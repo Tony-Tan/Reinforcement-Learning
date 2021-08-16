@@ -1,0 +1,179 @@
+digraph PG{     
+	{
+		node[shape=plaintext]
+		edge[style=dashed]
+		"1987"->"1988"->"1992"->"1994"->"1995"->"1996"->"1997"->"1998"->"1999"->"2001"->"2002"->
+        "2003"->"2004"->"2006"->"2008"->"2009"->"2010"->"2011"->"2013"->
+        "2014"->"2016"->"2017"->"2018"->"2019"->"2020";
+	}
+	//设置分辨率
+    rankdir="TB";
+	{
+        node[shape=box,color=green]
+        a1987[label="Likelihood ratio gradient estimation: An overview"];
+        a1988[label="On the Use of Backpropagation in Associative Reinforcement Learning"];
+        a1992[label="Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning"];
+        b1992[label="Gradient estimation for regenerative processes"]
+        a1994[label="Reinforcement Learning Algorithm for Partially Observable Markov Decision Problems"];
+        a1995[label="Reinforcement Learning by Stochastic Hill Climbing on Discounted Reward"];
+        b1995[label="Reinforcement learning methods for continuous-time Markov decision problems"];
+        a1996[label="Learning from Demonstration"];
+        a1997[label="Self-improving factory simulation using continuous-time average-reward reinforcement learning"]
+        a1998[label="An Overview of the Simultaneous Perturbation Method for Efficient Optimization"];
+        b1998[label="The variational formulation of the Fokker-Planck equation"]
+        c1998[label="Hierarchical control and learning for Markov decision processes"]
+        a1999[label="Between MDPs and Semi-MDPs: A Framework for Temporal Abstraction in Reinforcement Learning"];
+        b1999[label="Policy Gradient Methods for Reinforcement Learning with Function Approximation"];
+        a2001[label="Infinite-Horizon Policy-Gradient Estimation"];
+        c2001[label="A Natural Policy Gradient"];
+        d2001[label="Simulation-Based Optimization of Markov Reward Processes"];
+        a2002[label="Approximately Optimal Approximate Reinforcement Learning"];
+        a2003[label="Covariant Policy Search"];
+        b2003[label="Reinforcement Learning for Humanoid Robotics"];
+        a2004[label="Variance Reduction Techniques for Gradient Estimates in Reinforcement Learning"];
+        a2006[label="Bayesian Policy Gradient Algorithms"];
+        b2006[label="Policy Gradient Methods for Robotics"];
+        a2008[label="Reinforcement Learning of Motor Skills with Policy Gradients"];
+        a2009[label="A Theoretical and Empirical Analysis of Expected Sarsa"];
+        b2009[label="Learning Model-free Robot Control by a Monte Carlo EM Algorithm"]
+        a2010[label="Policy Gradient Methods"];
+        b2010[label="Parameter-Exploring Policy Gradients"];
+        a2011[label="PILCO: A Model-Based and Data-Efficient Approach to Policy Search"];
+        b2011[label="A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning"];
+        c2011[label="Policy Search for Motor Primitives in Robotics"]
+        a2013[label="Adaptive Step-Size for Policy Gradient Methods"];
+        b2013[label="Safe Policy Iteration"];
+        c2013[label="Bayesian Supervised Dimensionality Reduction"]
+        a2014[label="Deterministic Policy Gradient Algorithms"];
+        a2015[label="Trust Region Policy Optimization"];
+        a2016[label="Model-Based Relative Entropy Stochastic Search"];
+        b2016[label="Continuous Control with Deep Reinforcement Learning"];
+        c2016[label="Asynchronous Methods for Deep Reinforcement Learning"];
+        a2017[label="The Option-Critic Architecture"];
+        b2017[label="Emergence of Locomotion Behaviours in Rich Environments"];
+        c2017[label="Evolution Strategies as a Scalable Alternative to Reinforcement Learning"];
+        e2017[label="Proximal Policy Optimization Algorithms"];
+        f2017[label="Sample Efficient Actor-Critic with Experience Replay"];
+        a2018[label="Efficient Gradient-Free Variational Inference Using Policy Search"];
+        b2018[label="Structured Evolution with Compact Architectures for Scalable Policy Optimization"];
+        c2018[label="Expected Policy Gradients for Reinforcement Learning"];
+        d2018[label="Global Convergence of Policy Gradient Methods for the Linear Quadratic Regulator"];
+        e2018[label="Fourier Policy Gradients"];
+        f2018[label="Clipped Action Policy Gradient"];
+        g2018[label="Stochastic Variance-Reduced Policy Gradient"];
+        h2018[label="PIPPS: Flexible Model-Based Policy Search Robust to the Curse of Chaos"];
+        i2018[label="Parameter Space Noise for Exploration"];
+        j2018[label="An Inference-Based Policy Gradient Method for Learning Options"];
+        k2018[label="Learning to Explore via Meta-Policy Gradient"];
+        l2018[label="Policy Optimization as Wasserstein Gradient Flows"];
+        a2019[label="Trajectory-Wise Control Variates for Variance Reduction in Policy Gradient Methods"];
+        b2019[label="Predictor-Corrector Policy Optimization"];
+        c2019[label="Fingerprint Policy Optimisation for Robust Reinforcement Learning"];
+        a2020[label="Optimality and Approximation with Policy Gradient Methods in Markov Decision Processes"];
+        b2020[label="Momentum-Based Policy Gradient Methods"];
+        c2020[label="From Importance Sampling to Doubly Robust Policy Gradient"];
+        d2020[label="On the Global Convergence Rates of Softmax Policy Gradient Methods"];
+        e2020[label="Learning to Score Behaviors for Guided Policy Optimization"];
+        f2020[label="Structured Policy Iteration for Linear Quadratic Regulator"];
+        g2020[label="Taylor Expansion Policy Optimization"];
+    }
+
+    {
+        a2002 -> a2015;
+        a1992 -> c2016;
+        a1992 -> b1999;
+        a2010 -> a2014;
+        b2010 -> c2017;
+        c2001 -> a2008;
+        b1999 -> a2015;
+        a1992 -> a2015;
+        a1988 -> a1992;
+        a2015 -> f2017;
+        a1992 -> a2001;
+        a1995 -> a2001;
+        a2015 -> e2017;
+        e2017 -> b2017;
+        b1999 -> c2001;
+        a1994 -> a2001;
+        a2002 -> b2013;
+        b1999 -> d2001;
+        a1987 -> d2001;
+        b1992 -> d2001;
+        c2001 -> a2003;
+        a1992 -> a2006;
+        c2001 -> b2003;
+        d2018 -> f2020;
+        b1999 -> b2019;
+        b2011 -> b2019;
+        a2011 -> h2018;
+        a2013 -> b2020;
+        i2018 -> k2018;
+        a2017 -> j2018;
+        a2019 -> c2020;
+        a2015 -> g2020;
+        a2015 -> e2020;
+        c2001 -> a2020;
+        a2020 -> d2020;
+        a1992 -> f2018;
+        b1998 -> l2018;
+        a2015 -> l2018;
+        b1999 -> e2018;
+        c2001 -> d2018;
+        b1999 -> g2018;
+        a2016 -> a2018;
+        c2017 -> b2018;
+        c2001 -> c2019;
+        a1992 -> c2019;
+        a2001 -> a2004;
+        a2004 -> a2019;
+        a1992 -> a2010;
+        b2009 -> a2010;
+        c2011 -> a2010;
+        a2014 -> b2016;
+        b2016 -> i2018;
+        b2013 -> a2013;
+        c2001 -> a2016;
+        c2013 -> a2016;
+        a1998 -> b2010;
+        a1992 -> b2010;
+        a2009 -> c2018;
+        a2002 -> c2018;
+        a1992 -> b2006;
+        b2006 -> a2011;
+        a1996 -> a2011;
+        "SMDP" -> a1999;
+        b1995 -> a1999;
+        a1997 -> a1999;
+        c1998 -> a1999;
+        a1999 -> a2017;
+        b1999 -> a2017;
+    }
+    {
+		{rank=same;1987;a1987}
+        {rank=same;1988;a1988}
+        {rank=same;1992;a1992;b1992}
+        {rank=same;1994;a1994}
+        {rank=same;1995;a1995;b1995}
+        {rank=same;1996;a1996}
+        {rank=same;1997;a1997}
+        {rank=same;1998;a1998;b1998;c1998}
+        {rank=same;1999;a1999;b1999}
+        {rank=same;2001;a2001;c2001;d2001}
+        {rank=same;2002;a2002}
+        {rank=same;2003;a2003;b2003}
+        {rank=same;2004;a2004}
+        {rank=same;2006;a2006;b2006}
+        {rank=same;2008;a2008}
+        {rank=same;2009;a2009;b2009}
+        {rank=same;2010;a2010;b2010}
+        {rank=same;2011;a2011;b2011;c2011}
+        {rank=same;2013;a2013;b2013;c2013}
+        {rank=same;2014;a2014}
+        {rank=same;2016;a2016;b2016;c2016}
+        {rank=same;2017;a2017;b2017;c2017;a2015;e2017;f2017}
+        {rank=same;2018;a2018;b2018;c2018;d2018;e2018;f2018;g2018;h2018;i2018;j2018;k2018;l2018}
+        {rank=same;2019;a2019;b2019;c2019}
+        {rank=same;2020;a2020;b2020;c2020;d2020;e2020;f2020;g2020}
+	}
+
+}
