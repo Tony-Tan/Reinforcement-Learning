@@ -22,10 +22,11 @@ You can find my blog and research notes on:
     1. [Playing Atari with Deep Reinforcement Learning](./DQN)
 - 2015
     1. [Human-level control through deep reinforcement learning](./DQN)
-    2. [Dueling Network Architectures for Deep Reinforcement Learning](./dueling_network)
-    3. [Deep Reinforcement Learning with Double Q-learning](./double_DQN)
-    4. [Prioritized Experience Replay](./proportional_prioritization)
-
+    2. [Deep Reinforcement Learning with Double Q-learning](./double_DQN)
+    
+- 2016
+    1. [Dueling Network Architectures for Deep Reinforcement Learning](./dueling_network)
+    2. [Prioritized Experience Replay](./proportional_prioritization)
 
 ## A Brief Map of Concepts in Reinforcement Learning [^1]
 
