@@ -29,6 +29,7 @@ You can find my blog and research notes on:
     2. [Prioritized Experience Replay](./proportional_prioritization)
 
 ## Maps in Reinforcement Learning Algorithms
+[./Maps](./Maps)
 All maps below are coded by graphviz language.
 Command on OS X with graphviz:
 <code>dot the-name-of-your-dot-file.dot -Tsvg -o output-file-name.svg</code>
