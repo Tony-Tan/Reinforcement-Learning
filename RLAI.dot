@@ -1,0 +1,426 @@
+
+// concept: fontcolor="cyan4" shape="note"
+// algorithm: fontcolor="darkslateblue" shape="component"
+// property: fontcolor="dodgerblue1" shape="signature"
+// cluster: style=filled fillcolor="cornsilk"
+//
+//i
+
+digraph RL_main{
+    subgraph cluster_demo{
+        label="cluster" style=filled fillcolor="cornsilk"
+        concept[label="concept" fontcolor="cyan4" shape="note"];
+        algorithm[label="algorithm" fontcolor="darkslateblue" shape="component"];
+        property[label="property" fontcolor="dodgerblue1" shape="signature"];
+        
+    }
+    node [fontname="Avenir" fontcolor="cyan4" shape="note"];
+    // splines="line";
+    // bgcolor="gray";
+    overlap=false;
+    compound=true;
+    newrank=true;
+    //////////////////////////////////////////////////////////////////////////////
+    RL[label = "Reinforcement Learning" ];
+    //////////////////////////////////////////////////////////////////////////////
+    subgraph cluster_RL_property{
+        
+        style=filled fillcolor="cornsilk"
+        label = "RL Properties"
+        rank=same;
+        rl_p1[label="Evaluating the Actions" fontcolor="dodgerblue1" shape="signature"];
+        rl_p2[label="Trial-and-Error" fontcolor="dodgerblue1" shape="signature"];
+        // sl_p1[label="Instruct the Actions"];
+    }
+    RL->rl_p1[lhead=cluster_RL_property];
+    //////////////////////////////////////////////////////////////////////////////
+
+    subgraph cluster_RL_Problem{
+        style=filled fillcolor="cornsilk"
+        label="Reinforcement Learning Problem";
+        env[label="Environment" ];
+        agent[label="Agent" ];
+        state[label="State" ];
+        reward[label="Reward" ];
+        action[label="Action" ];
+       
+        after_state[label="After State" ];
+        state->after_state;
+        env->state->agent;
+        env->reward->agent;
+        agent->action[label="Policy" ];
+        action->env;
+        
+    }
+    
+
+
+    RL->env[lhead=cluster_RL_Problem];
+    //////////////////////////////////////////////////////////////////////////////
+    subgraph cluster_state_category
+    {
+        style=filled fillcolor="cornsilk"
+        label="State Relative Problem Categories";
+        rank=same;
+        nonassociative[label="Nonassociative" ];
+        associative[label="Associative" ];
+    }
+    subgraph cluster_env_category
+    {
+        style=filled fillcolor="cornsilk"
+        label="Environment Relative Problem Categories"
+        rank=same;
+        stationary[label="Stationary" ];
+        nonstationary[label="Nonstationary" ];
+        episodic[label="Episodic" ];
+        continuous[label="Continuous" ];
+    }
+    
+    state->nonassociative[lhead=cluster_state_category];
+    env->stationary[lhead=cluster_env_category];
+    /////////////////////////////////Solution /////////////////////////////////////////////
+    average_value[label="Average Reward"];
+    value[label="Value" ];
+    
+    GBA[label="Gradient Bandit Algorithms" fontcolor="darkslateblue" shape="component"];
+    
+
+    action->GBA;
+    increment_implementation[label="Increment Implementation(online)"];
+    
+    greedy[label="Greedy" ]
+    nongreedy[label="Nongreedy" ]
+    
+    subgraph cluster_explor_exploi{
+        style=filled fillcolor="cornsilk"
+        label="Trade-Off";
+        exploitation[label="Exploitation" ];
+        exploration[label="Exploration" ];
+        {
+            rank=same;
+            exploration;exploitation;
+        }
+    }
+    
+    epsilongreedy[label="epsilon-Greedy" ];
+    UCB[label="UCB" fontcolor="darkslateblue" shape="component"];
+   
+    
+    immediate_reward[label="Immediate Reward" ];
+    delay_reward[label="Delay Reward" ];
+    reward_hypothesis[label="Reward Hypothesis" ];
+    reward->reward_hypothesis;
+    
+    state_value[label="State Value" ];
+    state_action_value[label="State-Action Value" ];
+    
+    
+    
+    
+    iteration->prediction;
+    iteration->policy_improvement->policy_improvement_theorem;
+    iteration->GPI;
+    GPI->policy_improvement;
+    GPI->prediction;
+    // subgraph cluster_pi
+    // {
+    GPI[label="GPI(Policy Iteration/Value Iteration)" ];
+    iteration[label="Iteration Framework" ] ;
+    booststrapping[label="Bootstrapping" ];
+    update_target[label="Update Target" ];
+    objective_function[label="Objective Function" ];
+    step_size[label="Step Size" ];
+    constant_step_size[label="Constant Step Size" ];
+    dynamic_step_size[label="Dynamic Step Size" ] ;
+    
+    initial_guess[label="Initial Guess" ];
+    policy_improvement[label="Policy Improvement" ];
+    policy_improvement_theorem[label="Policy Improvement Theorem" ];
+    ////////////////////subgraph cluster_DP/////////////////////////
+    
+    //label="DP";
+    DP[label="Dynamic Programming" fontcolor="darkslateblue" shape="component"]
+    AsynchronousDP[label="Asynchronous Dynamic Programming" fontcolor="darkslateblue" shape="component"];
+    sweep[label="Sweep" ];
+        
+    
+    /////////////////////////// cluster_MC/////////////////////////
+    
+    //label="Monte Carlo Methods";
+    MC[label="Monte Carlo Methods" fontcolor="darkslateblue" shape="component"];
+    MCC[label="Monte Carlo Control" ];
+    first_visit[label="First Visit" ];
+    every_visit[label="Every Visit" ];
+    MC->first_visit;
+    MC->every_visit;
+    MC->MCC;
+        
+    prediction[label="Prediction(Policy Evaluation)" ];
+    inplace[label="In Place" ];
+    notinplace[label="Not In Place" ];
+    prediction->inplace;
+    prediction->notinplace;
+    ///////////////////////subgraph cluster_TD////////////////////
+    
+    //label="Temporal-Difference Learning";
+    TD_0[label="TD(0)" fontcolor="darkslateblue" shape="component"];
+    Sarsa[label="Sarsa" fontcolor="darkslateblue" shape="component"];
+    TD_0->Sarsa;
+    q_learning[label="Q-learning" fontcolor="darkslateblue" shape="component"];
+    TD_0->q_learning;
+    expected_Sarsa[label="Expected Sarsa" fontcolor="darkslateblue" shape="component"];
+    TD_0->expected_Sarsa;
+    maximization_bias[label="Maximization Bias" ];
+    double_learning[label="Double Learning" fontcolor="darkslateblue" shape="component"];
+    q_learning->maximization_bias;
+    maximization_bias->double_learning;
+    n_step_TD[label="n-step TD" fontcolor="darkslateblue" shape="component"];
+    TD_0->n_step_TD;
+    TD_0->TD_error;
+    iteration->booststrapping;//->n_step_TD;
+    n_step_Sarsa[label="n-step Sarsa" fontcolor="darkslateblue" shape="component"];
+    n_step_off_policy[label="n-step off-policy" fontcolor="darkslateblue" shape="component"];
+    n_step_TD->n_step_Sarsa;
+    n_step_TD->n_step_off_policy;
+    n_step_tree_backup_algorithm[label="n-step Tree Backup Algorithm" fontcolor="darkslateblue" shape="component"];
+    n_step_TD->n_step_tree_backup_algorithm;
+    ///////////////////////////////////////////////////////////////
+    
+    MC->TD_0;
+    DP->TD_0;
+    batch_updating[label="Batch Updating" ];
+    RL->iteration;
+    iteration->batch_updating;
+    subgraph cluster_model_based_free
+    {   
+        style=filled fillcolor="cornsilk"
+        {
+            rank=same;
+            model_based[label="Model Based" ];
+            model_free[label="Model Free" ];
+        }
+    }
+    model[label="Model" ];
+    
+    
+    planning[label="Planning" ];
+    learning[label="Learning" ];
+    subgraph cluster_model_type{
+        style=filled fillcolor="cornsilk"
+        rank=same;
+        sample_model[label="Sample Model" ];
+        distribution_model[label="Distribution Model" ];
+    }
+    Dyna[label="Dyna" ];
+    Dyna_Q[label="Dyna-Q" fontcolor="darkslateblue" shape="component"];
+    model->sample_model[lhead=cluster_model_type];
+    state_space_planning[label="State Space Planning" ];
+    plan_space_planning[label="Plan Space Planning" ];
+    planning->state_space_planning;
+    planning->plan_space_planning;
+    planning->Dyna->Dyna_Q;
+    search_control[label="Search Control" ];
+    simulated_experience->search_control;
+    prioritized_sweeping[label="Prioritized Sweeping" ];
+    search_control->prioritized_sweeping;
+    expected_updates[label="Expected Updates" ];
+    sample_updates[label="Sample Updates" ];
+    distribution_updates[label="Distribution Updates" ];
+    exhaustive_sweep[label="Exhaustive Sweep"];
+    trajectory_sample[label="Trajectory Sample" ];
+    RTDP[label="Real-time Dynamic Programming"];
+    trajectory_sample->RTDP;
+    decision_time_planning[label="Decision-time Planning" ];
+    heuristic_search[label="Heuristic Search" ];
+    rollout_algorithms[label="Rollout Algorithms"];
+    MCTS[label="Monte Carlo Tree Search" fontcolor="darkslateblue" shape="component"];
+    experience[label="Experience" ];
+    subgraph cluster_experience {
+        style=filled fillcolor="cornsilk"
+        rank=same;
+        actual_experience[label="Actual Experience" ];
+        simulated_experience[label="Simulated Experience" ];
+    }
+    // }
+    
+    
+    
+    subgraph cluster_onoff_policy
+    {
+        style=filled fillcolor="cornsilk"
+        rank=same;
+        on_policy[label="On-Policy" ];
+        off_policy[label="Off-Policy" ];
+        
+    }
+    experience->off_policy[lhead=cluster_onoff_policy];
+    IS[label="Important Sampling" ];
+    off_policy->IS;
+    ordinaryIS[label="Ordinary Important Sampling" ];
+    weightedIS[label="Weighted Important Sampling" ];
+    IS->ordinaryIS;
+    IS->weightedIS;
+    ///////////////////////////////value function///////////////////////////////////////////////  
+        value_function[label="Value Function" ];
+        tabular_methods[label="Tabular Methods" ];
+        approximate_solution_methods[label="Approximate Solution Methods" ];
+        function_approximation[label="Function Appproximation" ];
+        memory_based_function[label="Memory-based Methods" ];
+        parameterized_function[label="Parameterized Function" ];
+        differetial_value_function[label="Differetial Value Function" ];
+    // }
+
+    ////////////////////////////////function approximation//////////////////////////////////////////////
+        msve[label="Mean Squared Value Error" ];
+        local_optimum[label="Local Optimum" ];
+        global_optimum[label="Global Optimum" ];
+        optimization_method[label="Optimization Methods" ];
+        SGD[label="SGD" fontcolor="darkslateblue" shape="component"];
+        semi_gradient[label="Semi-Gradient" ];
+        feature_function[label="Feature Function" ];
+        linear_methods[label="Linear Methods" ];
+        ann_methods[label="ANN Methods" ];
+        LSTD[label="Least-Squares TD" ];
+        nearest_neighbor[label="Nearest Neighbor" ];
+        weighted_average[label="Weighted Average"];
+        
+        
+    //////////////////////////////eligibility trace////////////////////////////////////////////////
+    eligibility_trace[label="Eligibility Trace"];
+    offline_lambda_return_algorithm[label="Offline lambda-return Algorithm"];
+    TD_lambda[label="TD(lambda)" fontcolor="darkslateblue" shape="component"];
+    TD_error[label="TD Error"];
+    truncted_TD_lambda[label="Truncted TD(lambda)" fontcolor="darkslateblue" shape="component"];
+    online_lambda_return[label="online lambda-return" fontcolor="darkslateblue" shape="component"];
+    true_online_td_lambda[label="True Online TD(lambda)" fontcolor="darkslateblue" shape="component"];
+    Sarsa_lambda[label="Sarsa(lambda)" fontcolor="darkslateblue" shape="component"];
+    q_lambda[label="Q(lambda)" fontcolor="darkslateblue" shape="component"];
+    tree_backup_lambda[label="Tree-backup(lambda)" fontcolor="darkslateblue" shape="component"];
+    GTD[label="GTD" fontcolor="darkslateblue" shape="component"];
+    ETD[label="ETD" fontcolor="darkslateblue" shape="component"];
+    HTD[label="HTD" fontcolor="darkslateblue" shape="component"];
+
+    TD_0->TD_lambda;
+    eligibility_trace->GTD;
+    eligibility_trace->ETD;
+    GTD->HTD;
+    TD_lambda->HTD;
+    truncted_lambda_return->truncted_TD_lambda;
+    lambda_return->tree_backup_lambda;
+    TD_lambda->q_lambda;
+    lambda_return->Sarsa_lambda;
+    TD_lambda->true_online_td_lambda
+
+    lambda_return->online_lambda_return;
+    msve->weights_update;
+
+    eligibility_trace->TD_lambda;
+    lambda_return->offline_lambda_return_algorithm;
+    n_step_return->lambda_return[label="Compound Update"]
+    interest[label="Interest"];
+    Emphasis[label="Emphasis"];
+    state->interest;
+    state->Emphasis;
+    // SL->
+    function_approximation->update_target;
+    update_target->msve;
+    function_approximation->objective_function;
+    msve->objective_function;
+    objective_function->local_optimum;
+    objective_function->global_optimum;
+    objective_function->optimization_method->SGD;
+    optimization_method->semi_gradient;
+    parameterized_function->linear_methods;
+    parameterized_function->ann_methods;
+    feature_function->function_approximation;
+    linear_methods->LSTD;
+    approximate_solution_methods->function_approximation;
+    function_approximation->parameterized_function;
+    function_approximation->memory_based_function;
+    memory_based_function->weighted_average;
+    memory_based_function->nearest_neighbor;
+
+
+    value->value_function;
+    value_function->tabular_methods; 
+    value_function->approximate_solution_methods;
+    state_space_planning->decision_time_planning;
+    decision_time_planning->heuristic_search;
+    decision_time_planning->rollout_algorithms;
+    MCC->rollout_algorithms;
+    decision_time_planning->MCTS;
+    rollout_algorithms->MCTS;
+    value_function->expected_updates;
+    value_function->sample_updates;
+    value_function->distribution_updates;
+    distribution_updates->trajectory_sample;
+    distribution_updates->exhaustive_sweep;
+    env->model_based[lhead=cluster_model_based_free];
+    model_based->model->planning;
+    model_free->learning;
+    // IS->return;
+    rl_p2->experience;
+    // episodic->MC;
+    experience->MC;
+    experience->actual_experience[lhead=cluster_experience];
+    // experience->simulated_experience;
+    model->simulated_experience;
+    DP->AsynchronousDP[label="No Sweep"];
+    MarkovProperty->Optimality->approximation;
+    DP->sweep;
+    BellmanOptimalityEquation->DP;
+    
+    
+    value->state_value;
+    value->state_action_value;
+    reward->immediate_reward;
+    reward->delay_reward;
+    immediate_reward->value;
+    delay_reward->value;
+    value->exploration[lhead=cluster_explor_exploi]
+    
+    exploitation->greedy;
+    exploration->nongreedy->epsilongreedy;
+    nongreedy->UCB;
+    value->average_value;
+    average_value->increment_implementation;
+    iteration->step_size->constant_step_size;
+    step_size->dynamic_step_size;
+    iteration->initial_guess;
+   
+    return[label="Return"];
+    sum_return[label="Sum of the Reward"];
+    discount_return[label="Discounted Return"];
+    differetial_return[label="Differetial Return"];
+    n_step_return[label="n-step Return"];
+    lambda_return[label="lambda-return"];
+    truncted_lambda_return[label="Truncted lambda-return"];
+
+    lambda_return->truncted_lambda_return;
+    return->sum_return;
+    return->discount_return;
+    value->return;
+    policy[label="Policy"];
+    FiniteMDPs[label="Finite MDPs"];
+    dynamic[label="Dynamic"];
+    FiniteMDPs->dynamic;
+    MarkovProperty[label="Markov Property"];
+    FiniteMDPs->MarkovProperty;
+    BellmanEquation[label="Bellman Equation"];
+    MarkovProperty->BellmanEquation;
+    BellmanOptimalityEquation[label="Bellman Optimality Equation"];
+    BellmanEquation->BellmanOptimalityEquation;
+    Optimality[label="Optimality"];
+    approximation[label="Approximation"];
+    ergodicity[label="Ergodicity"];
+    return->n_step_return;
+    n_step_TD->n_step_return;
+    return->differetial_return;
+    differetial_return->differetial_value_function;
+    FiniteMDPs->ergodicity;
+    agent->policy;
+    policy->return;
+    env->FiniteMDPs;
+
+
+}
