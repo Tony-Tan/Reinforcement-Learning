@@ -28,16 +28,19 @@ You can find my blog and research notes on:
     1. [Dueling Network Architectures for Deep Reinforcement Learning](./dueling_network)
     2. [Prioritized Experience Replay](./proportional_prioritization)
 
-## A Brief Map of Concepts in Reinforcement Learning [^1]
+## Maps in Reinforcement Learning Algorithms
+All maps below are coded by graphviz language.
+Command on OS X with graphviz:
+<code>dot the-name-of-your-dot-file.dot -Tsvg -o output-file-name.svg</code>
 
 
-![](https://raw.githubusercontent.com/Tony-Tan/RL_Research_Papers_Review/master/RLAI.svg)
+### Concepts in 'Reinforcement Learning: an Introduction'
+![](./Maps/RLAI.svg)
 
 
-Command on OS X with graphviz: 
+### Graph of DQN papers
+![](./Maps/DQN_graph.svg)
 
-<code>dot RLAI.dot -Tsvg -o RLAI.svg</code>
 
-## References
-
-[^1]: Sutton, Richard S., and Andrew G. Barto. Reinforcement Learning: An Introduction. Adaptive Computation and Machine Learning. Cambridge, Mass: MIT Press, 1998.
+### Graph of PG papers
+![](./Maps/PG_graph.svg)
