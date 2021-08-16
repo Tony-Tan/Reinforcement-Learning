@@ -10,17 +10,21 @@ You can find my blog and research notes on:
 
 [![Website_rn](./logo_rn.png)](https://rn.anthony-tan.online)
 
-3. [![Twitter Follow](https://img.shields.io/twitter/follow/codeSTACKr?color=1DA1F2&logo=twitter&style=for-the-badge)](https://twitter.com/anthony_s_tan)
+3. [![Twitter Follow](https://img.shields.io/twitter/follow/anthony_tan?color=1DA1F2&logo=twitter&style=for-the-badge)](https://twitter.com/anthony_s_tan)
 
 ## This Project Contains All Experiment Codes of the Paper I've Read
-
+- 1951
+    1. [A Stochastic Approximation Method](./Robbins-Monro_Method)
+  
+- 1986
+    1. [Stochastic approximation for Monte Carlo optimization](./Stochastic_Approximation_for_Monte_Carlo_Optimization)
 - 2013
-    1. [Playing Atari with Deep Reinforcement Learning]
+    1. [Playing Atari with Deep Reinforcement Learning](./DQN)
 - 2015
-    1. Human-level control through deep reinforcement learning
-    2. Dueling Network Architectures for Deep Reinforcement Learning
-    3. Deep Reinforcement Learning with Double Q-learning
-    4. Prioritized Experience Replay
+    1. [Human-level control through deep reinforcement learning](./DQN)
+    2. [Dueling Network Architectures for Deep Reinforcement Learning](./dueling_network)
+    3. [Deep Reinforcement Learning with Double Q-learning](./double_DQN)
+    4. [Prioritized Experience Replay](./proportional_prioritization)
 
 
 ## A Brief Map of Concepts in Reinforcement Learning [^1]
