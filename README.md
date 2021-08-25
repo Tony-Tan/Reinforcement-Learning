@@ -8,16 +8,12 @@ And that project has been supported by [jetbrains](https://www.jetbrains.com/)
 ## Hello everyone, I'm Anthony Tan, an independent AI researcher. 
 
 You can find my blog and research notes on:
-1. [anthony-tan.online](https://anthony-tan.online)  👋
 
 [![website_online](./logo_online.png)](https://anthony-tan.online)
-
-
-2. [rn.anthony-tan.online](https://rn.anthony-tan.online) 👋
-
 [![Website_rn](./logo_rn.png)](https://rn.anthony-tan.online)
 
-3. [![Twitter Follow](https://img.shields.io/twitter/follow/anthony_tan?color=1DA1F2&logo=twitter&style=for-the-badge)](https://twitter.com/anthony_s_tan)
+or follow my twitter: 
+[![Twitter Follow](https://img.shields.io/twitter/follow/anthony_tan?color=1DA1F2&logo=twitter&style=for-the-badge)](https://twitter.com/anthony_s_tan)
 
 ## This Project Contains All Experiment Codes of the Paper I've Read
 - 1951
@@ -34,8 +30,7 @@ You can find my blog and research notes on:
     2. [Prioritized Experience Replay](./value-based_methods/proportional_prioritization)
 
 ## Map of Reinforcement Learning Algorithms
-[./Maps](./Maps)
-All maps below are coded by graphviz language.
+[./Maps](./Maps) contains all maps of concepts in RL that are coded by graphviz language.
 Command on OS X with graphviz:
 <code>dot the-name-of-your-dot-file.dot -Tsvg -o output-file-name.svg</code>
 
