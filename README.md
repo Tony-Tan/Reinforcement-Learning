@@ -21,21 +21,19 @@ You can find my blog and research notes on:
 
 ## This Project Contains All Experiment Codes of the Paper I've Read
 - 1951
-    1. [A Stochastic Approximation Method](./Robbins-Monro_Method)
-  
+    1. [A Stochastic Approximation Method](./policy-search_methods/Robbins-Monro_Method)
 - 1986
-    1. [Stochastic approximation for Monte Carlo optimization](./Stochastic_Approximation_for_Monte_Carlo_Optimization)
+    1. [Stochastic approximation for Monte Carlo optimization](./policy-search_methods/Stochastic_Approximation_for_Monte_Carlo_Optimization)
 - 2013
-    1. [Playing Atari with Deep Reinforcement Learning](./DQN)
+    1. [Playing Atari with Deep Reinforcement Learning](./value-based_methods/DQN)
 - 2015
-    1. [Human-level control through deep reinforcement learning](./DQN)
-    2. [Deep Reinforcement Learning with Double Q-learning](./double_DQN)
-    
+    1. [Human-level control through deep reinforcement learning](./value-based_methods/DQN)
+    2. [Deep Reinforcement Learning with Double Q-learning](./value-based_methods/double_DQN)
 - 2016
-    1. [Dueling Network Architectures for Deep Reinforcement Learning](./dueling_network)
-    2. [Prioritized Experience Replay](./proportional_prioritization)
+    1. [Dueling Network Architectures for Deep Reinforcement Learning](./value-based_methods/dueling_network)
+    2. [Prioritized Experience Replay](./value-based_methods/proportional_prioritization)
 
-## Maps in Reinforcement Learning Algorithms
+## Map of Reinforcement Learning Algorithms
 [./Maps](./Maps)
 All maps below are coded by graphviz language.
 Command on OS X with graphviz:
