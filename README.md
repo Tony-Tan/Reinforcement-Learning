@@ -1,6 +1,5 @@
 ## Acknowledgement
-Project [Reinforcement_Leanring_An_Introduction](https://github.com/Tony-Tan/Reinforcement_Leanring_An_Introduction) has been merged into this project. 
-And that project has been supported by [jetbrains](https://www.jetbrains.com/) 
+This project has been supported by [jetbrains](https://www.jetbrains.com/) 
 
 
 [![](./jetbrains-variant-2.png)](https://www.jetbrains.com/) 
