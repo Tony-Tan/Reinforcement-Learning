@@ -17,7 +17,7 @@ STATE_NUM = 8
 def probability_assign(theta):
     probability = np.ones(STATE_NUM) / STATE_NUM
     for i in range(STATE_NUM):
-        probability[i] = np.exp(-(theta - i/STATE_NUM) ** 2 / 0.5)
+        probability[i] = np.exp(-(theta - i / STATE_NUM) ** 2 / 0.5)
     probability /= probability.sum()
     return probability
 
@@ -26,19 +26,23 @@ def probability_assign2d(theta):
     probability = np.ones([STATE_NUM, STATE_NUM])
     for i in range(STATE_NUM):
         for j in range(STATE_NUM):
-            probability[i][j] = np.exp(-((i-theta-STATE_NUM/2.)**2/(j+1) + (j-theta-STATE_NUM/2.)**2/(i+1)) / 5)
+            probability[i][j] = np.exp(
+                -((i - theta - STATE_NUM / 2.) ** 2 / (j + 1) + (j - theta - STATE_NUM / 2.) ** 2 / (i + 1)) / 5)
         probability[i] /= np.sum(probability[i])
     return probability
+
 
 def probability_derivative_assign2d(theta):
     probability_derivative = np.ones([STATE_NUM, STATE_NUM])
     for i in range(STATE_NUM):
         for j in range(STATE_NUM):
-            probability_derivative[i][j] = np.exp(-((i-theta-STATE_NUM/2.)**2/(j+1) + (j-theta-STATE_NUM/2.)**2/(i+1)) / 5)* \
-                                           (-0.2 * (-2*(i - theta - STATE_NUM / 2.) / (j + 1) -2* (
-                                                       j - theta - STATE_NUM / 2.)  / (i + 1)) )
+            probability_derivative[i][j] = np.exp(
+                -((i - theta - STATE_NUM / 2.) ** 2 / (j + 1) + (j - theta - STATE_NUM / 2.) ** 2 / (i + 1)) / 5) * \
+                                           (-0.2 * (-2 * (i - theta - STATE_NUM / 2.) / (j + 1) - 2 * (
+                                                   j - theta - STATE_NUM / 2.) / (i + 1)))
         probability_derivative[i] /= np.sum(probability_derivative[i])
     return probability_derivative
+
 
 def value_list(theta):
     value = np.ones(STATE_NUM) / STATE_NUM
@@ -46,10 +50,11 @@ def value_list(theta):
         value[i] = -np.arctan(theta * i) - theta
     return value
 
+
 def value_derivative_list(theta):
     value_derivative = np.ones(STATE_NUM) / STATE_NUM
     for i in range(STATE_NUM):
-        value_derivative[i] = - i/(1+ (theta * i)**2) -1 #-np.arctan(theta * i) - theta
+        value_derivative[i] = - i / (1 + (theta * i) ** 2) - 1  # -np.arctan(theta * i) - theta
     return value_derivative
 
 
@@ -70,6 +75,7 @@ def calculate_y_t(sequence):
     t = len(sequence)
     return Y, t
 
+
 def calculate_y_t_d_e(sequence):
     Y = 0
     D = 0
@@ -82,7 +88,7 @@ def calculate_y_t_d_e(sequence):
     for s, v, p, p_, v_ in sequence:
         Y += v
         v__sum += v_
-        l+= p_/p
+        l += p_ / p
     D = v__sum + Y * l
     E = t * l
     return Y, t, D, E
@@ -115,9 +121,9 @@ def MarkovChainGenerator(theta, start_state=0):
         current_state = next_state
         next_state = np.random.choice(STATE_NUM, 1, p=probability_array2d[current_state])[0]
         sequence.append([current_state, value_array[current_state],
-                 probability_array2d[current_state][next_state],
-                 probability_derivative_array2d[current_state][next_state],
-                 value_derivative_array[current_state]])
+                         probability_array2d[current_state][next_state],
+                         probability_derivative_array2d[current_state][next_state],
+                         value_derivative_array[current_state]])
 
     return sequence
 
@@ -140,10 +146,10 @@ def AlgorithmA(sequence_generator_type, step_num=10000):
             i -= 1
             print('not available sequence')
             continue
-        eta = (Y_c * t - Y * t_c)*c
+        eta = (Y_c * t - Y * t_c) * c
         # alpha = step_size(i)
         # theta -= alpha * eta
-        theta = np.arctan(np.tan(theta) - (1/(i+1.)) * eta)
+        theta = np.arctan(np.tan(theta) - (1 / (i + 1.)) * eta)
         if i % 100 == 0:
             y_t.append(Y / t)
             theta_list.append(theta)
@@ -173,8 +179,8 @@ def AlgorithmB(step_num=10000):
         sq_ = MarkovChainGenerator(theta)
         Y_, t_, D_, E_ = calculate_y_t_d_e(sq_)
 
-        eta = (D*t_+D_*t - E*Y_ - E_ * Y)/(2 + 2*np.tan(theta)**2)
-        theta = np.arctan(np.tan(theta)-(1/(i+1))*eta)
+        eta = (D * t_ + D_ * t - E * Y_ - E_ * Y) / (2 + 2 * np.tan(theta) ** 2)
+        theta = np.arctan(np.tan(theta) - (1 / (i + 1)) * eta)
 
         if i % 100 == 0:
             y_t.append(Y / t)
