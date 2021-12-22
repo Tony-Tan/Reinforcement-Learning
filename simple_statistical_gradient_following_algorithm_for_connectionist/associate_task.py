@@ -14,12 +14,12 @@ class GaussianUnit:
         self.weights_mean = np.zeros(input_size_)
         # self.weights_std = np.zeros(input_size_)
         self.mean = 0
-        self.std = 1
+        self.std = 0.1
         self.action_space = np.array(action_space_)
         pass
 
     def __call__(self, input):
-        self.mean = squashing_function(self.weights_mean.dot(input)) * 10
+        self.mean = squashing_function(self.weights_mean.dot(input)) * 4
         # self.std = squashing_function(self.weights_std.dot(input))*10 + 0.01
         action_prob = 1 / (2 * SQRT_PI * self.std) * np.exp(
             -0.5 * ((self.action_space - self.mean) / self.std) ** 2) + 0.01
