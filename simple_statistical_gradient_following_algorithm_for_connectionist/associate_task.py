@@ -1,8 +1,14 @@
+import random
+
 from k_arm_bandit import KArmedBandit
 import numpy as np
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
+import time
+
 
 SQRT_PI = np.sqrt(np.pi)
+K = 5
 
 
 def squashing_function(input):
@@ -19,7 +25,7 @@ class GaussianUnit:
         pass
 
     def __call__(self, input):
-        self.mean = squashing_function(self.weights_mean.dot(input)) * 4
+        self.mean = squashing_function(self.weights_mean.dot(input)) * (K - 1)
         # self.std = squashing_function(self.weights_std.dot(input))*10 + 0.01
         # action_prob = 1 / (2 * SQRT_PI * self.std) * np.exp(
         #     -0.5 * ((self.action_space - self.mean) / self.std) ** 2) + 0.01
@@ -37,10 +43,10 @@ class GaussianUnit:
         return nabla_weights_mean  # , nabla_weights_std
 
 
-def reinforce_algorithm(repeat_times=10000000):
+def reinforce_algorithm(repeat_times=1000000,random_seed=0):
     # 10 arm bandits
-    K = 10
-    reward_log = []
+    reward_log_list = np.zeros(int(repeat_times/100))
+    np.random.seed(random_seed)
     env_mean = np.random.normal(.0, 1.0, K)
 
     env = KArmedBandit(env_mean, np.ones(K))
@@ -64,16 +70,38 @@ def reinforce_algorithm(repeat_times=10000000):
         # gu.weights_std += (alpha_std * (r-base_line_std)*nabla_std)
         gu.weights_mean += (alpha_mean * (r - base_line_mean) * nabla_mean)
         if repeat_i % 100 == 0:
-            reward_log.append(r)
+            reward_log_list[int(repeat_i/100)] = r
     print('mean:')
     print(gu.mean)
-    # print('weights for mean:')
-    # print(gu.weights_mean)
     print('environment mean:')
     print(env_mean)
-    plt.plot(reward_log)
-    plt.show()
+    # print('weights for mean:')
+    # print(gu.weights_mean)
+    return reward_log_list
 
 
 if __name__ == '__main__':
-    reinforce_algorithm()
+    experiment_time = 1000
+    seed_seq = np.random.randint(0, 100000, experiment_time)
+    pool = Pool()
+    repeat_times = 100000
+    thread_num = 4
+    reward_matrix = []
+    for experiment_i in range(int(experiment_time/thread_num)):
+        result_0 = pool.apply_async(reinforce_algorithm, [repeat_times, seed_seq[experiment_i*4]])
+        result_1 = pool.apply_async(reinforce_algorithm, [repeat_times, seed_seq[experiment_i*4]+1])
+        result_2 = pool.apply_async(reinforce_algorithm, [repeat_times, seed_seq[experiment_i*4]+2])
+        result_3 = pool.apply_async(reinforce_algorithm, [repeat_times, seed_seq[experiment_i*4]+3])
+        answer0 = result_0.get(timeout=50)
+        answer1 = result_1.get(timeout=50)
+        answer2 = result_2.get(timeout=50)
+        answer3 = result_3.get(timeout=50)
+        reward_matrix.append(answer0)
+        reward_matrix.append(answer1)
+        reward_matrix.append(answer2)
+        reward_matrix.append(answer3)
+    average_reward_list = np.zeros(len(reward_matrix[0]))
+    for i in reward_matrix:
+        average_reward_list += i
+    plt.plot(average_reward_list/experiment_time)
+    plt.show()
