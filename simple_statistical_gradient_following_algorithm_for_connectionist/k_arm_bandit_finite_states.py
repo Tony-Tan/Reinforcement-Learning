@@ -55,6 +55,7 @@ class KArmedBandit:
             for i in self.action_space:
                 current_state.append(
                     np.random.normal(self._k_value_mean[i], self._k_value_deviation[i], 1)[0])
+            current_state = np.round(np.array(current_state), 1)
             return current_state, current_state[action_], False, {}
         else:
             raise ValueError("action must be a number less than k")
