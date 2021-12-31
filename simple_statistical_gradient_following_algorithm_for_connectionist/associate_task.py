@@ -18,7 +18,7 @@ class GaussianUnit:
     def __init__(self, input_size_, action_space_):
         self.weights_mean = np.zeros(input_size_)
         self.mean = np.random.random(1)*(K-1)
-        self.std = 0.1
+        self.std = 0.01
         self.action_space = np.array(action_space_)
         pass
 
@@ -44,7 +44,7 @@ def reinforce_algorithm(repeat_times=1000000, random_seed=0):
     env = KArmedBandit(env_mean, np.ones(K))
     gu = GaussianUnit(K, range(K))
     state, reward, is_done, _ = env.step(0)
-    alpha = 0.0001
+    alpha = 0.00001
     base_line_mean = 0
 
     for repeat_i in range(repeat_times):
@@ -77,30 +77,25 @@ def reinforce_algorithm(repeat_times=1000000, random_seed=0):
 
 
 def experiment():
-    experiment_time = 100
+    experiment_time = 800
     seed_seq = np.random.randint(0, 100000, experiment_time)
-    pool = Pool()
+
     repeat_times = 100000
-    thread_num = 4
+    thread_num = 8
     reward_matrix = []
     optimal_action_hit_matrix = []
+
     for experiment_i in range(int(experiment_time / thread_num)):
-        result_0 = pool.apply_async(reinforce_algorithm, [repeat_times, seed_seq[experiment_i * 4]])
-        result_1 = pool.apply_async(reinforce_algorithm, [repeat_times, seed_seq[experiment_i * 4] + 1])
-        result_2 = pool.apply_async(reinforce_algorithm, [repeat_times, seed_seq[experiment_i * 4] + 2])
-        result_3 = pool.apply_async(reinforce_algorithm, [repeat_times, seed_seq[experiment_i * 4] + 3])
-        optimal_action_hit_thread_0, reward_thread_0 = result_0.get(timeout=500)
-        optimal_action_hit_thread_1, reward_thread_1 = result_1.get(timeout=500)
-        optimal_action_hit_thread_2, reward_thread_2 = result_2.get(timeout=500)
-        optimal_action_hit_thread_3, reward_thread_3 = result_3.get(timeout=500)
-        reward_matrix.append(reward_thread_0)
-        reward_matrix.append(reward_thread_1)
-        reward_matrix.append(reward_thread_2)
-        reward_matrix.append(reward_thread_3)
-        optimal_action_hit_matrix.append(optimal_action_hit_thread_0)
-        optimal_action_hit_matrix.append(optimal_action_hit_thread_1)
-        optimal_action_hit_matrix.append(optimal_action_hit_thread_2)
-        optimal_action_hit_matrix.append(optimal_action_hit_thread_3)
+        result = []
+        pool = Pool()
+        for thread_i in range(thread_num):
+            result.append(pool.apply_async(reinforce_algorithm, [repeat_times, seed_seq[experiment_i * thread_num+thread_i]]))
+        pool.close()
+        pool.join()
+        for result_i in result:
+            optimal_action_hit_thread, reward_thread = result_i.get(timeout=500)
+            reward_matrix.append(reward_thread)
+            optimal_action_hit_matrix.append(optimal_action_hit_thread)
     average_reward_list = np.zeros(len(reward_matrix[0]))
     average_optimal_action_hit_list = np.zeros(len(optimal_action_hit_matrix[0]))
     for i in reward_matrix:
