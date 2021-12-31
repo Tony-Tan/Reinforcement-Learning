@@ -1,3 +1,8 @@
+# Williams, Ronald J. “Simple Statistical Gradient-Following Algorithms for
+# Connectionist Reinforcement Learning.” Machine Learning 8, no. 3 (1992): 229–56.
+# associate task
+# 2-armed bandit
+
 import random
 
 from k_arm_bandit_finite_states import KArmedBandit
@@ -7,7 +12,7 @@ from multiprocessing import Pool
 import time
 
 SQRT_PI = np.sqrt(np.pi)
-K = 10
+K = 2
 
 
 def squashing_function(input):
@@ -80,7 +85,7 @@ def experiment():
     experiment_time = 80
     seed_seq = np.random.randint(0, 100000, experiment_time)
 
-    repeat_times = 10000
+    repeat_times = 100000
     thread_num = 8
     reward_matrix = []
     optimal_action_hit_matrix = []
@@ -102,8 +107,8 @@ def experiment():
         average_reward_list += i
     for i in optimal_action_hit_matrix:
         average_optimal_action_hit_list += i
-    plt.plot(average_reward_list / experiment_time, label='reward')
-    # plt.plot(average_optimal_action_hit_list / experiment_time, label='optimal action rate')
+    # plt.plot(average_reward_list / experiment_time, label='reward')
+    plt.plot(average_optimal_action_hit_list / experiment_time, label='optimal action rate')
     plt.legend()
     plt.show()
 
