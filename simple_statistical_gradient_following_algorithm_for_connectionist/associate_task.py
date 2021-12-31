@@ -7,7 +7,7 @@ from multiprocessing import Pool
 import time
 
 SQRT_PI = np.sqrt(np.pi)
-K = 2
+K = 10
 
 
 def squashing_function(input):
@@ -18,7 +18,7 @@ class GaussianUnit:
     def __init__(self, input_size_, action_space_):
         self.weights_mean = np.zeros(input_size_)
         self.mean = np.random.random(1)*(K-1)
-        self.std = 0.01
+        self.std = 0.1
         self.action_space = np.array(action_space_)
         pass
 
@@ -44,7 +44,7 @@ def reinforce_algorithm(repeat_times=1000000, random_seed=0):
     env = KArmedBandit(env_mean, np.ones(K))
     gu = GaussianUnit(K, range(K))
     state, reward, is_done, _ = env.step(0)
-    alpha = 0.00001
+    alpha = 0.001
     base_line_mean = 0
 
     for repeat_i in range(repeat_times):
@@ -77,10 +77,10 @@ def reinforce_algorithm(repeat_times=1000000, random_seed=0):
 
 
 def experiment():
-    experiment_time = 800
+    experiment_time = 80
     seed_seq = np.random.randint(0, 100000, experiment_time)
 
-    repeat_times = 100000
+    repeat_times = 10000
     thread_num = 8
     reward_matrix = []
     optimal_action_hit_matrix = []
@@ -102,8 +102,8 @@ def experiment():
         average_reward_list += i
     for i in optimal_action_hit_matrix:
         average_optimal_action_hit_list += i
-    # plt.plot(average_reward_list / experiment_time, label='reward')
-    plt.plot(average_optimal_action_hit_list / experiment_time, label='optimal action rate')
+    plt.plot(average_reward_list / experiment_time, label='reward')
+    # plt.plot(average_optimal_action_hit_list / experiment_time, label='optimal action rate')
     plt.legend()
     plt.show()
 
