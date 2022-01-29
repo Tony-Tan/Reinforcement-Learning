@@ -56,7 +56,6 @@ def policy_gradient_gradient_update(alpha):
     for i in range(1000000):
         delta_eta = 0
         stationary_distri = policy.stationary_distribution()
-
         for s_i in range(len(policy.state_space)):
             p_s = stationary_distri[s_i]
             for a_i in range(len(policy.action_space)):
