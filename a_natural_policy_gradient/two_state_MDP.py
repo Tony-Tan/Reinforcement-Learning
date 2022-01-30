@@ -4,7 +4,7 @@ import random
 
 class Policy:
     def __init__(self):
-        self.weights = np.array([np.log(9)+np.log(4), -np.log(4)])
+        self.weights = np.array([np.log(9) + np.log(4), -np.log(4)])
         self.trans_matrix = np.zeros((2, 2))
         # state i: 0, j:1
         # action a_1: -1, a_2: 1
@@ -16,6 +16,19 @@ class Policy:
         #   1              2         0
         self.reward = np.array([[1, 0], [2, 0]])
 
+    def q_value_matrix(self, gamma):
+        # pi(a|x) = pi_ax
+        pi_00 = self.sigmoid(self.state_space[0], self.action_space[0])
+        pi_01 = self.sigmoid(self.state_space[1], self.action_space[0])
+        pi_10 = self.sigmoid(self.state_space[0], self.action_space[1])
+        pi_11 = self.sigmoid(self.state_space[1], self.action_space[1])
+        v_0 = (2 * pi_01 - (1 - gamma * pi_01) * (
+                    gamma * pi_00 * pi_11 - 2 * (1 - gamma * pi_00) * pi_01 / ((1 - gamma * pi_00)
+                    * (1 - gamma * pi_01) + gamma * gamma * pi_10 * pi_11))) / (-gamma * pi_11)
+        v_1 = (gamma * pi_00 * pi_11 + 2 * (1 - gamma * pi_00) * pi_01) / ((1 - gamma * pi_00) * (1 - gamma * pi_00) *
+                    (1 - gamma * pi_01) + gamma * gamma * pi_10 * pi_11)
+        return np.array([[1 + gamma * v_0, gamma * v_1], [2 + gamma * v_1, gamma * v_0]])
+
     def sigmoid(self, x, a):
         return 1.0 / (1.0 + np.exp(-(self.weights[0] * x + self.weights[1]) * a))
 
@@ -26,13 +39,13 @@ class Policy:
         self.trans_matrix[0][1] = self.sigmoid(self.state_space[0], self.action_space[1])
         self.trans_matrix[1][0] = self.sigmoid(self.state_space[1], self.action_space[1])
         self.trans_matrix[1][1] = self.sigmoid(self.state_space[1], self.action_space[0])
-        p_j = (1 - self.trans_matrix[0][0])/(self.trans_matrix[1][0] - self.trans_matrix[0][0] + 1)
-        return np.array([1-p_j, p_j])
+        p_j = (1 - self.trans_matrix[0][0]) / (self.trans_matrix[1][0] - self.trans_matrix[0][0] + 1)
+        return np.array([1 - p_j, p_j])
 
     def derivative(self, x, a):
         forward_res = self.sigmoid(x, a)
-        partial_w_0 = (forward_res-1) * forward_res * x * a
-        partial_w_1 = (forward_res-1) * forward_res * a
+        partial_w_0 = (forward_res - 1) * forward_res * x * a
+        partial_w_1 = (forward_res - 1) * forward_res * a
         return np.array([[partial_w_0], [partial_w_1]])
 
     def Fisher_matrix(self):
@@ -44,33 +57,35 @@ class Policy:
                 x = self.state_space[s_i]
                 a = self.action_space[a_i]
                 p_a = self.sigmoid(x, a)
-                log_p_w = np.array([[(1-p_a)*x*a, (1-p_a)*a]])
+                log_p_w = np.array([[(1 - p_a) * x * a, (1 - p_a) * a]])
                 log_p_w_t = log_p_w.transpose()
-                f_matrix_s += log_p_w_t.dot(log_p_w)*p_a
-            f_matrix += stat_distri[s_i]*f_matrix_s
-        return f_matrix
+                f_matrix_s += log_p_w_t.dot(log_p_w) * p_a
+            f_matrix += stat_distri[s_i] * f_matrix_s
+        return f_matrix + 1e-3 * np.eye(2)
 
 
 def policy_gradient_gradient_update(alpha):
     policy = Policy()
-    for i in range(1000000):
+    gamma = 0.9
+    for i in range(10000000):
         delta_eta = 0
         stationary_distri = policy.stationary_distribution()
+        q_matrix = policy.q_value_matrix(gamma)
         for s_i in range(len(policy.state_space)):
             p_s = stationary_distri[s_i]
             for a_i in range(len(policy.action_space)):
                 policy_derivative = policy.derivative(policy.state_space[s_i], policy.action_space[a_i])
-                delta_eta += p_s * policy_derivative * policy.reward[s_i][a_i]
-        # F = policy.Fisher_matrix()
-        # delta_w = np.linalg.inv(F).dot(delta_eta)
-        delta_w = delta_eta
-        policy.weights += alpha*delta_w.transpose()[0]
-        if i%1000 == 0:
+                delta_eta += p_s * policy_derivative * q_matrix[s_i][a_i]
+        F = policy.Fisher_matrix()
+        delta_w = np.linalg.inv(F).dot(delta_eta)
+        # delta_w = delta_eta
+        policy.weights += alpha * delta_w.transpose()[0]
+        if i % 10000 == 0:
             print('-----------------------------------')
-            print('weight:'+str(policy.weights))
-            print('stationary distri'+str(stationary_distri))
+            print('weight:' + str(policy.weights))
+            print('stationary distri' + str(stationary_distri))
             print(policy.trans_matrix)
 
 
 if __name__ == '__main__':
-    policy_gradient_gradient_update(0.01)
+    policy_gradient_gradient_update(0.1)
