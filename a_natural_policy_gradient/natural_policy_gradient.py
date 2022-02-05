@@ -9,7 +9,7 @@ class NaturalPolicyGradient:
         # self.trajectory = []
         self.trajectory_horizon = trajectory_horizon
         self.env = play_ground
-        self.trans_matrix = np.zeros((2, 2))
+        # self.
 
     def sigmoid(self, x, a):
         return 1.0 / (1.0 + np.exp(-(self.weights[0] * a))) * (1 - x) + 1.0 / (1.0 + np.exp(-(self.weights[1] * a))) * x
@@ -86,7 +86,6 @@ class NaturalPolicyGradient:
         return q_val
 
     def run(self, alpha):
-
         for i in range(1000000):
             delta_eta = 0
             trajectory, total_reward = self.generate_trajectory()
@@ -100,8 +99,15 @@ class NaturalPolicyGradient:
             delta_w = delta_eta / len(trajectory)
             self.weights += alpha * delta_w.transpose()[0]
             if i % 10000 == 0:
+                trans_matrix = np.zeros((2, 2))
+                trans_matrix[0][0] = self.sigmoid(0, -1)
+                trans_matrix[0][1] = self.sigmoid(0, 1)
+                trans_matrix[1][0] = self.sigmoid(1, 1)
+                trans_matrix[1][1] = self.sigmoid(1, -1)
                 print('---------------%dth iteration--------------------' % i)
+                print(trans_matrix)
                 print('weight:' + str(self.weights))
+                print('q value' + str(q_val))
                 state_i_num = 0
                 for step_i in trajectory:
                     state, action, reward = step_i
