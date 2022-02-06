@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import random
 import two_states_MDP as tsMDP
@@ -5,7 +6,7 @@ import two_states_MDP as tsMDP
 
 class NaturalPolicyGradient:
     def __init__(self, play_ground, trajectory_horizon):
-        self.weights = np.array([-np.log(4), -np.log(9)])
+        self.weights = np.array([-np.log(4), np.log(9)])
         # self.trajectory = []
         self.trajectory_horizon = trajectory_horizon
         self.env = play_ground
@@ -37,22 +38,22 @@ class NaturalPolicyGradient:
         deriv = self.derivative(x, a)
         return deriv / self.sigmoid(x, a)
 
-    # def Fisher_matrix(self):
-    #     f_matrix = np.zeros((2, 2))
-    #     state_distri = self.stationary_distribution()
-    #     # state_distri = self.stationary_distribution_sim()
-    #     for s_i in range(len(self.state_space)):
-    #
-    #         f_matrix_s = np.zeros((2, 2))
-    #         for a_i in range(len(self.action_space)):
-    #             x = self.state_space[s_i]
-    #             a = self.action_space[a_i]
-    #             p_a = self.sigmoid(x, a)
-    #             log_p_w = np.array([[(1 - p_a) * x * a, (1 - p_a) * a]])
-    #             log_p_w_t = log_p_w.transpose()
-    #             f_matrix_s += log_p_w_t.dot(log_p_w) * p_a
-    #         f_matrix += state_distri[s_i] * f_matrix_s
-    #     return f_matrix + 1e-3 * np.eye(2)
+    def Fisher_matrix(self):
+        f_matrix = np.zeros((2, 2))
+        state_distri = self.stationary_distribution()
+        # state_distri = self.stationary_distribution_sim()
+        for s_i in range(len(self.state_space)):
+
+            f_matrix_s = np.zeros((2, 2))
+            for a_i in range(len(self.action_space)):
+                x = self.state_space[s_i]
+                a = self.action_space[a_i]
+                p_a = self.sigmoid(x, a)
+                log_p_w = np.array([[(1 - p_a) * x * a, (1 - p_a) * a]])
+                log_p_w_t = log_p_w.transpose()
+                f_matrix_s += log_p_w_t.dot(log_p_w) * p_a
+            f_matrix += state_distri[s_i] * f_matrix_s
+        return f_matrix + 1e-3 * np.eye(2)
 
     def generate_trajectory(self):
         current_state = self.env.reset()
@@ -76,16 +77,16 @@ class NaturalPolicyGradient:
             # action = {-1,1}
             # convert action to {0,1}: int((action+2)/2)
             state, action, reward = step_i
-            return_value -= reward
-
             if q_val[state][int((action + 2) / 2)] == 0:
                 q_val[state][int((action + 2) / 2)] = return_value / (self.trajectory_horizon - current_step) - exp_eta
             if q_val.all() != 0:
                 break
+            return_value -= reward
             current_step += 1
         return q_val
 
     def run(self, alpha):
+        eta_array = []
         for i in range(1000000):
             delta_eta = 0
             trajectory, total_reward = self.generate_trajectory()
@@ -93,7 +94,7 @@ class NaturalPolicyGradient:
             for step_i in trajectory:
                 state, action, reward = step_i
                 policy_derivative = self.derivative(state, action)
-                delta_eta += policy_derivative * q_val[state][int((action + 2) / 2)]
+                delta_eta += policy_derivative * q_val[state][int((action + 2) / 2)]/self.sigmoid(state,action)
             # F = policy.Fisher_matrix()
             # delta_w = np.linalg.inv(F).dot(delta_eta)
             delta_w = delta_eta / len(trajectory)
@@ -107,7 +108,7 @@ class NaturalPolicyGradient:
                 print('---------------%dth iteration--------------------' % i)
                 print(trans_matrix)
                 print('weight:' + str(self.weights))
-                print('q value' + str(q_val))
+                print('q value:\n' + str(q_val))
                 state_i_num = 0
                 for step_i in trajectory:
                     state, action, reward = step_i
@@ -115,9 +116,18 @@ class NaturalPolicyGradient:
                         state_i_num += 1
                 print('stationary distri' + str([state_i_num / self.trajectory_horizon,
                                                  1 - state_i_num / self.trajectory_horizon]))
+                print('eta:'+str(total_reward/self.trajectory_horizon))
+                eta_array.append(total_reward/self.trajectory_horizon)
+        return eta_array
 
 
 if __name__ == '__main__':
     play_ground = tsMDP.TwoStatesMDP([0.8, 0.2])
-    npg = NaturalPolicyGradient(play_ground, 20)
-    npg.run(0.01)
+    eta_matrix = []
+    for _ in range(10):
+        npg = NaturalPolicyGradient(play_ground, 20)
+        eta_array_ = npg.run(.1)
+        eta_matrix.append(eta_array_)
+    eta_matrix = np.array(eta_matrix)
+    plt.plot(np.average(eta_matrix, axis=0))
+    plt.show()
