@@ -4,6 +4,7 @@ import random
 import two_states_MDP as tsMDP
 from multiprocessing import Pool
 
+
 class NaturalPolicyGradient:
     def __init__(self, play_ground, trajectory_horizon):
         self.weights = np.array([-np.log(4), np.log(9)])
