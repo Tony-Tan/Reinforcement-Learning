@@ -1,15 +1,12 @@
-import simplified_tetris as tetris
+from environments import simplified_tetris as tetris
 # import tetris
 import torch
 import numpy as np
 import torch.nn.functional as F
-import matplotlib.pyplot as plt
-import cv2
 from torch.utils.tensorboard import SummaryWriter
-import copy
 import time
 
-writer = SummaryWriter('./data/log/')
+writer = SummaryWriter('../a_natural_policy_gradient/data/log/')
 
 
 class PolicyFunction:

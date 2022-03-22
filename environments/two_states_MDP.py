@@ -1,3 +1,4 @@
+# environment to test natural policy gradient
 import numpy as np
 # state i: 0, j:1
 # action a_1: -1, a_2: 1

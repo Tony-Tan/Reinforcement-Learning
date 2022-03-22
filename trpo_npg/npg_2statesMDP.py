@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import random
-import two_states_MDP as tsMDP
+from environments import two_states_MDP as tsMDP
 from multiprocessing import Pool
 
 
@@ -15,8 +14,8 @@ class NaturalPolicyGradient:
 
     def sigmoid(self, x, a):
         bias = 5e-3
-        return (1.-bias*2)*(1.0 / (1.0 + np.exp(-(self.weights[0] * a))) * (1 - x) + \
-               1.0 / (1.0 + np.exp(-(self.weights[1] * a))) * x) + bias
+        return (1. - bias * 2) * (1.0 / (1.0 + np.exp(-(self.weights[0] * a))) * (1 - x) +
+                                  1.0 / (1.0 + np.exp(-(self.weights[1] * a))) * x) + bias
 
     def next_action(self, x):
         pro_a0 = self.sigmoid(x, -1)
@@ -61,7 +60,7 @@ class NaturalPolicyGradient:
             log_gradient = self.derivative(current_state, action) / self.sigmoid(current_state, action)
             if natural_gradient:
                 fisher_matrix_exp = fisher_matrix_exp + log_gradient.dot(log_gradient.transpose())
-            eligibility_trace = beta*eligibility_trace + log_gradient
+            eligibility_trace = beta * eligibility_trace + log_gradient
             delta_eta += eligibility_trace * reward
             total_reward += reward
             if current_state == 0:
@@ -97,7 +96,7 @@ class NaturalPolicyGradient:
 
                 else:
                     delta_eta /= horizon
-                    self.weights += alpha*delta_eta.transpose()[0]
+                    self.weights += alpha * delta_eta.transpose()[0]
                 delta_eta = 0
         return eta_array
 
@@ -117,20 +116,20 @@ def experiment():
     eta_matrix_natural = []
     eta_matrix_navilla = []
 
-    for experiment_i in range(int(experiment_times/thread_num)):
+    for experiment_i in range(int(experiment_times / thread_num)):
         pool = Pool()
         for thread_i in range(thread_num):
-            eta_matrix_navilla.append( pool.apply_async(policy_gradient,
-                                      [0.01, seed_seq[experiment_i * thread_num+thread_i], False]))
+            eta_matrix_navilla.append(pool.apply_async(policy_gradient,
+                                                       [0.01, seed_seq[experiment_i * thread_num + thread_i], False]))
 
         pool.close()
         pool.join()
 
-    for experiment_i in range(int(experiment_times/thread_num)):
+    for experiment_i in range(int(experiment_times / thread_num)):
         pool = Pool()
         for thread_i in range(thread_num):
             eta_matrix_natural.append(pool.apply_async(policy_gradient,
-                                       [0.01, seed_seq[experiment_i * thread_num+thread_i],True]))
+                                                       [0.01, seed_seq[experiment_i * thread_num + thread_i], True]))
         pool.close()
         pool.join()
     # prepare data

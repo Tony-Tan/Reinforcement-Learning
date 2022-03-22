@@ -1,6 +1,6 @@
-import natural_policy_gradient_tetris as pt
+import npg_tetris as pt
 import torch
-import tetris
+from environments import tetris
 import cv2
 import numpy as np
 import torch.nn.functional as F

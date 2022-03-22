@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn.functional as F
-import a_natural_policy_gradient.simplified_tetris as tetris
+import environments.simplified_tetris as tetris
 from torch.utils.tensorboard import SummaryWriter
 
 TETRIS_WIDTH = 6

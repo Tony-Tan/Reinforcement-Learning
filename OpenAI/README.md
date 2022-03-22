@@ -1,4 +1,4 @@
-# Key Papers in Deep RL 105
+x# Key Papers in Deep RL 105
 ## Description
 Key papers in deep reinforcement learning suggested by [OpenAI spinningup](https://github.com/openai/spinningup/blob/master/docs/spinningup/keypapers.rst)
 ## Paper List
@@ -13,7 +13,7 @@ Key papers in deep reinforcement learning suggested by [OpenAI spinningup](https
     - [ ] [Rainbow: Combining Improvements in Deep Reinforcement Learning](https://arxiv.org/abs/1710.02298), Hessel et al, 2017. *Algorithm: Rainbow DQN.*
 - Policy Gradients
     - [ ] [Asynchronous Methods for Deep Reinforcement Learning](https://arxiv.org/abs/1602.01783), Mnih et al, 2016. *Algorithm: A3C.*
-    - [ ] [Trust Region Policy Optimization](https://arxiv.org/abs/1502.05477), Schulman et al, 2015. *Algorithm: TRPO.*
+    - [x] [Trust Region Policy Optimization](https://arxiv.org/abs/1502.05477), Schulman et al, 2015. *Algorithm: TRPO.*
     - [ ] [High-Dimensional Continuous Control Using Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438), Schulman et al, 2015. *Algorithm: GAE.*
     - [ ] [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347), Schulman et al, 2017. *Algorithm: PPO-Clip, PPO-Penalty.*
     - [ ] [Emergence of Locomotion Behaviours in Rich Environments](https://arxiv.org/abs/1707.02286), Heess et al, 2017. *Algorithm: PPO-Penalty.*
@@ -153,5 +153,5 @@ Key papers in deep reinforcement learning suggested by [OpenAI spinningup](https
 - [ ] [An Analysis of Temporal-Difference Learning with Function Approximation](http://web.mit.edu/jnt/www/Papers/J063-97-bvr-td.pdf), Tsitsiklis and Van Roy, 1997. *Contributions:* Variety of convergence results and counter-examples for value-learning methods in RL.
 - [ ] [Reinforcement Learning of Motor Skills with Policy Gradients](http://www.kyb.mpg.de/fileadmin/user_upload/files/publications/attachments/Neural-Netw-2008-21-682_4867%5b0%5d.pdf), Peters and Schaal, 2008. *Contributions:* Thorough review of policy gradient methods at the time, many of which are still serviceable descriptions of deep RL methods. 
 - [ ] [Approximately Optimal Approximate Reinforcement Learning](https://people.eecs.berkeley.edu/~pabbeel/cs287-fa09/readings/KakadeLangford-icml2002.pdf), Kakade and Langford, 2002. *Contributions:* Early roots for monotonic improvement theory, later leading to theoretical justification for TRPO and other algorithms.
-- [ ] [A Natural Policy Gradient](https://papers.nips.cc/paper/2073-a-natural-policy-gradient.pdf), Kakade, 2002. *Contributions:* Brought natural gradients into RL, later leading to TRPO, ACKTR, and several other methods in deep RL.
+- [x] [A Natural Policy Gradient](https://papers.nips.cc/paper/2073-a-natural-policy-gradient.pdf), Kakade, 2002. *Contributions:* Brought natural gradients into RL, later leading to TRPO, ACKTR, and several other methods in deep RL.
 - [ ] [Algorithms for Reinforcement Learning](https://sites.ualberta.ca/~szepesva/papers/RLAlgsInMDPs.pdf), Szepesvari, 2009. *Contributions:* Unbeatable reference on RL before deep RL, containing foundations and theoretical background.
