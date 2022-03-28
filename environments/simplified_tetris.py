@@ -98,14 +98,14 @@ class Tetris:
         self.current_tetrominoes_angle = random.choice([90, 180, 270, 0])
         self.current_tetrominoes_position = [int(self.w / 2), self.h]
 
-    def step_autofill(self, action):
+    def step(self, action):
         if self.step_num % 2 == 0:
-            state, reward, is_done, _ = self.step(2)
+            state, reward, is_done, _ = self.step_raw(2)
             if is_done:
                 return state, reward, is_done, _
-        return self.step(action)
+        return self.step_raw(action)
 
-    def step(self, action):
+    def step_raw(self, action):
         self.step_num += 1
         if self.action_space[action] == 'gl':
             new_position = [self.current_tetrominoes_position[0] - 1,
