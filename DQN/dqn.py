@@ -132,7 +132,7 @@ class AgentDQN:
                 outputs = self.target_state_action_value_function(inputs)
             else:
                 outputs = self.state_action_value_function(inputs)
-            _, predictions = torch.max(outputs, 1)
+            _ , predictions = torch.max(outputs, 1)
             outputs = outputs.cpu().numpy()
             predictions = predictions.cpu().numpy()
             for p_i in range(len(predictions)):

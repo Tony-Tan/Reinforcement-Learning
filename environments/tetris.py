@@ -128,14 +128,16 @@ class Tetris:
         self.current_tetrominoes_angle = random.choice([90, 180, 270, 0])
         self.current_tetrominoes_position = [int(self.w / 2), self.h]
 
-    def step_autofill(self, action):
-        if self.step_num % 2 == 0:
-            state, reward, is_done, _ = self.step(2)
-            if is_done:
-                return state, reward, is_done, _
-        return self.step(action)
-
     def step(self, action):
+        reward_0 = 0
+        if self.step_num % 2 == 0:
+            state, reward_0, is_done, _ = self.step_raw(2)
+            if is_done:
+                return state, reward_0, is_done, _
+        state, reward, is_done, _ = self.step_raw(action)
+        return state, reward+reward_0, is_done, _
+
+    def step_raw(self, action):
         self.step_num += 1
         if self.action_space[action] == 'rot':
             new_angle = (self.current_tetrominoes_angle + 90) % 360

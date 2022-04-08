@@ -10,8 +10,8 @@ import os
 import time
 
 DEBUG_FLAG = False
-TETRIS_WIDTH = 6
-TETRIS_HEIGHT = 5
+TETRIS_WIDTH = 5
+TETRIS_HEIGHT = 6
 writer = SummaryWriter('./data/log/')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -36,10 +36,10 @@ class policyNN(nn.Module):
         super(policyNN, self).__init__()
         self.flatten = nn.Flatten()
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(input_size, output_size, bias=False),
-            # nn.Tanh(),
-            # nn.Dropout(),
-            # nn.Linear(10, output_size, bias=False),
+            nn.Linear(input_size, 5, bias=False),
+            nn.Tanh(),
+            nn.Linear(5, output_size, bias=False),
+            nn.Tanh(),
             nn.Softmax(dim=1)
             )
 
@@ -68,13 +68,13 @@ def conjugate_gradient(A, b, max_step_num):
 
 
 class TRPO_Agent:
-    def __init__(self, env_, delta_limit_, input_size_, method_='TRPO'):
+    def __init__(self, env_, delta_limit_, input_size_, module_path=None, method_='TRPO'):
         self.method = method_
         self.env = env_
         # self.input_size = input_size_
         self.action_space_size = len(self.env.action_space)
         self.delta_limit = torch.tensor(delta_limit_).to(device)
-        self.trajectory_num_per_update = 500
+        self.trajectory_num_per_update = 400
 
         self.weights_state_value = None
         # self.weights_policy = torch.zeros([self.action_space_size, input_size_], requires_grad=True,
@@ -83,14 +83,17 @@ class TRPO_Agent:
         self.policy_parameter_size = 0
         for p in self.policy_module.parameters():
             self.policy_parameter_size += p.data.numel()
-            torch.zero_(p.data)
+            # torch.zero_(p.data)
+        if module_path is not None:
+            self.policy_module = torch.load(module_path)
+            self.policy_module.eval()
         pass
 
     def save_model(self, path='./data/models/'):
         model_name = time.strftime("%H-%M-%S", time.localtime())
         model_path = os.path.join(path, model_name)+'.pt'
         torch.save(self.policy_module, model_path)
-        print('model saved: '+ model_path)
+        print('model saved: ' + model_path)
 
     # def policy(self, x_tensor):
     #     prob = F.softmax(torch.sum(torch.mul(x_tensor, self.weights_policy), dim=1), dim=0).requires_grad_()
@@ -121,7 +124,7 @@ class TRPO_Agent:
 
         divergence = torch.matmul(torch.matmul(delta_theta_k.t(), fim), delta_theta_k)
         while divergence >= self.delta_limit:
-            delta_theta_k *= 0.9
+            delta_theta_k *= 0.5
             divergence = torch.matmul(torch.matmul(delta_theta_k.t(), fim), delta_theta_k)
         return delta_theta_k
 
@@ -130,7 +133,7 @@ class TRPO_Agent:
         total_step_num = 0
         for epoch_i in range(1, epoch):
             # print log
-            if epoch_i % 10 == 0:
+            if epoch_i % 100 == 0:
                 self.save_model()
                 pt.print_time()
                 writer.add_scalar('total step', total_step_num, self.trajectory_num_per_update * epoch_i)
@@ -152,8 +155,8 @@ class TRPO_Agent:
             delta_weight = None
             # collect set of N trajectories
             trajectory_collection, reward_sum = gts.generate_trajectory_set(self.env, self.trajectory_num_per_update,
-                                                                            self.policy_numpy, features,
-                                                                            max_trajectory_length=1000, device=device)
+                                                                            features, max_trajectory_length=1000,
+                                                                            device=device, policy_fn=self.policy_numpy)
             if trajectory_collection is None:
                 print('Nan in policy and its weights')
                 for p_i in self.policy_module.parameters():
@@ -166,7 +169,8 @@ class TRPO_Agent:
                 n = len(trajectory_i)
                 for step_index in reversed(range(n)):
                     if step_index + 1 < n:
-                        trajectory_i[step_index][2] = (trajectory_i[step_index][2] + trajectory_i[step_index + 1][2])
+                        trajectory_i[step_index][2] = (trajectory_i[step_index][2] +
+                                                       value_gamma * trajectory_i[step_index + 1][2])
                         # labels_collection.append(labels_collection[-1]+trajectory_i[step_index][2])
                     # else:
                     #     labels_collection.append(trajectory_i[step_index][2])
@@ -275,5 +279,5 @@ class TRPO_Agent:
 
 if __name__ == '__main__':
     env = tetris.Tetris(TETRIS_WIDTH, TETRIS_HEIGHT)
-    trpo_agent = TRPO_Agent(env, delta_limit_=0.0001, input_size_=TETRIS_WIDTH * TETRIS_HEIGHT + 4, method_='TRPO')
+    trpo_agent = TRPO_Agent(env, delta_limit_=0.001, input_size_=TETRIS_WIDTH * TETRIS_HEIGHT + 4, method_='TRPO')
     trpo_agent.optimization(100000)
