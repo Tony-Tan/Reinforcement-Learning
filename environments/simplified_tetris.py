@@ -100,7 +100,7 @@ class Tetris:
 
     def step(self, action):
         reward_0 = 0
-        if self.step_num % 2 == 0:
+        if self.step_num % 5 == 0:
             state, reward_0, is_done, _ = self.step_raw(2)
             if is_done:
                 return state, reward_0, is_done, _

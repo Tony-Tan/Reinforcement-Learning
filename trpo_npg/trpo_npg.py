@@ -10,24 +10,24 @@ import os
 import time
 
 DEBUG_FLAG = False
-TETRIS_WIDTH = 5
-TETRIS_HEIGHT = 6
+TETRIS_WIDTH = 6
+TETRIS_HEIGHT = 8
 writer = SummaryWriter('./data/log/')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 def features(state):
-    state_bg = state[0].reshape(1, -1).astype(np.float32)
-    # heights_arr = (state[0] != 0).argmax(axis=0) / tetris_height
-    # diff_height = np.array(
-    #     [heights_arr[i] - heights_arr[i + 1] for i in range(len(heights_arr) - 1)]) / tetris_height
+    # state_bg = (state[0].reshape(1, -1).astype(np.float32)-0.5)*2
+    heights_arr = (state[0] != 0).argmax(axis=0) / TETRIS_HEIGHT
+    diff_height = np.array(
+        [heights_arr[i] - heights_arr[i + 1] for i in range(len(heights_arr) - 1)]) / TETRIS_HEIGHT
     # the last number is for bias
-    state_t = np.array([state[1], state[2] / 360., state[3][0] / TETRIS_WIDTH,
-                        state[3][1] / TETRIS_HEIGHT]).astype(np.float32)
-    # state_ = np.append(heights_arr, diff_height)
-    # state_ = np.append(state_, state_t)
-    state_ = np.append(state_bg, state_t).reshape([1, -1])
-    x_tensor_current = state_
+    state_t = np.array([state[1]/4-0.5, (state[2] / 360. - 0.5)*2, (state[3][0] / TETRIS_WIDTH-0.5)*2,
+                        (state[3][1] / TETRIS_HEIGHT-0.5)*2]).astype(np.float32)
+    state_ = np.append(heights_arr, diff_height)
+    state_ = np.append(state_, state_t)
+    # state_ = np.append(state_bg, state_t).reshape([1, -1])
+    x_tensor_current = np.array([state_])
     return x_tensor_current
 
 
@@ -36,17 +36,17 @@ class policyNN(nn.Module):
         super(policyNN, self).__init__()
         self.flatten = nn.Flatten()
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(input_size, 5, bias=False),
-            nn.Tanh(),
-            nn.Linear(5, output_size, bias=False),
-            nn.Tanh(),
+            nn.Linear(input_size, 10, bias=False),
+            nn.ReLU(),
+            nn.Linear(10, output_size, bias=False),
+            nn.ReLU(),
             nn.Softmax(dim=1)
             )
 
     def forward(self, x):
         x = self.flatten(x)
         p = self.linear_relu_stack(x)
-        # p = p * 0.999 + 0.001 / torch.numel(p)
+        # p = p * 0.99 + 0.01 / torch.numel(p)
         return p
 
 
@@ -74,7 +74,7 @@ class TRPO_Agent:
         # self.input_size = input_size_
         self.action_space_size = len(self.env.action_space)
         self.delta_limit = torch.tensor(delta_limit_).to(device)
-        self.trajectory_num_per_update = 400
+        self.trajectory_num_per_update = 500
 
         self.weights_state_value = None
         # self.weights_policy = torch.zeros([self.action_space_size, input_size_], requires_grad=True,
@@ -90,7 +90,7 @@ class TRPO_Agent:
         pass
 
     def save_model(self, path='./data/models/'):
-        model_name = time.strftime("%H-%M-%S", time.localtime())
+        model_name = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
         model_path = os.path.join(path, model_name)+'.pt'
         torch.save(self.policy_module, model_path)
         print('model saved: ' + model_path)
@@ -128,40 +128,47 @@ class TRPO_Agent:
             divergence = torch.matmul(torch.matmul(delta_theta_k.t(), fim), delta_theta_k)
         return delta_theta_k
 
-    def optimization(self, epoch, value_gamma=0.9, value_step_size=.1, conjugate_step_k=10):
+    def optimization(self, epoch, value_gamma=1., value_step_size=.1, conjugate_step_k=10):
         log_reward = 0
-        total_step_num = 0
+        log_average_step_num = 0
         for epoch_i in range(1, epoch):
             # print log
             if epoch_i % 100 == 0:
                 self.save_model()
                 pt.print_time()
-                writer.add_scalar('total step', total_step_num, self.trajectory_num_per_update * epoch_i)
+                writer.add_scalar('total step', log_average_step_num / (self.trajectory_num_per_update * 100.),
+                                  self.trajectory_num_per_update * epoch_i)
                 writer.add_scalar('reward', log_reward / (self.trajectory_num_per_update * 100.),
                                   self.trajectory_num_per_update * epoch_i)
-                print('total step: ' + str(total_step_num))
+                print('total step: ' + str(log_average_step_num / (self.trajectory_num_per_update * 100.)))
                 print('reward: ' + str(log_reward / (self.trajectory_num_per_update * 100.)))
                 print('policy weights:')
                 for p_i in self.policy_module.parameters():
                     print(p_i.data)
                 print('------------------------------------------------------------')
                 log_reward = 0
+                log_average_step_num = 0
 
             fisher_matrix = torch.zeros([self.policy_parameter_size, self.policy_parameter_size],
                                         dtype=torch.float32).to(device)
             eta_summation = torch.zeros([self.policy_parameter_size, 1],
                                         dtype=torch.float32).to(device)
-            total_step_num = 0
+
             delta_weight = None
             # collect set of N trajectories
             trajectory_collection, reward_sum = gts.generate_trajectory_set(self.env, self.trajectory_num_per_update,
-                                                                            features, max_trajectory_length=1000,
+                                                                            features, max_trajectory_length=100000,
                                                                             device=device, policy_fn=self.policy_numpy)
             if trajectory_collection is None:
                 print('Nan in policy and its weights')
                 for p_i in self.policy_module.parameters():
                     print(p_i.data)
             log_reward += reward_sum
+            collection_step_num = 0
+            for trajectory_i in trajectory_collection:
+                collection_step_num += len(trajectory_i)
+            log_average_step_num += collection_step_num
+            baseline = reward_sum/collection_step_num
             # regress the state-value linear estimate
             # data_collection = []  # least square methods for regressing state value
             # labels_collection = []  # least square methods for regressing state value
@@ -183,13 +190,14 @@ class TRPO_Agent:
             # self.weights_state_value = torch.tensor(weights, requires_grad=False, dtype=torch.float32)
             # trpo
             for trajectory_i in trajectory_collection:
-                for step_index in range(len(trajectory_i) - 1):
+                # for step_index in range(len(trajectory_i) - 1):
+                for step_index in range(len(trajectory_i)):
                     # build up the input tensor
                     current_x_tensor = trajectory_i[step_index][0]
-                    next_x_tensor = trajectory_i[step_index + 1][0]
+                    # next_x_tensor = trajectory_i[step_index + 1][0]
                     # q_value = trajectory_i[step_index][2] + self.state_value(
                     #     next_x_tensor) - self.state_value(current_x_tensor)
-                    q_value = trajectory_i[step_index][2]
+                    q_value = trajectory_i[step_index][2] - baseline
                     prob = self.policy(current_x_tensor)
                     prob_num = prob.clone().detach()
                     action = trajectory_i[step_index][1]
@@ -207,28 +215,28 @@ class TRPO_Agent:
                         gradient = torch.cat(gradient, dim=0).to(device)
                         log_gradient = gradient / prob_num[0][action_i]
                         if action == action_i:
-                            eta_summation += (log_gradient * q_value )
+                            eta_summation += (log_gradient * q_value)
                         fisher_matrix += torch.matmul(log_gradient, log_gradient.t()) * prob_num[0][action_i]
                         # if torch.any(torch.isnan(fisher_matrix)):
                         #     print('gradient:')
                         #     print(gradient.t())
                         #     print('probability:')
                         #     print(prob_num)
-                    total_step_num += 1
+
             with torch.no_grad():
                 if torch.count_nonzero(eta_summation) == 0:
                     continue
                 # total_step_num = torch.tensor([total_step_num], dtype=torch.float32).to(device)
-                gradient_estimate = eta_summation / total_step_num
-                if DEBUG_FLAG:
-                    print('gradient estimate:')
-                    print(gradient_estimate.t())
-                fim = fisher_matrix / total_step_num + torch.eye(gradient_estimate.size()[0]).to(device) * 1e-3
-                if DEBUG_FLAG:
-                    print('fisher information matrix:')
-                    print(fim)
-                    print('total step numbers:')
-                    print(total_step_num)
+                gradient_estimate = eta_summation / collection_step_num
+                # if DEBUG_FLAG:
+                #     print('gradient estimate:')
+                #     print(gradient_estimate.t())
+                fim = fisher_matrix / collection_step_num + torch.eye(gradient_estimate.size()[0]).to(device) * 1e-3
+                # if DEBUG_FLAG:
+                #     print('fisher information matrix:')
+                #     print(fim)
+                #     print('total step numbers:')
+                #     print(log_average_step_num)
                 if self.method == 'TRPO':
                     # conjugate algorithm first K step
                     # Hx = g
@@ -237,23 +245,23 @@ class TRPO_Agent:
                     if torch.any(torch.isnan(x_k)):
                         print('x_k contains nan')
                         continue
-                    if DEBUG_FLAG:
-                        print('delta weights before shrink')
-                        print(x_k.t())
+                    # if DEBUG_FLAG:
+                    #     print('delta weights before shrink')
+                    #     print(x_k.t())
                     # backtracking line search
                     # theta_k = self.weights_policy.clone().detach().numpy().reshape((-1, 1))
                     delta_weight = self.shrink_update(fim, x_k)
                     if torch.any(torch.isnan(delta_weight)):
                         print('delta weight contains nan')
                         continue
-                    if DEBUG_FLAG:
-                        print('delta weights after shrink:')
-                        print(delta_weight.t())
+                    # if DEBUG_FLAG:
+                    #     print('delta weights after shrink:')
+                    #     print(delta_weight.t())
                     # update
-                    if DEBUG_FLAG:
-                        print('policy weights before update')
-                        for p_i in self.policy_module.parameters():
-                            print(p_i.data)
+                    # if DEBUG_FLAG:
+                    #     print('policy weights before update')
+                    #     for p_i in self.policy_module.parameters():
+                    #         print(p_i.data)
                     # -----------------------------------------------------------
                     array_update_position = 0
                     for p_i in self.policy_module.parameters():
@@ -270,14 +278,16 @@ class TRPO_Agent:
                 #     new_weight = self.weights_policy.clone().detach().numpy() + \
                 #                  delta_weight.reshape(self.action_space_size, -1)
                 #     self.weights_policy = torch.tensor(new_weight, requires_grad=True, dtype=torch.float32)
-
-
-            if DEBUG_FLAG:
-                print('==============================================================================================')
+            # if DEBUG_FLAG:
+            #     print('==============================================================================================')
             # -----------------------------------
 
 
 if __name__ == '__main__':
     env = tetris.Tetris(TETRIS_WIDTH, TETRIS_HEIGHT)
-    trpo_agent = TRPO_Agent(env, delta_limit_=0.001, input_size_=TETRIS_WIDTH * TETRIS_HEIGHT + 4, method_='TRPO')
+    trpo_agent = TRPO_Agent(env, delta_limit_=0.01,
+                            # input_size_=TETRIS_WIDTH * TETRIS_HEIGHT + 4,
+                            input_size_=TETRIS_WIDTH*2-1 + 4,
+                            # module_path='./data/models/2022-04-18-23-04-40.pt',
+                            method_='TRPO')
     trpo_agent.optimization(100000)
