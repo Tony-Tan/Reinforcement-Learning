@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-import environments.tetris as tetris
+import environments.simplified_tetris as tetris
 from torch.utils.tensorboard import SummaryWriter
 import environments.generate_trajectories_set as gts
 import environments.print_time as pt
@@ -10,8 +10,8 @@ import os
 import time
 
 DEBUG_FLAG = False
-TETRIS_WIDTH = 6
-TETRIS_HEIGHT = 8
+TETRIS_WIDTH = 5
+TETRIS_HEIGHT = 10
 writer = SummaryWriter('./data/log/')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
