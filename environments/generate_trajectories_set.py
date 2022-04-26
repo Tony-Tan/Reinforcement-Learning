@@ -11,6 +11,15 @@ def select_action(policy):
     return action
 
 
+def generate_trajectory_n(env, n, feature_fn, max_trajectory_length=sys.maxsize,
+                            device='cpu', policy_fn=None, select_action_fn=None):
+    trajectory_set = []
+    for _ in range(n):
+        trajectory_set.append(generate_trajectory(env, feature_fn, max_trajectory_length,
+                            device, policy_fn, select_action_fn))
+    return trajectory_set
+
+
 def generate_trajectory(env, feature_fn, max_trajectory_length=sys.maxsize,
                             device='cpu', policy_fn=None, select_action_fn=None):
     total_reward = 0
@@ -42,13 +51,15 @@ def generate_trajectory(env, feature_fn, max_trajectory_length=sys.maxsize,
     return [trajectory_i, total_reward]
 
 
-# def generate_trajectory_set(env, set_size, feature_fn, max_trajectory_length=sys.maxsize,
+# def generate_trajectory_set_s(env, set_size, feature_fn, max_trajectory_length=sys.maxsize,
 #                             device='cpu', policy_fn=None, select_action_fn=None):
 #     # using select_action_fn, return action,pro
 #     total_reward = 0
 #     trajectory_collection = []
 #     with torch.no_grad():
 #         for set_i in range(set_size):
+#             total_reward = 0
+#
 #             trajectory_i = []
 #             current_state, reward, is_done, _ = env.reset()
 #             current_state_feature = torch.tensor(feature_fn(current_state), dtype=torch.float32,
@@ -80,18 +91,26 @@ def generate_trajectory_set(env, set_size, feature_fn, max_trajectory_length=sys
                                device='cpu', policy_fn=None, select_action_fn=None, thread_num=4):
 
     trajectory_and_reward_mt = []
-    for i in range(int(set_size/thread_num)):
+    trajectory_and_reward_array = []
+    if thread_num != 1:
+        n = int(set_size/thread_num)
         pool = Pool()
         for thread_i in range(thread_num):
-            trajectory_and_reward_mt.append(pool.apply_async(generate_trajectory,
-                                                             [env, feature_fn, max_trajectory_length, device,
+            trajectory_and_reward_mt.append(pool.apply_async(generate_trajectory_n,
+                                                             [env, n, feature_fn, max_trajectory_length, device,
                                                               policy_fn, select_action_fn]))
         pool.close()
         pool.join()
-    trajectory_and_reward_array = []
-    for t_r_mt_i in trajectory_and_reward_mt:
-        result_i = t_r_mt_i.get()
-        if result_i[0] is None:
-            return None
-        trajectory_and_reward_array.append(result_i)
+        trajectory_and_reward_array = []
+        for t_r_mt_i in trajectory_and_reward_mt:
+            result_i = t_r_mt_i.get()
+            for t_i in result_i:
+                trajectory_and_reward_array.append(t_i)
+    else:
+        for i in range(set_size):
+            trajectory_and_reward_array.append(generate_trajectory(env, feature_fn,
+                                                                   max_trajectory_length, device,
+                                                                   policy_fn, select_action_fn))
     return trajectory_and_reward_array
+
+

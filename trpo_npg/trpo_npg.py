@@ -2,33 +2,34 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-import environments.tetris as tetris
+import environments.simplified_tetris as tetris
 # from torch.utils.tensorboard import SummaryWriter
 import environments.generate_trajectories_set as gts
 import environments.print_time as pt
 import os
 import time
+from multiprocessing import Pool
 
 DEBUG_FLAG = False
-TETRIS_WIDTH = 6
-TETRIS_HEIGHT = 8
+TETRIS_WIDTH = 5
+TETRIS_HEIGHT = 7
 # writer = SummaryWriter('./data/log/')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 def features(state):
-    state_bg = (state[0].reshape(1, -1).astype(np.float32)-0.5)*2
-    # heights_arr = ((state[0] != 0).argmax(axis=0) / TETRIS_HEIGHT)*2 - 1.
-    # diff_height = (np.array(
-    #     [heights_arr[i] - heights_arr[i + 1] for i in range(len(heights_arr) - 1)]) / TETRIS_HEIGHT)*2-1.
+    # state_bg = (state[0].reshape(1, -1).astype(np.float32)-0.5)*2
+    heights_arr = ((state[0] != 0).argmax(axis=0) / TETRIS_HEIGHT) * 2 - 1.
+    diff_height = (np.array(
+        [heights_arr[i] - heights_arr[i + 1] for i in range(len(heights_arr) - 1)]) / TETRIS_HEIGHT) * 2 - 1.
     # the last number is for bias
-    state_t = np.array([state[1]/4 - 0.5, (state[2] / 360. - 0.5)*2, (state[3][0] / TETRIS_WIDTH-0.5)*2,
-                        (state[3][1] / TETRIS_HEIGHT-0.5)*2]).astype(np.float32)
-    # state_ = np.append(heights_arr, diff_height)
-    # state_ = np.append(state_, state_t)
-    state_ = np.append(state_bg, state_t).reshape([1, -1])
-    # x_tensor_current = np.array([state_])
-    x_tensor_current = state_
+    state_t = np.array([state[1] / 4 - 0.5, (state[2] / 360. - 0.5) * 2, (state[3][0] / TETRIS_WIDTH - 0.5) * 2,
+                        (state[3][1] / TETRIS_HEIGHT - 0.5) * 2]).astype(np.float32)
+    state_ = np.append(heights_arr, diff_height)
+    state_ = np.append(state_, state_t)
+    # state_ = np.append(state_bg, state_t).reshape([1, -1])
+    x_tensor_current = np.array([state_])
+    # x_tensor_current = state_
     return x_tensor_current
 
 
@@ -43,7 +44,7 @@ class policyNN(nn.Module):
             # nn.Linear(10, output_size, bias=False),
             # nn.ReLU(),
             nn.Softmax(dim=1)
-            )
+        )
 
     def forward(self, x):
         x = self.flatten(x)
@@ -54,7 +55,7 @@ class policyNN(nn.Module):
 
 def conjugate_gradient(A, b, max_step_num):
     with torch.no_grad():
-        x_k = torch.randn(b.shape).to(device)/2.
+        x_k = torch.randn(b.shape).to(device) / 2.
         r_k = torch.matmul(A, x_k) - b
         p_k = - r_k
         for k_i in range(max_step_num):
@@ -76,7 +77,7 @@ class TRPO_Agent:
         # self.input_size = input_size_
         self.action_space_size = len(self.env.action_space)
         self.delta_limit = torch.tensor(delta_limit_).to(device)
-        self.trajectory_num_per_update = 512
+        self.trajectory_num_per_update = 1024
 
         self.weights_state_value = None
         # self.weights_policy = torch.zeros([self.action_space_size, input_size_], requires_grad=True,
@@ -93,7 +94,7 @@ class TRPO_Agent:
 
     def save_model(self, path='./data/models/'):
         model_name = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        model_path = os.path.join(path, model_name)+'.pt'
+        model_path = os.path.join(path, model_name) + '.pt'
         torch.save(self.policy_module, model_path)
         print('model saved: ' + model_path)
 
@@ -112,7 +113,7 @@ class TRPO_Agent:
         return prob_np.cpu().detach().numpy().flatten()
 
     def state_value(self, x_tensor):
-        x_tensor = torch.cat((x_tensor, torch.ones([1,1], dtype=torch.float32)),dim=1)
+        x_tensor = torch.cat((x_tensor, torch.ones([1, 1], dtype=torch.float32)), dim=1)
         state_value = torch.matmul(x_tensor, self.weights_state_value)
         return state_value
 
@@ -130,43 +131,76 @@ class TRPO_Agent:
             divergence = torch.matmul(torch.matmul(delta_theta_k.t(), fim), delta_theta_k)
         return delta_theta_k
 
-    def optimization(self, epoch, value_gamma=1., value_step_size=.1, conjugate_step_k=10):
+    def info_print(self, log_average_step_num, log_reward, log_inter=100.):
+        self.save_model()
+        pt.print_time()
+        # writer.add_scalar('total step', log_average_step_num / (self.trajectory_num_per_update * 100.),
+        #                   self.trajectory_num_per_update * epoch_i)
+        # writer.add_scalar('reward', log_reward / (self.trajectory_num_per_update * 100.),
+        #                   self.trajectory_num_per_update * epoch_i)
+        print('total step: ' + str(log_average_step_num / (self.trajectory_num_per_update * log_inter)))
+        print('reward: ' + str(log_reward / (self.trajectory_num_per_update * log_inter)))
+        print('policy weights:')
+        for p_i in self.policy_module.parameters():
+            print(p_i.data)
+        print('------------------------------------------------------------')
+
+    def optimization_part_trajectory(self, trajectory_set, baseline):
+        fisher_matrix = torch.zeros([self.policy_parameter_size, self.policy_parameter_size],
+                                    dtype=torch.float32).to(device)
+        eta_summation = torch.zeros([self.policy_parameter_size, 1],
+                                    dtype=torch.float32).to(device)
+        # for t_r_i in trajectory_and_reward_collection:
+        for t_r_i in trajectory_set:
+            trajectory_i = t_r_i[0]
+            trajectory_step_num = len(trajectory_i)
+            # -----------------------------------
+            # for step_index in range(len(trajectory_i) - 1):
+            for step_index in range(trajectory_step_num):
+                # build up the input tensor
+                current_x_tensor = trajectory_i[step_index][0]
+                # next_x_tensor = trajectory_i[step_index + 1][0]
+                # q_value = trajectory_i[step_index][2] + self.state_value(
+                #     next_x_tensor) - self.state_value(current_x_tensor)
+                q_value = trajectory_i[step_index][2] - baseline
+                prob = self.policy(current_x_tensor)
+                prob_num = prob.clone().detach()
+                action = trajectory_i[step_index][1]
+                for action_i in range(self.action_space_size):
+                    output = torch.zeros_like(prob).to(device)
+                    output[0][action_i] = 1
+                    self.policy_module.zero_grad()
+                    prob.backward(output, retain_graph=True)
+                    gradient = []
+                    for p_i in self.policy_module.parameters():
+                        if not p_i.requires_grad:
+                            continue
+                        gradient.append(p_i.grad.reshape([-1, 1]))
+
+                    gradient = torch.cat(gradient, dim=0).to(device)
+                    log_gradient = gradient / prob_num[0][action_i]
+                    if action == action_i:
+                        eta_summation += (log_gradient * q_value)
+                    fisher_matrix += torch.matmul(log_gradient, log_gradient.t()) * prob_num[0][action_i]
+        return [fisher_matrix, eta_summation]
+
+    def optimization(self, epoch, value_gamma=1., value_step_size=.1, conjugate_step_k=10, thread_num=8):
         log_reward = 0
         log_average_step_num = 0
         baseline = 0
+        log_inter = 100
         for epoch_i in range(0, epoch):
             # print log
-            if epoch_i % 100 == 0:
-                self.save_model()
-                pt.print_time()
-                # writer.add_scalar('total step', log_average_step_num / (self.trajectory_num_per_update * 100.),
-                #                   self.trajectory_num_per_update * epoch_i)
-                # writer.add_scalar('reward', log_reward / (self.trajectory_num_per_update * 100.),
-                #                   self.trajectory_num_per_update * epoch_i)
-                print('total step: ' + str(log_average_step_num / (self.trajectory_num_per_update * 100.)))
-                print('reward: ' + str(log_reward / (self.trajectory_num_per_update * 100.)))
-                print('policy weights:')
-                for p_i in self.policy_module.parameters():
-                    print(p_i.data)
-                print('------------------------------------------------------------')
-                baseline = log_reward / (self.trajectory_num_per_update * 100.)
+            if epoch_i % log_inter == 0:
+                self.info_print(log_average_step_num, log_reward, log_inter)
+                baseline = log_reward / (self.trajectory_num_per_update * log_inter)
                 log_reward = 0
                 log_average_step_num = 0
-
-            fisher_matrix = torch.zeros([self.policy_parameter_size, self.policy_parameter_size],
-                                        dtype=torch.float32).to(device)
-            eta_summation = torch.zeros([self.policy_parameter_size, 1],
-                                        dtype=torch.float32).to(device)
-
-            delta_weight = None
             # collect set of N trajectories
-            trajectory_and_reward_collection = gts.generate_trajectory_set(self.env,
-                                                                              self.trajectory_num_per_update,
-                                                                              features,
-                                                                              max_trajectory_length=100000,
-                                                                              device=device,
-                                                                              policy_fn=self.policy_numpy,
-                                                                              thread_num=4)
+            trajectory_and_reward_collection = gts.generate_trajectory_set(self.env, self.trajectory_num_per_update,
+                                                                           features, max_trajectory_length=100000,
+                                                                           device=device, policy_fn=self.policy_numpy,
+                                                                           thread_num=8)
             if trajectory_and_reward_collection is None:
                 print('Nan in policy and its weights')
                 for p_i in self.policy_module.parameters():
@@ -180,9 +214,15 @@ class TRPO_Agent:
             # baseline = reward_sum/collection_step_num
             # regress the state-value linear estimate
             # data_collection = []  # least square methods for regressing state value
-            # labels_collection = []  # least square methods for regressing state value
+            # labels_collection = []  # least square methods for regressing state value\
+            total_trajectory_step_num = 0
             for t_r_i in trajectory_and_reward_collection:
                 trajectory_i = t_r_i[0]
+                return_value = t_r_i[1]
+                trajectory_step_num = len(trajectory_i)
+                total_trajectory_step_num += trajectory_step_num
+                log_average_step_num += trajectory_step_num
+                log_reward += return_value
                 n = len(trajectory_i)
                 for step_index in reversed(range(n)):
                     if step_index + 1 < n:
@@ -199,51 +239,33 @@ class TRPO_Agent:
             # weights = np.linalg.lstsq(data_collection, labels_collection, rcond=None)[0]
             # self.weights_state_value = torch.tensor(weights, requires_grad=False, dtype=torch.float32)
             # trpo
-            total_trajectory_step_num = 0
-            for t_r_i in trajectory_and_reward_collection:
-                trajectory_i = t_r_i[0]
-                return_value = t_r_i[1]
-
-                trajectory_step_num = len(trajectory_i)
-                # log
-                log_average_step_num += trajectory_step_num
-                log_reward += return_value
-                # -----------------------------------
-                total_trajectory_step_num += trajectory_step_num
-                # for step_index in range(len(trajectory_i) - 1):
-                for step_index in range(trajectory_step_num):
-                    # build up the input tensor
-                    current_x_tensor = trajectory_i[step_index][0]
-                    # next_x_tensor = trajectory_i[step_index + 1][0]
-                    # q_value = trajectory_i[step_index][2] + self.state_value(
-                    #     next_x_tensor) - self.state_value(current_x_tensor)
-                    q_value = trajectory_i[step_index][2] - baseline
-                    prob = self.policy(current_x_tensor)
-                    prob_num = prob.clone().detach()
-                    action = trajectory_i[step_index][1]
-                    for action_i in range(self.action_space_size):
-                        output = torch.zeros_like(prob).to(device)
-                        output[0][action_i] = 1
-                        self.policy_module.zero_grad()
-                        prob.backward(output, retain_graph=True)
-                        gradient = []
-                        for p_i in self.policy_module.parameters():
-                            if not p_i.requires_grad:
-                                continue
-                            gradient.append(p_i.grad.reshape([-1, 1]))
-
-                        gradient = torch.cat(gradient, dim=0).to(device)
-                        log_gradient = gradient / prob_num[0][action_i]
-                        if action == action_i:
-                            eta_summation += (log_gradient * q_value)
-                        fisher_matrix += torch.matmul(log_gradient, log_gradient.t()) * prob_num[0][action_i]
+            # log
+            fisher_matrix_eta_summation = []
+            pool = Pool()
+            trajectory_num_per_thread = int(self.trajectory_num_per_update / thread_num)
+            for thread_i in range(thread_num):
+                trajectory_set_i = trajectory_and_reward_collection[thread_i * trajectory_num_per_thread:
+                                                                    (thread_i + 1) * trajectory_num_per_thread]
+                fisher_matrix_eta_summation.append(pool.apply_async(self.optimization_part_trajectory,
+                                                                    [trajectory_set_i, baseline]))
+            pool.close()
+            pool.join()
+            fisher_matrix = torch.zeros([self.policy_parameter_size, self.policy_parameter_size],
+                                        dtype=torch.float32).to(device)
+            eta_summation = torch.zeros([self.policy_parameter_size, 1],
+                                        dtype=torch.float32).to(device)
+            for f_e_mt_i in fisher_matrix_eta_summation:
+                result_i = f_e_mt_i.get()
+                fisher_matrix += result_i[0]
+                eta_summation += result_i[1]
 
             with torch.no_grad():
                 if torch.count_nonzero(eta_summation) == 0:
                     continue
                 # total_step_num = torch.tensor([total_step_num], dtype=torch.float32).to(device)
                 gradient_estimate = eta_summation / total_trajectory_step_num
-                fim = fisher_matrix / total_trajectory_step_num + torch.eye(gradient_estimate.size()[0]).to(device) * 1e-3
+                fim = fisher_matrix / total_trajectory_step_num + torch.eye(gradient_estimate.size()[0]).to(
+                    device) * 1e-3
                 if self.method == 'TRPO':
                     # conjugate algorithm first K step
                     # Hx = g
@@ -279,8 +301,8 @@ class TRPO_Agent:
 if __name__ == '__main__':
     env = tetris.Tetris(TETRIS_WIDTH, TETRIS_HEIGHT)
     trpo_agent = TRPO_Agent(env, delta_limit_=0.01,
-                            input_size_=TETRIS_WIDTH * TETRIS_HEIGHT + 4,
-                            # input_size_=TETRIS_WIDTH*2-1 + 4,
+                            # input_size_=TETRIS_WIDTH * TETRIS_HEIGHT + 4,
+                            input_size_=TETRIS_WIDTH * 2 - 1 + 4,
                             # module_path='./data/models/2022-04-21-21-56-46.pt',
                             method_='TRPO')
     trpo_agent.optimization(100000)
