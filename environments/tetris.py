@@ -128,16 +128,16 @@ class Tetris:
         self.current_tetrominoes_angle = random.choice([90, 180, 270, 0])
         self.current_tetrominoes_position = [int(self.w / 2), self.h]
 
-    def step(self, action):
+    def step_auto(self, action):
         reward_0 = 0
         if self.step_num % 5 == 0:
-            state, reward_0, is_done, _ = self.step_raw(2)
+            state, reward_0, is_done, _ = self.step(2)
             if is_done:
                 return state, reward_0, is_done, _
-        state, reward, is_done, _ = self.step_raw(action)
+        state, reward, is_done, _ = self.step(action)
         return state, reward+reward_0, is_done, _
 
-    def step_raw(self, action):
+    def step(self, action):
         self.step_num += 1
         if self.action_space[action] == 'rot':
             new_angle = (self.current_tetrominoes_angle + 90) % 360
@@ -203,13 +203,15 @@ class Tetris:
 
 
 if __name__ == '__main__':
-    t = Tetris(10, 16)
+    t = Tetris(5, 8)
     t.reset()
     is_done = False
+    total_step = 0
+    total_reward =0
     while not is_done:
         frame = t.draw()
         cv2.imshow('play', frame)
-        action = cv2.waitKey(2000)
+        action = cv2.waitKey(20)
         if action == ord('w'):
             action = 3
         elif action == ord('a'):
@@ -221,4 +223,6 @@ if __name__ == '__main__':
         else:
            continue
         state, reward, is_done, _ = t.step(int(action))
-        print(reward)
+        total_reward += reward
+        total_step += 1
+        print('step Num: ' + str(total_step)+' total reward: '+str(total_reward))

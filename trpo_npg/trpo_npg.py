@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-import environments.simplified_tetris as tetris
+import environments.tetris as tetris
 # from torch.utils.tensorboard import SummaryWriter
 import environments.generate_trajectories_set as gts
 import environments.print_time as pt
@@ -12,24 +12,24 @@ from multiprocessing import Pool
 
 DEBUG_FLAG = False
 TETRIS_WIDTH = 5
-TETRIS_HEIGHT = 7
+TETRIS_HEIGHT = 8
 # writer = SummaryWriter('./data/log/')
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = 'cpu'
 
 def features(state):
-    # state_bg = (state[0].reshape(1, -1).astype(np.float32)-0.5)*2
-    heights_arr = ((state[0] != 0).argmax(axis=0) / TETRIS_HEIGHT) * 2 - 1.
-    diff_height = (np.array(
-        [heights_arr[i] - heights_arr[i + 1] for i in range(len(heights_arr) - 1)]) / TETRIS_HEIGHT) * 2 - 1.
+    state_bg = (state[0].reshape(1, -1).astype(np.float32)-0.5)*2
+    # heights_arr = ((state[0] != 0).argmax(axis=0) / TETRIS_HEIGHT) * 2 - 1.
+    # diff_height = (np.array(
+    #     [heights_arr[i] - heights_arr[i + 1] for i in range(len(heights_arr) - 1)]) / TETRIS_HEIGHT) * 2 - 1.
     # the last number is for bias
     state_t = np.array([state[1] / 4 - 0.5, (state[2] / 360. - 0.5) * 2, (state[3][0] / TETRIS_WIDTH - 0.5) * 2,
                         (state[3][1] / TETRIS_HEIGHT - 0.5) * 2]).astype(np.float32)
-    state_ = np.append(heights_arr, diff_height)
-    state_ = np.append(state_, state_t)
-    # state_ = np.append(state_bg, state_t).reshape([1, -1])
-    x_tensor_current = np.array([state_])
-    # x_tensor_current = state_
+    # state_ = np.append(heights_arr, diff_height)
+    # state_ = np.append(state_, state_t)
+    state_ = np.append(state_bg, state_t).reshape([1, -1])
+    # x_tensor_current = np.array([state_])
+    x_tensor_current = state_
     return x_tensor_current
 
 
@@ -38,7 +38,7 @@ class policyNN(nn.Module):
         super(policyNN, self).__init__()
         self.flatten = nn.Flatten()
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(input_size, output_size, bias=False),
+            nn.Linear(input_size, output_size, bias=True),
             # nn.Linear(input_size, 10, bias=False),
             # nn.ReLU(),
             # nn.Linear(10, output_size, bias=False),
@@ -55,9 +55,10 @@ class policyNN(nn.Module):
 
 def conjugate_gradient(A, b, max_step_num):
     with torch.no_grad():
-        x_k = torch.randn(b.shape).to(device) / 2.
-        r_k = torch.matmul(A, x_k) - b
-        p_k = - r_k
+        x_k = torch.zeros(b.shape).to(device)
+        # r_k = torch.matmul(A, x_k) - b
+        r_k = - b
+        p_k = b
         for k_i in range(max_step_num):
             if r_k.all() == 0:
                 break
@@ -184,12 +185,12 @@ class TRPO_Agent:
                     fisher_matrix += torch.matmul(log_gradient, log_gradient.t()) * prob_num[0][action_i]
         return [fisher_matrix, eta_summation]
 
-    def optimization(self, epoch, value_gamma=1., value_step_size=.1, conjugate_step_k=10, thread_num=8):
+    def optimization(self, epoch, value_gamma=0.9, value_step_size=.1, conjugate_step_k=10, thread_num=8):
         log_reward = 0
         log_average_step_num = 0
         baseline = 0
-        log_inter = 100
-        for epoch_i in range(0, epoch):
+        log_inter = 10
+        for epoch_i in range(1, epoch):
             # print log
             if epoch_i % log_inter == 0:
                 self.info_print(log_average_step_num, log_reward, log_inter)
@@ -203,8 +204,8 @@ class TRPO_Agent:
                                                                            thread_num=8)
             if trajectory_and_reward_collection is None:
                 print('Nan in policy and its weights')
-                for p_i in self.policy_module.parameters():
-                    print(p_i.data)
+                # for p_i in self.policy_module.parameters():
+                #     print(p_i.data)
 
             # collection_step_num = 0
             # for t_r_i in trajectory_and_reward_collection:
@@ -301,8 +302,8 @@ class TRPO_Agent:
 if __name__ == '__main__':
     env = tetris.Tetris(TETRIS_WIDTH, TETRIS_HEIGHT)
     trpo_agent = TRPO_Agent(env, delta_limit_=0.01,
-                            # input_size_=TETRIS_WIDTH * TETRIS_HEIGHT + 4,
-                            input_size_=TETRIS_WIDTH * 2 - 1 + 4,
-                            # module_path='./data/models/2022-04-21-21-56-46.pt',
+                            input_size_=TETRIS_WIDTH * TETRIS_HEIGHT + 4,
+                            # input_size_=TETRIS_WIDTH * 2 - 1 + 4,
+                            # module_path='./data/models/2022-05-05-09-56-35.pt',
                             method_='TRPO')
     trpo_agent.optimization(100000)

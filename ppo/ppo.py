@@ -5,6 +5,8 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
 import gym
+import matplotlib.pyplot as plt
+
 # from gym.envs.mujoco import mujoco_env
 
 TETRIS_WIDTH = 6
@@ -113,8 +115,8 @@ class PPO_Agent:
                 next_state = data_i['next_state']
                 action_lh = data_i['action_lh']
                 mu = self.policy_module(current_state)
-                policy_dist = GAUSSIAN_NORM * torch.exp(torch.pow(action-mu,2))
-                loss = - loss_function(policy_dist,action_lh,reward,0.2)
+                policy_dist = GAUSSIAN_NORM * torch.exp(torch.pow(action-mu, 2))
+                loss = - loss_function(policy_dist, action_lh, reward, 0.2)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -123,9 +125,10 @@ class PPO_Agent:
 if __name__ == '__main__':
     env = gym.make('LunarLanderContinuous-v2')
     # pp0_agent = PPO_Agent(env, 10)
-    env.reset()
+    state = env.reset()
     for _ in range(100):
-        env.render(mode='rgb_array')
-        env.step(env.action_space.sample())
+        action = 0
+        new_state, reward, is_done, _ = env.step(action)
+
     env.close()
     pass

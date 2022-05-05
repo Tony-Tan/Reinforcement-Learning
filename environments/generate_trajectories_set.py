@@ -88,7 +88,7 @@ def generate_trajectory(env, feature_fn, max_trajectory_length=sys.maxsize,
 
 
 def generate_trajectory_set(env, set_size, feature_fn, max_trajectory_length=sys.maxsize,
-                               device='cpu', policy_fn=None, select_action_fn=None, thread_num=4):
+                               device='cpu', policy_fn=None, select_action_fn=None, thread_num=8):
 
     trajectory_and_reward_mt = []
     trajectory_and_reward_array = []
