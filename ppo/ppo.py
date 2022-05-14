@@ -249,14 +249,14 @@ class PPOAgent:
                     action = data_i['action'].to(device)
                     reward = data_i['reward'].to(device)
                     # next_state = data_i['next_state'].to(device)
-                    action_lh = data_i['action_likelihood'].to(device)
+                    action_lh_old = data_i['action_likelihood'].to(device)
                     state_value = data_i['state_value'].to(device)
                     next_state_value = data_i['next_state_value'].to(device)
                     mu = self.policy_module(current_state)
-                    action_likelihood = GAUSSIAN_NORM * torch.exp(- torch.mul(0.5, torch.pow(action-mu, 2)))
+                    action_lh_new = GAUSSIAN_NORM * torch.exp(torch.mul(-0.5, torch.pow(action-mu, 2)))
                     reward = reward.reshape(-1, 1)
-                    advantage = reward + next_state_value - state_value
-                    loss = loss_function(action_likelihood, action_lh, advantage, 0.2)
+                    advantage = reward + 0.99 * next_state_value - state_value
+                    loss = loss_function(action_lh_new, action_lh_old, advantage, 0.2)
                     optimizer_policy.zero_grad()
                     loss.backward(torch.ones_like(loss))
                     optimizer_policy.step()
