@@ -6,6 +6,7 @@ import time
 import gym
 import os
 from torch.utils.tensorboard import SummaryWriter
+import copy
 
 writer = SummaryWriter('./data/log/')
 GAUSSIAN_NORM = 1. / (1. * np.sqrt(2 * np.pi))
@@ -46,7 +47,7 @@ class ValueNN(nn.Module):
         super(ValueNN, self).__init__()
         self.flatten = nn.Flatten()
         self.linear_stack = nn.Sequential(
-            nn.Linear(input_size, 1),
+            nn.Linear(input_size, 1)
         )
 
     def forward(self, x):
@@ -77,7 +78,8 @@ class StepSet(Dataset):
                       'reward': self.step_set[idx][2],
                       'next_state': self.step_set[idx][3],
                       'action_likelihood': self.step_set[idx][4],
-                      'G': self.step_set[idx][5]
+                      'termination': self.step_set[idx][5],
+                      'G': self.step_set[idx][6]
                       }
             return sample
         else:
@@ -86,9 +88,10 @@ class StepSet(Dataset):
                       'reward': self.step_set[idx][2],
                       'next_state': self.step_set[idx][3],
                       'action_likelihood': self.step_set[idx][4],
-                      'G': self.step_set[idx][5],
-                      'state_value': self.step_set[idx][6],
-                      'next_state_value': self.step_set[idx][7]
+                      'termination': self.step_set[idx][5],
+                      'G': self.step_set[idx][6],
+                      'state_value': self.step_set[idx][7],
+                      'next_state_value': self.step_set[idx][8]
                       }
             return sample
 
@@ -96,11 +99,17 @@ class StepSet(Dataset):
 def trajectory_return(trajectory_set, gamma=0.99):
     for trajectory_i in trajectory_set:
         n = len(trajectory_i)
+        if trajectory_i[n - 1][5] is True:
+            g = 0
+        else:
+            g = trajectory_i[n - 1][2]
+        trajectory_i[n - 1].append(np.array([g]).astype(np.float32))
         for step_i in reversed(range(n-1)):
-            g = np.array([trajectory_i[step_i][2]+gamma*trajectory_i[step_i+1][2]]).astype(np.float32)
-            trajectory_i[step_i].append(g)
-        g = np.array([trajectory_i[n - 1][2]]).astype(np.float32)
-        trajectory_i[n - 1].append(g)
+            if trajectory_i[step_i][5] is True:
+                g = 0
+            else:
+                g = trajectory_i[step_i][2]+gamma*trajectory_i[step_i+1][-1][0]
+            trajectory_i[step_i].append(np.array([g]).astype(np.float32))
 
 
 class PPOAgent:
@@ -134,8 +143,8 @@ class PPOAgent:
 
     def generate_trajectory_set(self, set_size, horizon):
         with torch.no_grad():
-            print('start generating trajectory')
-            print_time()
+            # print('start generating trajectory')
+            # print_time()
             trajectory_set = []
             env_list = []
             total_reward = 0
@@ -151,24 +160,28 @@ class PPOAgent:
                 state_list.append(state_np)
 
             for i in range(horizon):
-                state_list_np = np.array(state_list).astype(np.float32)
+                state_list_np = np.array(state_list) # .astype(np.float32)
                 # x_tensor = torch.tensor(state_list_np, dtype=torch.float32).to(device_)
                 x_tensor = torch.tensor(state_list_np, dtype=torch.float32).to(device)
                 action, action_likelihood = self.action_selection(x_tensor)
-                state_list = []
+                next_state_list = []
                 for env_i in range(len(env_list)):
                     new_state, reward, is_done, _ = env_list[env_i].step(action[env_i])
                     action_np = np.float32(action[env_i])
                     reward_np = np.float32(reward)
                     action_likelihood_np = np.float32(action_likelihood[env_i])
                     new_state_np = np.array([new_state]).astype(np.float32)
-                    trajectory_set[env_i].append([state_np, action_np, reward_np,
-                                                  new_state_np, action_likelihood_np])
-                    state_list.append(new_state_np)
+                    trajectory_set[env_i].append([state_list[env_i], action_np, reward_np,
+                                                  new_state_np, action_likelihood_np, is_done])
+                    if is_done:
+                        new_state = env_list[env_i].reset()
+                        new_state_np = np.array([new_state]).astype(np.float32)
                     total_reward += reward_np
+                    next_state_list.append(new_state_np)
+                state_list = copy.deepcopy(next_state_list)
 
-            print('end generating trajectory')
-            print_time()
+            # print('end generating trajectory')
+            # print_time()
 
             return trajectory_set, total_reward
 
@@ -187,8 +200,10 @@ class PPOAgent:
         torch.save(self.value_module, value_module_path)
         print('model saved: ' + model_name)
 
-    def optimize(self, policy_update_times, horizon=2048, actor_num=8):
+    def optimize(self, policy_update_times, horizon=512, actor_num=4):
         log_reward = 0
+        data_size = horizon*actor_num
+        last_value_residual = 1e10
         for update_i in range(1, policy_update_times):
             trajectory_collection, total_reward = self.generate_trajectory_set(actor_num, horizon)
             # == log ==
@@ -196,14 +211,16 @@ class PPOAgent:
             # ------------------------
             trajectory_return(trajectory_collection)
             steps_dataset = StepSet(trajectory_collection)
-            dataset_loader = torch.utils.data.DataLoader(steps_dataset, batch_size=horizon,
+            value_batch_size = 512
+            dataset_loader = torch.utils.data.DataLoader(steps_dataset, batch_size=value_batch_size,
                                                          shuffle=True, num_workers=0)
             # update value
-            optimizer_value = torch.optim.SGD(self.value_module.parameters(), lr=0.001)
+            value_lr = 0.001
+            optimizer_value = torch.optim.SGD(self.value_module.parameters(), lr=value_lr)
             loss = torch.nn.MSELoss()
-            residual_log = 0
-            for mini_epoch_i in range(max(50-update_i, 1)):
-                residual = None
+            average_residual = 0
+
+            while True:
                 for batch_i, data_i in enumerate(dataset_loader):
                     current_state = data_i['state'].to(device)
                     value = data_i['G'].to(device)
@@ -212,13 +229,23 @@ class PPOAgent:
                     optimizer_value.zero_grad()
                     residual.backward()
                     optimizer_value.step()
-                residual_log = residual.item()
-            if update_i % 10 == 0:
+                    average_residual += residual.item()
+                average_residual /= (data_size/value_batch_size)
+                if 0 < (last_value_residual-average_residual)/last_value_residual < 0.01:
+                    break
+                else:
+                    last_value_residual = average_residual
+                    average_residual = 0
+
+            if update_i % 100 == 0:
                 print('-----------------------------------------------------------------')
                 print('regression state value for advantage; epoch: ' + str(update_i))
                 print_time()
-                print('value loss: ' + str(residual_log))
-                writer.add_scalar('value loss', residual_log, update_i)
+                print('value loss: ' + str(average_residual))
+                writer.add_scalar('value loss', average_residual, update_i)
+                ##############################################################################
+            if update_i % 1000 == 0:
+                value_lr *= 0.99
 
             # add value data into dataset
             value_data_array = []
@@ -230,7 +257,7 @@ class PPOAgent:
                     next_state = data_i['next_state'].to(device)
                     state_value = self.value_module(current_state)
                     next_state_value = self.value_module(next_state)
-                    value_data_array.append([state_value.numpy(), next_state_value.numpy()])
+                    value_data_array.append([state_value.cpu().numpy(), next_state_value.cpu().numpy()])
             total_step_index = 0
             for t_i in trajectory_collection:
                 for step_i in t_i:
@@ -241,7 +268,7 @@ class PPOAgent:
 
             # update policy
             dataset_loader = torch.utils.data.DataLoader(steps_dataset, batch_size=64, shuffle=True, num_workers=0)
-            optimizer_policy = torch.optim.Adam(self.policy_module.parameters(), lr=3e-4)
+            optimizer_policy = torch.optim.SGD(self.policy_module.parameters(), lr=3e-4)
             for mini_epoch_i in range(10):
                 for batch_i, data_i in enumerate(dataset_loader):
                     # print(batch_i)
@@ -256,16 +283,17 @@ class PPOAgent:
                     action_lh_new = GAUSSIAN_NORM * torch.exp(torch.mul(-0.5, torch.pow(action-mu, 2)))
                     reward = reward.reshape(-1, 1)
                     advantage = reward + 0.99 * next_state_value - state_value
+                    # advantage = data_i['G'].to(device)
                     loss = loss_function(action_lh_new, action_lh_old, advantage, 0.2)
                     optimizer_policy.zero_grad()
                     loss.backward(torch.ones_like(loss))
                     optimizer_policy.step()
 
             # print log
-            if update_i % 100 == 0:
+            if update_i % 1000 == 0:
                 print('policy update: ' + str(update_i)+' time(s); reward: ' +
-                      str(log_reward/(horizon * actor_num * 100)))
-                writer.add_scalar('reward', log_reward/(horizon * actor_num * 100), update_i)
+                      str(log_reward/(actor_num * 1000)))
+                writer.add_scalar('reward', log_reward/(horizon * actor_num * 1000), update_i)
                 self.save_model()
                 log_reward = 0
                 print('-------------------------------------------------------\n\n')
