@@ -67,9 +67,8 @@ class Tetris:
         self.current_tetrominoes_angle = random.choice([90, 180, 270, 0])
         self.back_ground = np.zeros([self.h, self.w])
         self.current_tetrominoes_position = [int(self.w / 2), self.h]
-        return [self.back_ground, self.current_tetrominoes_type,
-                self.current_tetrominoes_angle,
-                self.current_tetrominoes_position], 0, False, {}
+        return np.append(np.append(self.back_ground, [self.current_tetrominoes_type, self.current_tetrominoes_angle]),
+                         self.current_tetrominoes_position).astype(np.float32)
 
     def _test_move(self, new_position):
         for pos in self.tetrominoes[self.current_tetrominoes_type][self.current_tetrominoes_angle]:
@@ -143,44 +142,44 @@ class Tetris:
             new_angle = (self.current_tetrominoes_angle + 90) % 360
             if self._test_angle(new_angle):
                 self.current_tetrominoes_angle = new_angle
-            return [self.back_ground, self.current_tetrominoes_type,
-                    self.current_tetrominoes_angle,
-                    self.current_tetrominoes_position], 0, False, {}
+            return np.append(np.append(self.back_ground, [self.current_tetrominoes_type,
+                                                          self.current_tetrominoes_angle]),
+                         self.current_tetrominoes_position).astype(np.float32), 0, False, {}
 
         elif self.action_space[action] == 'gl':
             new_position = [self.current_tetrominoes_position[0] - 1,
                             self.current_tetrominoes_position[1]]
             if self._test_move(new_position):
                 self.current_tetrominoes_position = new_position
-            return [self.back_ground, self.current_tetrominoes_type,
-                    self.current_tetrominoes_angle,
-                    self.current_tetrominoes_position], 0, False, {}
+            return np.append(np.append(self.back_ground, [self.current_tetrominoes_type,
+                                                          self.current_tetrominoes_angle]),
+                         self.current_tetrominoes_position).astype(np.float32), 0, False, {}
         elif self.action_space[action] == 'gr':
             new_position = [self.current_tetrominoes_position[0] + 1,
                             self.current_tetrominoes_position[1]]
             if self._test_move(new_position):
                 self.current_tetrominoes_position = new_position
-            return [self.back_ground, self.current_tetrominoes_type,
-                    self.current_tetrominoes_angle,
-                    self.current_tetrominoes_position], 0, False, {}
+            return np.append(np.append(self.back_ground, [self.current_tetrominoes_type,
+                                                          self.current_tetrominoes_angle]),
+                         self.current_tetrominoes_position).astype(np.float32), 0, False, {}
         elif self.action_space[action] == 'gd':
             new_position = [self.current_tetrominoes_position[0],
                             self.current_tetrominoes_position[1] - 1]
             if self._test_move(new_position):
                 self.current_tetrominoes_position = new_position
-                return [self.back_ground, self.current_tetrominoes_type,
-                        self.current_tetrominoes_angle,
-                        self.current_tetrominoes_position], 0, False, {}
+                return np.append(np.append(self.back_ground, [self.current_tetrominoes_type,
+                                                              self.current_tetrominoes_angle]),
+                         self.current_tetrominoes_position).astype(np.float32), 0, False, {}
             else:
                 if self._test_end(new_position):
-                    return [self.back_ground, self.current_tetrominoes_type,
-                            self.current_tetrominoes_angle,
-                            self.current_tetrominoes_position], 0, True, {}
+                    return np.append(np.append(self.back_ground, [self.current_tetrominoes_type,
+                                                                  self.current_tetrominoes_angle]),
+                         self.current_tetrominoes_position).astype(np.float32), 0, True, {}
                 line, reward = self._update_background()
                 self._new_tetrominoes()
-                return [self.back_ground, self.current_tetrominoes_type,
-                        self.current_tetrominoes_angle,
-                        self.current_tetrominoes_position], reward, False, {}
+                return np.append(np.append(self.back_ground, [self.current_tetrominoes_type,
+                                                              self.current_tetrominoes_angle]),
+                         self.current_tetrominoes_position).astype(np.float32), reward, False, {}
 
     def draw(self, resize_factor=100):
         back_ground = self.back_ground

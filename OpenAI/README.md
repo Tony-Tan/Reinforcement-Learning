@@ -15,7 +15,7 @@ Key papers in deep reinforcement learning suggested by [OpenAI spinningup](https
     - [ ] [Asynchronous Methods for Deep Reinforcement Learning](https://arxiv.org/abs/1602.01783), Mnih et al, 2016. *Algorithm: A3C.*
     - [x] [Trust Region Policy Optimization](https://arxiv.org/abs/1502.05477), Schulman et al, 2015. *Algorithm: TRPO.*
     - [ ] [High-Dimensional Continuous Control Using Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438), Schulman et al, 2015. *Algorithm: GAE.*
-    - [ ] [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347), Schulman et al, 2017. *Algorithm: PPO-Clip, PPO-Penalty.*
+    - [x] [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347), Schulman et al, 2017. *Algorithm: PPO-Clip, PPO-Penalty.*
     - [ ] [Emergence of Locomotion Behaviours in Rich Environments](https://arxiv.org/abs/1707.02286), Heess et al, 2017. *Algorithm: PPO-Penalty.*
     - [ ] [Scalable trust-region method for deep reinforcement learning using Kronecker-factored approximation](https://arxiv.org/abs/1708.05144), Wu et al, 2017. *Algorithm: ACKTR.*
     - [ ] [Sample Efficient Actor-Critic with Experience Replay](https://arxiv.org/abs/1611.01224), Wang et al, 2016. *Algorithm: ACER.*

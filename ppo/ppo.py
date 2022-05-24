@@ -9,7 +9,9 @@ from torch.utils.tensorboard import SummaryWriter
 import copy
 
 writer = SummaryWriter('./data/log/')
-GAUSSIAN_NORM = 1. / (1. * np.sqrt(2 * np.pi))
+STD_DEVIATION = 1
+GAUSSIAN_NORM = 1. / (STD_DEVIATION * np.sqrt(2 * np.pi))
+
 # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device = 'cpu'
 
@@ -21,7 +23,7 @@ def print_time():
 def loss_function(pi_new, pi_old, estimate_advantage, epsilon):
     r_t = pi_new / pi_old
     l_clip = torch.min(r_t * estimate_advantage,
-                       torch.clip(r_t, 1 - epsilon, 1 + epsilon) * estimate_advantage)
+                       torch.clip(r_t, 1. - epsilon, 1. + epsilon) * estimate_advantage)
     return - torch.mean(l_clip, dim=0)
 
 
@@ -30,9 +32,11 @@ class PolicyNN(nn.Module):
         super(PolicyNN, self).__init__()
         self.flatten = nn.Flatten()
         self.linear_mlp_stack = nn.Sequential(
-            nn.Linear(input_size, 64),
+            nn.Linear(input_size, 32),
             nn.Tanh(),
-            nn.Linear(64, output_size),
+            nn.Linear(32, 32),
+            nn.Tanh(),
+            nn.Linear(32, output_size),
             nn.Tanh()
         )
 
@@ -48,6 +52,9 @@ class ValueNN(nn.Module):
         self.flatten = nn.Flatten()
         self.linear_stack = nn.Sequential(
             nn.Linear(input_size, 1)
+            # nn.Tanh(),
+            # nn.Linear(32, 1),
+            # nn.Tanh()
         )
 
     def forward(self, x):
@@ -91,7 +98,8 @@ class StepSet(Dataset):
                       'termination': self.step_set[idx][5],
                       'G': self.step_set[idx][6],
                       'state_value': self.step_set[idx][7],
-                      'next_state_value': self.step_set[idx][8]
+                      'GAE': self.step_set[idx][8]
+                      # 'next_state_value': self.step_set[idx][8]
                       }
             return sample
 
@@ -112,15 +120,45 @@ def trajectory_return(trajectory_set, gamma=0.99):
             trajectory_i[step_i].append(np.array([g]).astype(np.float32))
 
 
+def g_a_e(trajectory_set, lambda_value=0.95, gamma=0.99):
+    for trajectory_i in trajectory_set:
+        n = len(trajectory_i)
+        # generate delta
+        delta_array = []
+        for i in range(n-1):
+            if trajectory_i[i][5] is not True:
+                delta_i = trajectory_i[i][2] - trajectory_i[i][7] + gamma * trajectory_i[i+1][7]
+                delta_array.append(delta_i)
+            else:
+                delta_i = trajectory_i[i][2] - trajectory_i[i][7]
+                delta_array.append(delta_i)
+        delta_i = trajectory_i[n-1][2] - trajectory_i[n-1][7]
+        delta_array.append(delta_i)
+
+        # generate advantage
+        trajectory_i[n-1].append(delta_array[n-1])
+        for i in reversed(range(n-1)):
+            if trajectory_i[i][5] is True:
+                trajectory_i[i].append(delta_array[i])
+            else:
+                trajectory_i[i].append(delta_array[i] + gamma*lambda_value*trajectory_i[i+1][-1])
+
+
 class PPOAgent:
-    def __init__(self, env_name, model_name=None, model_path='./data/models/'):
+    def __init__(self, env_name, model_path='./data/models/'):
         self.env_name = env_name
         env_ = gym.make(self.env_name)
         self.module_input_size = len(env_.reset())
         self.action_size = env_.action_space.shape[0]
         self.policy_module = None
         self.value_module = None
-        if model_name is not None:
+        self.start_update_i = 1
+        model_name_file_path = os.path.join(model_path, 'last_models.txt')
+        if os.path.exists(model_name_file_path):
+            model_rec_file = open(model_name_file_path, 'r')
+            model_name = model_rec_file.readline().strip('\n')
+            self.start_update_i = int(model_rec_file.readline().strip('\n')) + 1
+            model_rec_file.close()
             self.load_model(model_name, model_path)
         else:
             self.policy_module = PolicyNN(self.module_input_size, self.action_size)
@@ -138,7 +176,7 @@ class PPOAgent:
             mu = self.policy(x_tensor)
             mu_np = mu.clone().detach().cpu().numpy()
             action = np.random.normal(mu_np, 1)
-            pro = GAUSSIAN_NORM*np.exp(-0.5*(action-mu_np)**2)
+            pro = GAUSSIAN_NORM*np.exp(-0.5*((action-mu_np)/STD_DEVIATION)**2)
             return action, pro
 
     def generate_trajectory_set(self, set_size, horizon):
@@ -192,35 +230,42 @@ class PPOAgent:
         self.value_module = torch.load(value_module_path)
         print('model loaded: ' + model_name)
 
-    def save_model(self, path='./data/models/'):
+    def save_model(self, update_times, path='./data/models/'):
         model_name = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
         policy_module_path = os.path.join(path, model_name) + '_policy.pt'
         torch.save(self.policy_module, policy_module_path)
         value_module_path = os.path.join(path, model_name) + '_value.pt'
         torch.save(self.value_module, value_module_path)
+        model_rec_file = open(os.path.join(path,'last_models.txt'),'w+')
+        model_rec_file.write(model_name+'\n')
+        model_rec_file.write(str(update_times)+'\n')
+        model_rec_file.close()
+
         print('model saved: ' + model_name)
 
-    def optimize(self, policy_update_times, horizon=512, actor_num=4):
+    def optimize(self, policy_update_times, horizon=2048, actor_num=1):
         log_reward = 0
         data_size = horizon*actor_num
         last_value_residual = 1e10
-        for update_i in range(1, policy_update_times):
+        value_lr = 0.000005
+        for update_i in range(self.start_update_i, policy_update_times):
             trajectory_collection, total_reward = self.generate_trajectory_set(actor_num, horizon)
             # == log ==
             log_reward += total_reward
             # ------------------------
             trajectory_return(trajectory_collection)
             steps_dataset = StepSet(trajectory_collection)
-            value_batch_size = 512
+            value_batch_size = 64
             dataset_loader = torch.utils.data.DataLoader(steps_dataset, batch_size=value_batch_size,
                                                          shuffle=True, num_workers=0)
             # update value
-            value_lr = 0.001
+
             optimizer_value = torch.optim.SGD(self.value_module.parameters(), lr=value_lr)
             loss = torch.nn.MSELoss()
             average_residual = 0
-
-            while True:
+            value_regression_epoch = max(50-update_i, 2)
+            # while True:
+            for i in range(value_regression_epoch):
                 for batch_i, data_i in enumerate(dataset_loader):
                     current_state = data_i['state'].to(device)
                     value = data_i['G'].to(device)
@@ -231,22 +276,22 @@ class PPOAgent:
                     optimizer_value.step()
                     average_residual += residual.item()
                 average_residual /= (data_size/value_batch_size)
-                if 0 < (last_value_residual-average_residual)/last_value_residual < 0.01:
-                    break
-                else:
-                    last_value_residual = average_residual
-                    average_residual = 0
+                # if 0 < (last_value_residual-average_residual)/last_value_residual < 0.0001:
+                #     break
+                # else:
+                #     last_value_residual = average_residual
+                #     average_residual = 0
 
             if update_i % 100 == 0:
                 print('-----------------------------------------------------------------')
+                print_time()
                 print('regression state value for advantage; epoch: ' + str(update_i))
                 print_time()
                 print('value loss: ' + str(average_residual))
                 writer.add_scalar('value loss', average_residual, update_i)
                 ##############################################################################
-            if update_i % 1000 == 0:
-                value_lr *= 0.99
-
+            # if update_i % 1000 == 0:
+            #     value_lr = max(value_lr * 0.99, 1e-5)
             # add value data into dataset
             value_data_array = []
             dataset_loader = torch.utils.data.DataLoader(steps_dataset, batch_size=horizon*actor_num,
@@ -254,36 +299,39 @@ class PPOAgent:
             with torch.no_grad():
                 for batch_i, data_i in enumerate(dataset_loader):
                     current_state = data_i['state'].to(device)
-                    next_state = data_i['next_state'].to(device)
+                    # next_state = data_i['next_state'].to(device)
                     state_value = self.value_module(current_state)
-                    next_state_value = self.value_module(next_state)
-                    value_data_array.append([state_value.cpu().numpy(), next_state_value.cpu().numpy()])
+                    # next_state_value = self.value_module(next_state)
+                    # value_data_array.append([state_value.cpu().numpy(), next_state_value.cpu().numpy()])
+                    value_data_array.append(state_value.cpu().numpy())
             total_step_index = 0
             for t_i in trajectory_collection:
                 for step_i in t_i:
-                    step_i.append(value_data_array[0][0][total_step_index])
-                    step_i.append(value_data_array[0][1][total_step_index])
+                    step_i.append(value_data_array[0][total_step_index])
+                    # step_i.append(value_data_array[0][1][total_step_index])
                     total_step_index += 1
+
+            # generated advantage estimation
+            g_a_e(trajectory_collection)
             steps_dataset = StepSet(trajectory_collection, with_value=True)
 
             # update policy
             dataset_loader = torch.utils.data.DataLoader(steps_dataset, batch_size=64, shuffle=True, num_workers=0)
-            optimizer_policy = torch.optim.SGD(self.policy_module.parameters(), lr=3e-4)
-            for mini_epoch_i in range(10):
+            optimizer_policy = torch.optim.Adam(self.policy_module.parameters(), lr=1e-4)
+            for mini_epoch_i in range(5):
                 for batch_i, data_i in enumerate(dataset_loader):
                     # print(batch_i)
                     current_state = data_i['state'].to(device)
                     action = data_i['action'].to(device)
                     reward = data_i['reward'].to(device)
-                    # next_state = data_i['next_state'].to(device)
                     action_lh_old = data_i['action_likelihood'].to(device)
-                    state_value = data_i['state_value'].to(device)
-                    next_state_value = data_i['next_state_value'].to(device)
+                    # state_value = data_i['state_value'].to(device)
+                    # next_state_value = data_i['next_state_value'].to(device)
                     mu = self.policy_module(current_state)
-                    action_lh_new = GAUSSIAN_NORM * torch.exp(torch.mul(-0.5, torch.pow(action-mu, 2)))
-                    reward = reward.reshape(-1, 1)
-                    advantage = reward + 0.99 * next_state_value - state_value
-                    # advantage = data_i['G'].to(device)
+                    action_lh_new = GAUSSIAN_NORM * torch.exp(torch.mul(-0.5, torch.pow((action-mu)/STD_DEVIATION, 2)))
+                    # reward = reward.reshape(-1, 1)
+                    # advantage = reward + 0.99 * next_state_value
+                    advantage = data_i['GAE'].to(device)
                     loss = loss_function(action_lh_new, action_lh_old, advantage, 0.2)
                     optimizer_policy.zero_grad()
                     loss.backward(torch.ones_like(loss))
@@ -291,12 +339,12 @@ class PPOAgent:
 
             # print log
             if update_i % 1000 == 0:
-                print('policy update: ' + str(update_i)+' time(s); reward: ' +
-                      str(log_reward/(actor_num * 1000)))
-                writer.add_scalar('reward', log_reward/(horizon * actor_num * 1000), update_i)
-                self.save_model()
+                print('policy update: ' + str(update_i)+' reward: ' +
+                      str(log_reward/(horizon * 1000)))
+                writer.add_scalar('reward', log_reward/(horizon * 1000), update_i)
+                self.save_model(update_i)
                 log_reward = 0
-                print('-------------------------------------------------------\n\n')
+                print('================================================================')
 
 
 # Hyperparameter          Value

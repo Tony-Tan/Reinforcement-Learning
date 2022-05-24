@@ -21,7 +21,7 @@ def generate_trajectory_n(env, n, feature_fn, max_trajectory_length=sys.maxsize,
 
 
 def generate_trajectory(env, feature_fn, max_trajectory_length=sys.maxsize,
-                            device='cpu', policy_fn=None, select_action_fn=None):
+                        device='cpu', policy_fn=None, select_action_fn=None):
     total_reward = 0
     trajectory_i = []
     action = None
