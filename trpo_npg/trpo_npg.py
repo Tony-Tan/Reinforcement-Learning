@@ -205,7 +205,7 @@ class TRPO_Agent:
                     action = trajectory_i[step_index][1]
                     for action_i in range(self.action_space_size):
                         output = torch.zeros_like(prob).to(device)
-                        output[0][action_i] = 1
+                        # output[0][action_i] = 1
                         self.policy_module.zero_grad()
                         prob.backward(output, retain_graph=True)
                         gradient = []
