@@ -29,22 +29,23 @@ or follow my twitter:
 - 2016
     1. [Dueling Network Architectures for Deep Reinforcement Learning](./dueling_network)
     2. [Prioritized Experience Replay](./proportional_prioritization)
-
+- 2017
+    1. [Proximal Policy Optimization Algorithms](./ppo)
 
 
 ## Map of Reinforcement Learning Algorithms
-[./Maps](./Maps) contains all maps of concepts in RL that are coded by graphviz language.
+[./doc/Maps](doc/Maps) contains all maps of concepts in RL that are coded by graphviz language.
 Command on OS X with graphviz:
 <code>dot the-name-of-your-dot-file.dot -Tsvg -o output-file-name.svg</code>
 
 
 ### Concepts in 'Reinforcement Learning: an Introduction'
-![](./Maps/RLAI.svg)
+![](doc/Maps/RLAI.svg)
 
 
 ### Graph of DQN papers
-![](./Maps/DQN_graph.svg)
+![](doc/Maps/DQN_graph.svg)
 
 
 ### Graph of PG papers
-![](./Maps/PG_graph.svg)
+![](doc/Maps/PG_graph.svg)

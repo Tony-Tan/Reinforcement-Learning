@@ -5,12 +5,12 @@ Command on OS X with graphviz:
 
 
 ### Concepts in 'Reinforcement Learning: an Introduction'
-![](./RLAI.svg)
+![](RLAI.svg)
 
 
 ### Graph of DQN papers
-![](./DQN_graph.svg)
+![](DQN_graph.svg)
 
 
 ### Graph of PG papers
-![](./PG_graph.svg)
+![](PG_graph.svg)

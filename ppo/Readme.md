@@ -1,7 +1,8 @@
 # Proximal Policy Optimization Algorithms(PPO)
-reproduce by python and pytorch
-video can be found at: [https://www.youtube.com/watch?v=Hq9Zc7ISTmQ&t=37s](https://www.youtube.com/watch?v=Hq9Zc7ISTmQ&t=37s)
-InvertedDoublePendulum-v2 training processes:
+## InvertedDoublePendulum-v2
+reproduce by python and pytorch.
+And video can be found at: [https://www.youtube.com/watch?v=Hq9Zc7ISTmQ&t=37s](https://www.youtube.com/watch?v=Hq9Zc7ISTmQ&t=37s)
+The training processes log is like:
 ![](./data/exp/InvertedDoublePendulum-v2/action_std.png)
 ![](data/exp/InvertedDoublePendulum-v2/policy_lr.png)
 ![](data/exp/InvertedDoublePendulum-v2/reward.png)
