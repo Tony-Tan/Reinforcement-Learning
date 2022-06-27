@@ -5,7 +5,7 @@ import time
 import os
 from core.exceptions import *
 from core.basic import *
-import json
+
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -25,7 +25,7 @@ class Critic(nn.Module):
         super(Critic, self).__init__()
         pass
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, *args):
         raise NotImplement
 
 
@@ -50,9 +50,9 @@ class Agent:
         self.agent_name = name
         self.actor = None
         self.critic = None
-        self.start_epoch = 0
-        self.hyperparameter = {}
+        self.start_epoch = 1
         self.path = path
+        self.model_name_ = None
         self.load()
 
     def reaction(self, state: np.ndarray):
@@ -61,54 +61,44 @@ class Agent:
     def simulation(self):
         raise NotImplement
 
-    def save_hyperparameter(self):
-        hyperparameter_json = json.dumps(self.hyperparameter)
-        with open(os.path.join(self.path, 'hyperparameter.json'), 'w') as j_file:
-            j_file.write(hyperparameter_json)
-            j_file.close()
-            print('hyperparameter saved')
-
-    def load_hyperparameter(self):
-        with open(os.path.join(self.path, 'hyperparameter.json'), 'r') as j_file:
-            content = j_file.read()
-            self.hyperparameter = json.loads(content)
-            j_file.close()
-            print('hyperparameter loaded')
-
-    def save(self, epoch_num=0):
-        self.save_hyperparameter()
-        model_name = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        policy_module_path = os.path.join(self.path, model_name) + '_actor.pt'
+    def save(self, epoch_num):
+        self.model_name_ = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+        policy_module_path = os.path.join(self.path, self.model_name_) + '_actor.pt'
         torch.save(self.actor, policy_module_path)
-        value_module_path = os.path.join(self.path, model_name) + '_critic.pt'
+        value_module_path = os.path.join(self.path, self.model_name_) + '_critic.pt'
         torch.save(self.critic, value_module_path)
         model_rec_file = open(os.path.join(self.path, 'last_models.txt'), 'w+')
-        model_rec_file.write(model_name + '\n')
+        model_rec_file.write(self.model_name_ + '\n')
         model_rec_file.write(str(epoch_num) + '\n')
         model_rec_file.close()
         print('model saved! ')
 
-    def load(self):
-
-        model_name_file_path = os.path.join(self.path, 'last_models.txt')
-        if os.path.exists(model_name_file_path):
-            self.load_hyperparameter()
-            model_rec_file = open(model_name_file_path, 'r')
-            model_name = model_rec_file.readline().strip('\n')
-            self.start_epoch = int(model_rec_file.readline().strip('\n')) + 1
-            model_rec_file.close()
-            actor_module_path = os.path.join(self.path, model_name) + '_actor.pt'
-            self.actor = torch.load(actor_module_path)
-            critic_module_path = os.path.join(self.path, model_name) + '_critic.pt'
-            self.critic = torch.load(critic_module_path)
-            print('================================================================')
-            print('model loaded: ' + model_name)
-            print('================================================================')
+    def load(self, model_name=None):
+        self.model_name_ = model_name
+        if self.model_name_ is None:
+            model_name_file_path = os.path.join(self.path, 'last_models.txt')
+            if os.path.exists(model_name_file_path):
+                model_rec_file = open(model_name_file_path, 'r')
+                self.model_name_ = model_rec_file.readline().strip('\n')
+                self.start_epoch = int(model_rec_file.readline().strip('\n')) + 1
+                model_rec_file.close()
+            else:
+                return
+        actor_module_path = os.path.join(self.path, self.model_name_) + '_actor.pt'
+        self.actor = torch.load(actor_module_path, map_location=torch.device('cpu'))
+        critic_module_path = os.path.join(self.path, self.model_name_) + '_critic.pt'
+        self.critic = torch.load(critic_module_path, map_location=torch.device('cpu'))
+        print('================================================================')
+        print('model loaded: ' + self.model_name_)
+        print('================================================================')
 
     def update_actor(self, epoch_num: int, data: DataBuffer, device: str, log_writer: SummaryWriter):
         raise NotImplement
 
     def update_critic(self, epoch_num: int, data: DataBuffer, device: str, log_writer: SummaryWriter):
+        raise NotImplement
+
+    def update_actor_critic(self, *args):
         raise NotImplement
 
 
@@ -127,7 +117,8 @@ class RLExperiment:
         self.buffer = None
 
         self.buffer = DataBuffer(buffer_size, data_template)
-        self.exp_log_writer = SummaryWriter(log_path)
+        if log_path is not None:
+            self.exp_log_writer = SummaryWriter(log_path)
 
     def generate_trajectories(self, total_step_num: int):
         if total_step_num > self.buffer.max_size:
@@ -173,5 +164,4 @@ class RLExperiment:
         self.exp_log_writer.add_scalar('step', total_steps / test_round_num, round_num)
         return total_reward / test_round_num
 
-    def save(self):
-        self.agent.save()
+
