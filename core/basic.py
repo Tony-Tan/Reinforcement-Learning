@@ -70,8 +70,6 @@ class Hyperparameter:
                 print(self.parameters)
 
 
-
-
 class DataBuffer:
     def __init__(self, max_size: int, data_template: dict):
         self.buffer_template = data_template
@@ -149,3 +147,23 @@ class RLDataset(Dataset):
             sample[key_i] = torch.from_numpy(sample[key_i])
         return sample
 
+
+def MLP(size_of_layer: list, action_fc, output_action=torch.nn.Identity):
+    layers = []
+    for i in range(len(size_of_layer)-2):
+        layers += [torch.nn.Linear(size_of_layer[i], size_of_layer[i+1]), action_fc()]
+    layers += [torch.nn.Linear(size_of_layer[-2], size_of_layer[-1]), output_action()]
+    return torch.nn.Sequential(*layers)
+
+
+def polyak_average(model1, model2, beta, dist_model):
+    params1 = model1.named_parameters()
+    params2 = model2.named_parameters()
+
+    dict_params2 = dict(params2)
+
+    for name1, param1 in params1:
+        if name1 in dict_params2:
+            dict_params2[name1].data.copy_(beta * param1.data + (1 - beta) * dict_params2[name1].data)
+
+    dist_model.load_state_dict(dict_params2)

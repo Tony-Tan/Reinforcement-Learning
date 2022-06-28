@@ -1,29 +1,40 @@
 import copy
-
 import torch
+from core.rl_elements import *
+from DDPG.ddpg import DDPG_exp
+import gym
 
-from DDPG.ddpg import *
-
-
-class TD3_Agent(DDPG_Agent):
-    def __init__(self, state_dim, action_dim,min_action, max_action):
-        self.critic_2 = None
-        super(TD3_Agent, self).__init__(state_dim, action_dim, 'TD3')
+class TD3_Agent(Agent):
+    def __init__(self, state_dim, action_dim, actor_mlp_hidden_layer, critic_mlp_hidden_layer,
+                 action_min, action_max, path='./data/models'):
+        super(TD3_Agent, self).__init__('TD3', path)
+        self.hyperparameter['batch_size'] = 100
+        self.hyperparameter['actor_main_lr'] = 1e-3
+        self.hyperparameter['critic_main_lr'] = 1e-3
+        self.hyperparameter['discounted_rate'] = 0.99
+        self.hyperparameter['polyak'] = 0.995
         self.hyperparameter['actor_update_period'] = 2
+        self.hyperparameter.load()
+        self.actor = MLPGaussianActorManuSTD(state_dim, action_dim, actor_mlp_hidden_layer, torch.nn.Tanh,
+                                             output_action=torch.nn.Tanh, std_init=.1, std_decay=1.,
+                                             mu_output_shrink=action_max)
+        self.critic = MLPCritic(state_dim, action_dim, critic_mlp_hidden_layer, torch.nn.Tanh)
+        self.critic_2 = MLPCritic(state_dim, action_dim, critic_mlp_hidden_layer, torch.nn.Tanh)
+        self.load()
+        self.critic_main_1 = copy.deepcopy(self.critic)
+        self.critic_main_2 = copy.deepcopy(self.critic_2)
+        self.actor_main = copy.deepcopy(self.actor)
         self.state_dim = state_dim
         self.action_dim = action_dim
-        self.min_action = min_action
-        self.max_action = max_action
+        self.action_min = action_min
+        self.action_max = action_max
         self.critic_main_1_loss = torch.nn.MSELoss()
         self.critic_main_2_loss = torch.nn.MSELoss()
-        self.critic_1 = self.critic
-        self.critic_2 = MLPCritic(state_dim, action_dim) if (self.critic_2 is None) else self.critic_2
-
-        self.critic_main_1 = self.critic_main
-        self.critic_main_2 = copy.deepcopy(self.critic_2)
-
-        self.critic_main_1_optimizer = self.critic_main_optimizer
-        self.critic_main_2_optimizer = torch.optim.SGD(self.critic_main_2.parameters(),
+        self.actor_main_optimizer = torch.optim.Adam(self.actor_main.parameters(),
+                                                     lr=self.hyperparameter['actor_main_lr'])
+        self.critic_main_1_optimizer = torch.optim.Adam(self.critic_main_1.parameters(),
+                                                        lr=self.hyperparameter['critic_main_lr'])
+        self.critic_main_2_optimizer = torch.optim.Adam(self.critic_main_2.parameters(),
                                                         lr=self.hyperparameter['critic_main_lr'])
 
     def save(self, epoch_num):
@@ -36,6 +47,15 @@ class TD3_Agent(DDPG_Agent):
         if self.model_name_ is not None:
             critic_module_path = os.path.join(self.path, self.model_name_) + '_critic_2.pt'
             self.critic_2 = torch.load(critic_module_path, map_location=torch.device('cpu'))
+
+    def reaction(self, state: np.ndarray) -> (np.ndarray, np.ndarray, np.ndarray):
+        state_tensor = torch.as_tensor(state, dtype=torch.float32)
+        with torch.no_grad():
+            self.actor_main.to('cpu')
+            mu, std = self.actor_main(state_tensor)
+            mu = mu.cpu().numpy()
+            action = np.random.normal(mu, std)
+            return action, mu, std
 
     def update_actor_critic(self, epoch_num: int, data: DataBuffer, update_time: int, device: str,
                             log_writer: SummaryWriter):
@@ -50,25 +70,25 @@ class TD3_Agent(DDPG_Agent):
 
         self.actor.to(device)
         self.actor_main.to(device)
-        self.critic_1.to(device)
+        self.critic.to(device)
         self.critic_main_1.to(device)
         self.critic_2.to(device)
         self.critic_main_2.to(device)
         i = 0
         average_residual_1 = 0
         average_residual_2 = 0
-        while i < update_time:
+        for i in range(update_time):
             start_ptr = i * batch_size
             end_ptr = (i + 1) * batch_size
             # update main networks
             with torch.no_grad():
-                new_action_tensor = self.actor(next_obs_tensor[start_ptr:end_ptr]) + \
+                new_action_tensor = self.actor(next_obs_tensor[start_ptr:end_ptr])[0] + \
                                     torch.as_tensor(np.random.normal(0, 0.1, [batch_size, self.action_dim]),
                                                     dtype=torch.float32).to(device)
-                new_action_tensor = torch.clip(new_action_tensor, min=self.min_action, max=self.max_action)
+                new_action_tensor = torch.clip(new_action_tensor, min=self.action_min, max=self.action_max)
                 value_target = reward_tensor[start_ptr:end_ptr] + \
                     gamma * (1 - termination_tensor[start_ptr:end_ptr]) * \
-                    torch.min(self.critic_1(next_obs_tensor[start_ptr:end_ptr], new_action_tensor),
+                    torch.min(self.critic(next_obs_tensor[start_ptr:end_ptr], new_action_tensor),
                               self.critic_2(next_obs_tensor[start_ptr:end_ptr], new_action_tensor))
             value_target.require_grad = False
             # update critic 1
@@ -88,21 +108,20 @@ class TD3_Agent(DDPG_Agent):
             average_residual_2 += critic_loss.item()
 
             if i % self.hyperparameter['actor_update_period'] == 0:
-                actor_output = self.actor_main(obs_tensor[start_ptr:end_ptr])
-                for p in self.critic_main.parameters():
+                actor_output,_ = self.actor_main(obs_tensor[start_ptr:end_ptr])
+                for p in self.critic_main_1.parameters():
                     p.requires_grad = False
                 q_value = self.critic_main_1(obs_tensor[start_ptr:end_ptr], actor_output)
                 average_q_value = - q_value.mean()
                 self.actor_main_optimizer.zero_grad()
                 average_q_value.backward()
                 self.actor_main_optimizer.step()
-                for p in self.critic_main.parameters():
+                for p in self.critic_main_1.parameters():
                     p.requires_grad = True
                 # update target
-                self.polyak_average(self.actor, self.actor_main, self.actor)
-                self.polyak_average(self.critic_1, self.critic_main_1, self.critic_1)
-                self.polyak_average(self.critic_2, self.critic_main_2, self.critic_2)
-            i += 1
+                polyak_average(self.actor, self.actor_main, self.hyperparameter['polyak'], self.actor)
+                polyak_average(self.critic, self.critic_main_1, self.hyperparameter['polyak'], self.critic)
+                polyak_average(self.critic_2, self.critic_main_2, self.hyperparameter['polyak'], self.critic_2)
 
         if epoch_num % 200 == 0:
             average_residual_1 /= update_time
@@ -117,17 +136,18 @@ class TD3_Agent(DDPG_Agent):
 
 
 class TD3_exp(DDPG_exp):
-    def __init__(self, env, state_dim, action_dim, agent: DDPG_Agent, buffer_size, log_path=None):
+    def __init__(self, env, state_dim, action_dim, agent, buffer_size, log_path):
         super(TD3_exp, self).__init__(env, state_dim, action_dim, agent, buffer_size, log_path)
 
 
 if __name__ == '__main__':
-    env_ = gym.make('HumanoidStandup-v2')
+    env_ = gym.make('Swimmer-v3')
     state_dim_ = env_.observation_space.shape[-1]
     action_dim_ = env_.action_space.shape[-1]
-    min_action_ = -0.4
-    max_action_ = 0.4
-    agent_ = TD3_Agent(state_dim_, action_dim_, min_action_, max_action_)
+    min_action_ = -1.
+    max_action_ = 1.
+    agent_ = TD3_Agent(state_dim_, action_dim_, [64, 64], [64, 64], min_action_, max_action_)
     experiment = TD3_exp(env_, state_dim_, action_dim_, agent_, 1000000, './data/log/')
-    experiment.play(round_num=1000000, trajectory_size_each_round=100)
+    experiment.play(round_num=1000000, trajectory_size_each_round=100, training_device='cpu',
+                    test_device='cpu', recording_period=2000)
     env_.close()

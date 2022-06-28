@@ -53,7 +53,7 @@ class Agent:
         self.start_epoch = 1
         self.path = path
         self.model_name_ = None
-        self.load()
+        self.hyperparameter = Hyperparameter(path)
 
     def reaction(self, state: np.ndarray):
         raise NotImplement
@@ -138,10 +138,10 @@ class RLExperiment:
             else:
                 current_state = new_state
 
-    def play(self, round_num: int):
+    def play(self, *args):
         raise NotImplement
 
-    def test(self, round_num: int, test_round_num: int, device='cpu'):
+    def test(self, round_num: int, test_round_num: int, device: str):
         env = self.env
         total_reward = 0.0
         total_steps = 0
@@ -165,3 +165,77 @@ class RLExperiment:
         return total_reward / test_round_num
 
 
+class MLPGaussianActor(Actor):
+    def __init__(self, state_dim, action_dim,
+                 hidden_layers_size: list,
+                 hidden_action_fc,
+                 output_action_fc: dict,
+                 mu_output_shrink,
+                 std_output_shrink):
+        """
+        :param state_dim:
+        :param action_dim:
+        :param hidden_layers_size:
+        :param hidden_action_fc:
+        :param output_action_fc: dict, {'mu':action, 'std':action}
+        """
+        super(MLPGaussianActor, self).__init__()
+        self.mu_output_shrink = mu_output_shrink
+        self.std_output_shrink = std_output_shrink
+        layers = [state_dim, *hidden_layers_size]
+        self.linear_mlp_stack = MLP(layers, hidden_action_fc)
+        self.mu_output = torch.nn.Linear(hidden_layers_size[-1], action_dim, output_action_fc['mu'])
+        self.std_output = torch.nn.Linear(hidden_layers_size[-1], action_dim, output_action_fc['std'])
+
+    def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
+        x = self.linear_mlp_stack(x)
+        mu = self.mu_output(x)
+        mu = mu * self.mu_output_shrink
+        std = self.std_output(x)
+        std = std * self.std_output_shrink
+        return mu, std
+
+
+class MLPGaussianActorManuSTD(Actor):
+    def __init__(self, state_dim, action_dim,
+                 hidden_layers_size: list,
+                 hidden_action, output_action,
+                 mu_output_shrink,
+                 std_init: float,
+                 std_decay: float):
+        """
+
+        :param state_dim:
+        :param action_dim:
+        :param hidden_layers_size:
+        :param hidden_action:
+        :param output_action:
+        :param std_init:
+        :param std_decay:
+        """
+        super(MLPGaussianActorManuSTD, self).__init__()
+        self.mu_output_shrink = mu_output_shrink
+        layers = [state_dim, *hidden_layers_size, action_dim]
+        self.linear_mlp_stack = MLP(layers,  hidden_action, output_action)
+        self.std = std_init
+        self.std_decay = std_decay
+
+    def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
+        mu = self.linear_mlp_stack(x)
+        mu = mu * self.mu_output_shrink
+        return mu,  self.std
+
+    def update_std(self):
+        self.std = self.std * self.std_decay
+
+
+class MLPCritic(Critic):
+    def __init__(self, state_dim: int, action_dim: int, hidden_layers_size: list, hidden_action):
+        super(MLPCritic, self).__init__()
+        layers = [state_dim+action_dim, *hidden_layers_size, 1]
+        self.linear_stack = MLP(layers, hidden_action)
+
+    def forward(self, obs: torch.Tensor, action: torch.Tensor):
+        x = torch.cat((obs, action), 1)
+        output = self.linear_stack(x)
+        return output

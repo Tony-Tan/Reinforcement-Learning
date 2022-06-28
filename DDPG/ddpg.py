@@ -1,3 +1,4 @@
+import numpy as np
 import torch.optim
 
 from core.rl_elements import *
@@ -6,87 +7,77 @@ import gym
 import copy
 
 
-class MLPCritic(Critic):
-    def __init__(self, input_state_size: int, input_action_size: int):
-        super(MLPCritic, self).__init__()
+# class MLPCritic(Critic):
+#     def __init__(self, input_state_size: int, input_action_size: int):
+#         super(MLPCritic, self).__init__()
+#
+#         self.linear_stack = nn.Sequential(
+#             nn.Linear(input_state_size + input_action_size, 256),
+#             nn.Tanh(),
+#             nn.Linear(256, 256),
+#             nn.Tanh(),
+#             nn.Linear(256, 1)
+#         )
+#
+#     def forward(self, obs: torch.Tensor, action: torch.Tensor):
+#         x = torch.cat((obs, action), 1)
+#         value = self.linear_stack(x)
+#         return value
 
-        self.linear_stack = nn.Sequential(
-            nn.Linear(input_state_size + input_action_size, 256),
-            nn.Tanh(),
-            nn.Linear(256, 256),
-            nn.Tanh(),
-            nn.Linear(256, 1)
-        )
 
-    def forward(self, obs: torch.Tensor, action: torch.Tensor):
-        x = torch.cat((obs, action), 1)
-        value = self.linear_stack(x)
-        return value
-
-
-class GaussianActor(Actor):
-    def __init__(self, state_dim, action_dim, std_init):
-        super(GaussianActor, self).__init__()
-        self.std = std_init * np.ones(action_dim, dtype=np.float32)
-        self.linear_mlp_stack = nn.Sequential(
-            nn.Linear(state_dim, 256),
-            nn.Tanh(),
-            nn.Linear(256, 256),
-            nn.Tanh(),
-            nn.Linear(256, action_dim),
-            nn.Tanh()
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        mu = self.linear_mlp_stack(x) * 0.4
-        return mu
-
-    def distribution(self, x: torch.Tensor) -> (np.ndarray, np.ndarray):
-        with torch.no_grad():
-            mu = self.forward(x).cpu().numpy()
-        return mu, self.std
+# class GaussianActor(Actor):
+#     def __init__(self, state_dim, action_dim, std_init):
+#         super(GaussianActor, self).__init__()
+#         self.std = std_init * np.ones(action_dim, dtype=np.float32)
+#         self.linear_mlp_stack = nn.Sequential(
+#             nn.Linear(state_dim, 256),
+#             nn.Tanh(),
+#             nn.Linear(256, 256),
+#             nn.Tanh(),
+#             nn.Linear(256, action_dim),
+#             nn.Tanh()
+#         )
+#
+#     def forward(self, x: torch.Tensor) -> torch.Tensor:
+#         mu = self.linear_mlp_stack(x) * 0.4
+#         return mu
+#
+#     def distribution(self, x: torch.Tensor) -> (np.ndarray, np.ndarray):
+#         with torch.no_grad():
+#             mu = self.forward(x).cpu().numpy()
+#         return mu, self.std
 
 
 class DDPG_Agent(Agent):
-    def __init__(self, state_dim, action_dim, agent_name='DDPG', path='./data/models'):
-        self.hyperparameter = Hyperparameter(path)
+    def __init__(self, state_dim, action_dim, actor_mlp_hidden_layer, critic_mlp_hidden_layer, path='./data/models'):
+        super(DDPG_Agent, self).__init__('DDPG', path)
         self.hyperparameter['batch_size'] = 100
         self.hyperparameter['actor_main_lr'] = 1e-3
         self.hyperparameter['critic_main_lr'] = 1e-3
         self.hyperparameter['discounted_rate'] = 0.99
         self.hyperparameter['polyak'] = 0.995
         self.hyperparameter.load()
-        super(DDPG_Agent, self).__init__(agent_name, path)
-        self.actor = GaussianActor(state_dim, action_dim, .1) if (self.actor is None) else self.actor
-        self.critic = MLPCritic(state_dim, action_dim) if (self.critic is None) else self.critic
+        self.actor = MLPGaussianActorManuSTD(state_dim, action_dim, actor_mlp_hidden_layer, torch.nn.Tanh,
+                                             output_action=torch.nn.Tanh,mu_output_shrink=0.4, std_init=.1, std_decay=1.)
+        self.critic = MLPCritic(state_dim, action_dim, critic_mlp_hidden_layer, torch.nn.Tanh)
+        self.load()
+
         self.actor_main = copy.deepcopy(self.actor)
         self.critic_main = copy.deepcopy(self.critic)
         self.critic_main_loss = torch.nn.MSELoss()
-        self.critic_main_optimizer = torch.optim.SGD(self.critic_main.parameters(),
+        self.critic_main_optimizer = torch.optim.Adam(self.critic_main.parameters(),
                                                       lr=self.hyperparameter['critic_main_lr'])
-        self.actor_main_optimizer = torch.optim.SGD(self.actor_main.parameters(),
+        self.actor_main_optimizer = torch.optim.Adam(self.actor_main.parameters(),
                                                      lr=self.hyperparameter['actor_main_lr'])
 
-    def reaction(self, state: np.ndarray):
+    def reaction(self, state: np.ndarray) -> (np.ndarray, np.ndarray, np.ndarray):
         state_tensor = torch.as_tensor(state, dtype=torch.float32)
         with torch.no_grad():
             self.actor_main.to('cpu')
-            mu, std = self.actor_main.distribution(state_tensor)
+            mu, std = self.actor_main(state_tensor)
+            mu = mu.cpu().numpy()
             action = np.random.normal(mu, std)
             return action, mu, std
-
-    def polyak_average(self, model1, model2, dist_model):
-        beta = self.hyperparameter['polyak']
-        params1 = model1.named_parameters()
-        params2 = model2.named_parameters()
-
-        dict_params2 = dict(params2)
-
-        for name1, param1 in params1:
-            if name1 in dict_params2:
-                dict_params2[name1].data.copy_(beta * param1.data + (1 - beta) * dict_params2[name1].data)
-
-        dist_model.load_state_dict(dict_params2)
 
     def update_actor_critic(self, epoch_num: int, data: DataBuffer, update_time: int, device: str,
                             log_writer: SummaryWriter):
@@ -109,7 +100,7 @@ class DDPG_Agent(Agent):
             end_ptr = (i + 1) * batch_size
             # update main networks
             with torch.no_grad():
-                new_action_tensor = self.actor(next_obs_tensor[start_ptr:end_ptr])
+                new_action_tensor, _ = self.actor(next_obs_tensor[start_ptr:end_ptr])
                 value_target = reward_tensor[start_ptr:end_ptr] + \
                     gamma * (1 - termination_tensor[start_ptr:end_ptr]) * \
                     self.critic(next_obs_tensor[start_ptr:end_ptr], new_action_tensor)
@@ -122,7 +113,7 @@ class DDPG_Agent(Agent):
             self.critic_main_optimizer.step()
             average_residual += critic_loss.item()
 
-            actor_output = self.actor_main(obs_tensor[start_ptr:end_ptr])
+            actor_output, _ = self.actor_main(obs_tensor[start_ptr:end_ptr])
             for p in self.critic_main.parameters():
                 p.requires_grad = False
             q_value = self.critic_main(obs_tensor[start_ptr:end_ptr], actor_output)
@@ -133,8 +124,8 @@ class DDPG_Agent(Agent):
             for p in self.critic_main.parameters():
                 p.requires_grad = True
             # update target
-            self.polyak_average(self.actor, self.actor_main, self.actor)
-            self.polyak_average(self.critic, self.critic_main, self.critic)
+            polyak_average(self.actor, self.actor_main, self.hyperparameter['polyak'], self.actor)
+            polyak_average(self.critic, self.critic_main, self.hyperparameter['polyak'], self.critic)
             i += 1
 
         if epoch_num % 200 == 0:
@@ -147,7 +138,7 @@ class DDPG_Agent(Agent):
 
 
 class DDPG_exp(RLExperiment):
-    def __init__(self, env, state_dim, action_dim, agent: DDPG_Agent, buffer_size, log_path=None):
+    def __init__(self, env, state_dim, action_dim, agent: Agent, buffer_size, log_path=None):
         buffer_template = {'obs': state_dim, 'action': action_dim,
                            'next_obs': state_dim, 'reward': 0, 'termination': 0}
         super(DDPG_exp, self).__init__(env, 0.99, agent, buffer_size, buffer_template, log_path)
@@ -160,11 +151,11 @@ class DDPG_exp(RLExperiment):
 
     def generate_trajectories(self, trajectory_size: int):
         # current_state = self.env.reset()
-        if self.buffer['termination'][self.buffer.ptr-1]:
+        if self.buffer['termination'][self.buffer.ptr - 1]:
             current_state = self.env.reset()
             current_state = np.float32((current_state - self.state_mean) / self.state_std)
         else:
-            current_state = self.buffer['next_obs'][self.buffer.ptr-1]
+            current_state = self.buffer['next_obs'][self.buffer.ptr - 1]
         # current_state = np.float32((current_state - self.state_mean) / self.state_std)
         for _ in range(trajectory_size):
             # current_state = np.float32(current_state)
@@ -183,7 +174,7 @@ class DDPG_exp(RLExperiment):
     def fill_buffer(self, rate):
         current_state = self.env.reset()
         current_state = np.float32((current_state - self.state_mean) / self.state_std)
-        for _ in range(int(self.buffer.max_size*rate)):
+        for _ in range(int(self.buffer.max_size * rate)):
             action = self.env.action_space.sample()
             new_state, reward, is_done, _ = self.env.step(action)
             new_state = np.float32((new_state - self.state_mean) / self.state_std)
@@ -237,7 +228,7 @@ class DDPG_exp(RLExperiment):
             np.save(reward_std_path, self.reward_std)
             print('state reward info saved!')
 
-    def test(self, round_num: int, test_round_num: int, device='cpu'):
+    def test(self, round_num: int, test_round_num: int, device):
         env = copy.deepcopy(self.env)
         total_reward = 0.0
         total_steps = 0
@@ -248,7 +239,8 @@ class DDPG_exp(RLExperiment):
             while True:
                 obs = np.float32((obs - self.state_mean) / self.state_std)
                 obs_tensor = torch.as_tensor(obs, dtype=torch.float32).to(device)
-                action = self.agent.actor(obs_tensor).detach().numpy()
+                mu, std = self.agent.actor(obs_tensor)
+                action = mu.detach().numpy()
                 obs, reward, done, _ = env.step(action)
                 total_reward += reward
                 total_steps += 1
@@ -261,19 +253,19 @@ class DDPG_exp(RLExperiment):
         self.exp_log_writer.add_scalar('step', total_steps / test_round_num, round_num)
         return total_reward / test_round_num
 
-    def play(self, round_num=1000000, trajectory_size_each_round=100):
+    def play(self, round_num, trajectory_size_each_round, training_device, test_device, recording_period):
         start_round_num = self.agent.start_epoch
         print_time()
         self.fill_buffer(0.01)
-        self.generate_trajectories(int(round_num*0.1))
+        self.generate_trajectories(int(round_num * 0.1))
         for round_i in range(start_round_num, round_num):
             self.generate_trajectories(trajectory_size_each_round)
             # with profile(activities=[ProfilerActivity.CPU], record_shapes=True) as prof:
-            self.agent.update_actor_critic(round_i, self.buffer, 100, 'cpu', self.exp_log_writer)
+            self.agent.update_actor_critic(round_i, self.buffer, 100, training_device, self.exp_log_writer)
             # print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=100))
 
-            if round_i % 1000 == 0:
-                self.test(round_i, 100, 'cpu')
+            if round_i % recording_period == 0:
+                self.test(round_i, 100, test_device)
                 self.agent.save(round_i)
                 self.exp_log_writer.add_scalars('lr', {'value': self.agent.hyperparameter['critic_main_lr'],
                                                        'policy': self.agent.hyperparameter['actor_main_lr']}, round_i)
@@ -283,7 +275,8 @@ if __name__ == '__main__':
     env_ = gym.make('HumanoidStandup-v2')
     state_dim_ = env_.observation_space.shape[-1]
     action_dim_ = env_.action_space.shape[-1]
-    agent = DDPG_Agent(state_dim_, action_dim_)
-    experiment = DDPG_exp(env_, state_dim_, action_dim_, agent, 1000000, './data/log/')
-    experiment.play(round_num=1000000, trajectory_size_each_round=100)
+    agent_ = DDPG_Agent(state_dim_, action_dim_, [256, 256], [256, 256])
+    experiment = DDPG_exp(env_, state_dim_, action_dim_, agent_, 1000000, './data/log/')
+    experiment.play(round_num=1000000, trajectory_size_each_round=100, training_device='cuda',
+                    test_device='cpu', recording_period=2000)
     env_.close()
