@@ -1,1 +1,0 @@
-{"batch_size": 100, "actor_main_lr": 0.001, "critic_main_lr": 0.001, "discounted_rate": 0.99, "polyak": 0.995}

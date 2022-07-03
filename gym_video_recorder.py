@@ -13,7 +13,7 @@ import os
 import cv2
 
 device = 'cpu'
-env_name = 'HumanoidStandup-v2'
+env_name = 'Walker2d-v3'
 
 if __name__ == "__main__":
     test_times = 100
@@ -21,12 +21,13 @@ if __name__ == "__main__":
     model_list.sort()
     epoch = 2000
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Be sure to use the lower case
-    out = cv2.VideoWriter('./data/exp/' + env_name + '.mp4', fourcc, 20.0, (2048, 2048))
+    out = cv2.VideoWriter('DDPG/data/exp/' + env_name + '.mp4', fourcc, 20.0, (2048, 2048))
     env_ = gym.make(env_name)
     state_dim_ = env_.observation_space.shape[-1]
     action_dim_ = env_.action_space.shape[-1]
-    agent = DDPG_Agent(state_dim_, action_dim_)
-    experiment = DDPG_exp(env_, state_dim_, action_dim_, agent, 1)
+    agent = DDPG_Agent(state_dim_, action_dim_, [64, 64], [64, 64],  './DDPG/data/models')
+    experiment = DDPG_exp(env_, state_dim_, action_dim_, agent, 1, True,
+                         log_path='DDPG/data/log', env_data_path='DDPG/data')
     for name in model_list:
         if '.pt' in name and '_actor' in name:
             epoch += 2000
@@ -41,10 +42,13 @@ if __name__ == "__main__":
             for i in range(test_times):
                 obs = env_.reset()
                 while True:
-                    x_tensor = torch.tensor(((obs - experiment.state_mean) / experiment.state_std), dtype=torch.float32)
-                    # x_tensor = (obs - experiment.state_mean) / experiment.state_std
+                    if experiment.normalize:
+                        x_tensor = torch.tensor(((obs - experiment.state_mean) / experiment.state_std), dtype=torch.float32)
+                    else:
+                        x_tensor = torch.as_tensor(obs,dtype=torch.float32)
                     agent.actor.eval()
-                    mu = agent.actor(x_tensor)
+                    # mu = agent.actor(x_tensor)
+                    mu = agent.actor(x_tensor)[0]
                     action = mu.detach().cpu().numpy()
                     obs, reward, done, _ = env_.step(action)
                     # print(obs)
@@ -57,8 +61,11 @@ if __name__ == "__main__":
             obs = env_.reset()
             done = False
             while not done:
-                x_tensor = torch.tensor(((obs - experiment.state_mean) / experiment.state_std), dtype=torch.float32)
-                mu = agent.actor(x_tensor)
+                if experiment.normalize:
+                    x_tensor = torch.tensor(((obs - experiment.state_mean) / experiment.state_std), dtype=torch.float32)
+                else:
+                    x_tensor = torch.as_tensor(obs, dtype=torch.float32)
+                mu = agent.actor(x_tensor)[0]
                 action = mu.detach().cpu().numpy()
                 obs, reward, done, _ = env_.step(action)
                 screen = env_.render(mode='rgb_array')
