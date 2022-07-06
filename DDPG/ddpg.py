@@ -21,7 +21,7 @@ class DDPG_Agent(Agent):
         self.action_max = action_max
         self.actor = MLPGaussianActorManuSTD(state_dim, action_dim, actor_mlp_hidden_layer, torch.nn.Tanh,
                                              output_action=torch.nn.Tanh, mu_output_shrink=1, std_init=.1, std_decay=1.)
-        self.critic = MLPCritic(state_dim, action_dim, critic_mlp_hidden_layer, torch.nn.Tanh)
+        self.critic = MLPCritic(state_dim, action_dim, critic_mlp_hidden_layer, torch.nn.ReLU)
         self.load()
 
         self.actor_tar = copy.deepcopy(self.actor)
@@ -57,6 +57,7 @@ class DDPG_Agent(Agent):
         self.critic_tar.to(device)
         i = 0
         average_residual = 0
+        policy_loss = 0
         while i < update_time:
             start_ptr = i * batch_size
             end_ptr = (i + 1) * batch_size
@@ -85,6 +86,7 @@ class DDPG_Agent(Agent):
             self.actor_optimizer.step()
             for p in self.critic.parameters():
                 p.requires_grad = True
+            policy_loss += average_q_value.item()
             # update target
             polyak_average(self.actor_tar, self.actor, self.hyperparameter['polyak'], self.actor_tar)
             polyak_average(self.critic_tar, self.critic, self.hyperparameter['polyak'], self.critic_tar)
@@ -95,8 +97,10 @@ class DDPG_Agent(Agent):
             print_time()
             print('\t\t regression state value for advantage; epoch: ' + str(epoch_num))
             print('\t\t value loss: ' + str(average_residual))
+            print('\t\t policy loss: ' + str(policy_loss))
             print('-----------------------------------------------------------------')
-            log_writer.add_scalar('value loss', average_residual, epoch_num)
+            log_writer.add_scalar('loss/value_loss', average_residual, epoch_num)
+            log_writer.add_scalar('loss/policy_loss', policy_loss, epoch_num)
 
 
 class DDPG_exp(RLExperiment):
@@ -116,6 +120,7 @@ class DDPG_exp(RLExperiment):
 
     def generate_trajectories(self, trajectory_size: int, random_action=False):
         # current_state = self.env.reset()
+        self.agent.actor.to('cpu')
         if self.buffer.ptr == 0 and not self.buffer.buffer_full_filled:
             current_state = self.env.reset()
         else:
@@ -215,12 +220,13 @@ class DDPG_exp(RLExperiment):
     def play(self, round_num, trajectory_size_each_round, training_device, test_device, recording_period):
         start_round_num = self.agent.start_epoch
         print_time()
-        self.generate_trajectories(int(round_num * 0.01), random_action=True)
-        self.generate_trajectories(int(round_num * 0.01))
+        self.generate_trajectories(int(10000), random_action=True)
+        self.generate_trajectories(int(10000))
         for round_i in range(start_round_num, round_num):
             self.generate_trajectories(trajectory_size_each_round)
             # with profile(activities=[ProfilerActivity.CPU], record_shapes=True) as prof:
-            self.agent.update_actor_critic(round_i, self.buffer, 100, training_device, self.exp_log_writer)
+            self.agent.update_actor_critic(round_i, self.buffer, trajectory_size_each_round,
+                                           training_device, self.exp_log_writer)
             # print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=100))
 
             if round_i % recording_period == 0:
@@ -231,10 +237,10 @@ class DDPG_exp(RLExperiment):
 
 
 if __name__ == '__main__':
-    env_ = gym.make('Walker2d-v3')
+    env_ = gym.make('InvertedDoublePendulum-v2')
     state_dim_ = env_.observation_space.shape[-1]
     action_dim_ = env_.action_space.shape[-1]
-    agent_ = DDPG_Agent(state_dim_, action_dim_, [64, 64], [64, 64], action_min = -1,action_max=1)
+    agent_ = DDPG_Agent(state_dim_, action_dim_, [64, 64], [64, 64], action_min=-1, action_max=1)
     experiment = DDPG_exp(env_, state_dim_, action_dim_, agent_, 1000000, True, './data/log/')
     experiment.play(round_num=1000000, trajectory_size_each_round=100, training_device='cpu',
                     test_device='cpu', recording_period=2000)

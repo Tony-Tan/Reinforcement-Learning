@@ -75,6 +75,7 @@ class TD3_Agent(Agent):
         self.critic_tar_2.to(device)
         average_residual_1 = 0
         average_residual_2 = 0
+        policy_loss_item = 0
         for i in range(update_time):
             start_ptr = i * batch_size
             end_ptr = (i + 1) * batch_size
@@ -120,6 +121,7 @@ class TD3_Agent(Agent):
                 self.actor_optimizer.zero_grad()
                 average_q_value.backward()
                 self.actor_optimizer.step()
+                policy_loss_item += average_q_value.item()
                 for p in self.critic.parameters():
                     p.requires_grad = True
                 # update target
@@ -134,9 +136,11 @@ class TD3_Agent(Agent):
             print('\t\t regression state value for advantage; epoch: ' + str(epoch_num))
             print('\t\t value loss for critic_1: ' + str(average_residual_1))
             print('\t\t value loss for critic_2: ' + str(average_residual_2))
+            print('\t\t policy loss: ' + str(policy_loss_item))
             print('-----------------------------------------------------------------')
-            log_writer.add_scalars('value loss', {'q_1': average_residual_1,
+            log_writer.add_scalars('loss/value_loss', {'q_1': average_residual_1,
                                                   'q_2': average_residual_2}, epoch_num)
+            log_writer.add_scalar('loss/policy_loss', policy_loss_item, epoch_num)
 
 
 class TD3_exp(DDPG_exp):

@@ -9,14 +9,23 @@ class SAC_Agent(DDPG_Agent):
     def __init__(self, state_dim, action_dim, actor_mlp_hidden_layer, critic_mlp_hidden_layer,
                  action_min, action_max, path='./data/models'):
         super(SAC_Agent, self).__init__(state_dim, action_dim, actor_mlp_hidden_layer, critic_mlp_hidden_layer,
-                                        action_min, action_max, 'TD3_Agent', path=path)
+                                        action_min, action_max, 'SAC', path=path)
+        self.hyperparameter['heat'] = 0.2
+        self.hyperparameter['actor_main_lr'] = 1e-3
+        self.hyperparameter['critic_main_lr'] = 1e-3
         if isinstance(self.actor, MLPGaussianActorManuSTD):
             self.actor = MLPGaussianActorSquashing(state_dim, action_dim, actor_mlp_hidden_layer,
-                                                   hidden_action_fc=torch.nn.Tanh,
-                                                   output_action_fc={'mu': torch.nn.Tanh, 'std': torch.nn.Sigmoid})
-        self.critic_2 = MLPCritic(state_dim, action_dim, critic_mlp_hidden_layer, torch.nn.Tanh)
-        self.hyperparameter['actor_update_period'] = 2
-        self.hyperparameter['heat'] = 0.
+                                                   hidden_action_fc=torch.nn.ReLU)
+            self.critic = MLPCritic(state_dim, action_dim, critic_mlp_hidden_layer, torch.nn.ReLU)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(),
+                                                lr=self.hyperparameter['actor_main_lr'])
+
+        self.critic_tar = copy.deepcopy(self.critic)
+        self.critic_loss = torch.nn.MSELoss()
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(),
+                                                 lr=self.hyperparameter['critic_main_lr'])
+
+        self.critic_2 = MLPCritic(state_dim, action_dim, critic_mlp_hidden_layer, torch.nn.ReLU)
         self.critic_2_loss = torch.nn.MSELoss()
         self.critic_tar_2 = copy.deepcopy(self.critic_2)
         self.critic_2_optimizer = torch.optim.Adam(self.critic_2.parameters(),
@@ -58,17 +67,16 @@ class SAC_Agent(DDPG_Agent):
         self.critic_tar_2.to(device)
         average_residual_1 = 0
         average_residual_2 = 0
+        policy_loss_item = 0
         for i in range(update_time):
             start_ptr = i * batch_size
             end_ptr = (i + 1) * batch_size
             # update main networks
             with torch.no_grad():
                 action, log_pro = self.actor.act_logpro(next_obs_tensor[start_ptr:end_ptr])
-                new_action_tensor = torch.clip(action, min=self.action_min, max=self.action_max)
                 entropy = -log_pro
-                entropy = torch.mean(entropy, dim=1, keepdim=True)
-                q_value_1 = self.critic_tar(next_obs_tensor[start_ptr:end_ptr], new_action_tensor)
-                q_value_2 = self.critic_tar_2(next_obs_tensor[start_ptr:end_ptr], new_action_tensor)
+                q_value_1 = self.critic_tar(next_obs_tensor[start_ptr:end_ptr], action)
+                q_value_2 = self.critic_tar_2(next_obs_tensor[start_ptr:end_ptr], action)
                 min_q_value = torch.min(q_value_1, q_value_2)
                 termination_coe = 1. - termination_tensor[start_ptr:end_ptr]
                 value_target = reward_tensor[start_ptr:end_ptr] + \
@@ -93,18 +101,21 @@ class SAC_Agent(DDPG_Agent):
             # update actor
             actions, action_log_pro = self.actor.act_logpro(obs_tensor[start_ptr:end_ptr])
 
-            # actions_sample = action_noise * std + mu
             for p in self.critic.parameters():
                 p.requires_grad = False
             for p in self.critic_2.parameters():
                 p.requires_grad = False
+
             q_value_1 = self.critic(obs_tensor[start_ptr:end_ptr], actions)
             q_value_2 = self.critic_2(obs_tensor[start_ptr:end_ptr], actions)
             q_value = torch.min(q_value_1, q_value_2)
+
             loss = (self.hyperparameter['heat'] * action_log_pro - q_value).mean()
             self.actor_optimizer.zero_grad()
             loss.backward()
             self.actor_optimizer.step()
+            policy_loss_item = loss.item()
+
             for p in self.critic.parameters():
                 p.requires_grad = True
             for p in self.critic_2.parameters():
@@ -120,9 +131,11 @@ class SAC_Agent(DDPG_Agent):
             print('\t\t regression state value for advantage; epoch: ' + str(epoch_num))
             print('\t\t value loss for critic_1: ' + str(average_residual_1))
             print('\t\t value loss for critic_2: ' + str(average_residual_2))
+            print('\t\t policy loss : ' + str(policy_loss_item))
             print('-----------------------------------------------------------------')
-            log_writer.add_scalars('value loss', {'q_1': average_residual_1,
-                                                  'q_2': average_residual_2}, epoch_num)
+            log_writer.add_scalars('loss/value_loss', {'q_1': average_residual_1,
+                                                       'q_2': average_residual_2}, epoch_num)
+            log_writer.add_scalar('loss/policy_loss', policy_loss_item , epoch_num)
 
 
 class SAC_exp(DDPG_exp):
@@ -137,8 +150,6 @@ class SAC_exp(DDPG_exp):
         total_steps = 0
         self.agent.actor.eval()
         self.agent.actor.to(device)
-        std_array = []
-        mu_array = []
         for i in range(test_round_num):
             obs = env.reset()
             while True:
@@ -146,17 +157,12 @@ class SAC_exp(DDPG_exp):
                     obs = np.float32((obs - self.state_mean) / self.state_std)
                 obs_tensor = torch.as_tensor(obs, dtype=torch.float32).to(device)
                 with torch.no_grad():
-                    mu, std = self.agent.actor(obs_tensor)
                     action = self.agent.actor.act(obs_tensor, stochastically=False)
-                    std_array.append(std.item())
-                    mu_array.append(mu.item())
                 obs, reward, done, _ = env.step(action.cpu().numpy())
                 total_reward += reward
                 total_steps += 1
                 if done:
                     break
-        print(std_array)
-        print(mu_array)
         print("Episode done in %.2f steps, total reward %.2f" % (
             total_steps / test_round_num, total_reward / test_round_num))
         env.close()
@@ -171,7 +177,7 @@ if __name__ == '__main__':
     action_dim_ = env_.action_space.shape[-1]
     min_action_ = -1
     max_action_ = 1
-    agent_ = SAC_Agent(state_dim_, action_dim_, [64, 64], [64, 64], action_min=-1, action_max=1)
+    agent_ = SAC_Agent(state_dim_, action_dim_, [256, 256], [256, 256], action_min=-1, action_max=1)
     experiment = SAC_exp(env_, state_dim_, action_dim_, agent_, 1000000, False, './data/log/')
     experiment.play(round_num=1000000, trajectory_size_each_round=100, training_device='cpu',
                     test_device='cpu', recording_period=2000)

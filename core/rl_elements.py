@@ -175,8 +175,7 @@ class RLExperiment:
 class MLPGaussianActor(Actor):
     def __init__(self, state_dim, action_dim,
                  hidden_layers_size: list,
-                 hidden_action_fc,
-                 output_action_fc: dict):
+                 hidden_action_fc ):
         """
         :param state_dim:
         :param action_dim:
@@ -187,17 +186,15 @@ class MLPGaussianActor(Actor):
         super(MLPGaussianActor, self).__init__()
         layers = [state_dim, *hidden_layers_size]
         self.linear_mlp_stack = MLP(layers, hidden_action_fc, hidden_action_fc)
-        self.mu_output = torch.nn.Sequential(torch.nn.Linear(hidden_layers_size[-1], action_dim))
-        self.std_output = torch.nn.Sequential(torch.nn.Linear(hidden_layers_size[-1], action_dim),
-                                              torch.nn.Sigmoid())
+        self.mu_output = torch.nn.Linear(hidden_layers_size[-1], action_dim)
+        self.log_std_output = torch.nn.Linear(hidden_layers_size[-1], action_dim)
 
     def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
         x = self.linear_mlp_stack(x)
         mu = self.mu_output(x)
-        std = self.std_output(x)
-        # std = torch.clip(std, min=-20, max=-2.5)
-        # std = torch.exp(std)
-        std = std * 0.2
+        log_std = self.log_std_output(x)
+        log_std = torch.clamp(log_std, min=-20, max=2)
+        std = torch.exp(log_std)
         return mu, std
 
     def distribution(self, x: torch.Tensor):
@@ -206,7 +203,7 @@ class MLPGaussianActor(Actor):
     def act(self, x: torch.Tensor, stochastically=True):
         mu, std = self.forward(x)
         if stochastically:
-            return torch.randn_like(mu)*std+mu
+            return torch.randn_like(mu) * std + mu
         else:
             return mu
 
@@ -221,12 +218,10 @@ class MLPGaussianActor(Actor):
 class MLPGaussianActorSquashing(MLPGaussianActor):
     def __init__(self, state_dim, action_dim,
                  hidden_layers_size: list,
-                 hidden_action_fc,
-                 output_action_fc: dict
-                 ):
+                 hidden_action_fc):
         super(MLPGaussianActorSquashing,
               self).__init__(state_dim, action_dim,
-                             hidden_layers_size, hidden_action_fc, output_action_fc)
+                             hidden_layers_size, hidden_action_fc )
 
     def distribution(self, x: torch.Tensor):
         return self.forward(x)
@@ -238,10 +233,18 @@ class MLPGaussianActorSquashing(MLPGaussianActor):
     def act_logpro(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
         mu, std = self.forward(x)
         action_noise = torch.randn_like(mu)
-        actions = action_noise*std+mu
+        actions = action_noise * std + mu
         actions_squashing = torch.tanh(actions)
-        da_du = torch.sum(torch.log(1 - torch.tanh(actions) ** 2), dim=1, keepdim=True)
-        log_pro = LOG_GAUSSIAN_NORMAL_CONSTANT - torch.log(std) - 0.5 * action_noise * action_noise - da_du
+        # da_du = torch.sum(torch.log(1. - torch.tanh(actions) ** 2), dim=1, keepdim=True)
+        da_du = torch.sum(2*np.log(2) - 2 * torch.log(torch.exp(2 * actions + 1) - actions), dim=1, keepdim=True)
+
+        gaussian_normalize_0 = len(mu[-1])*LOG_GAUSSIAN_NORMAL_CONSTANT
+        gaussian_normalize_1 = 0.5 * torch.log((std * std).sum(dim=1, keepdim=True))
+        gaussian_exp = 0.5 * (action_noise * action_noise).sum(dim=1, keepdim=True)
+        log_pro = gaussian_normalize_0 - gaussian_normalize_1 - gaussian_exp - da_du
+        # log_pro = LOG_GAUSSIAN_NORMAL_CONSTANT - torch.log(std) - 0.5 * action_noise * action_noise
+        # log_pro -= torch.log((1 - actions_squashing * actions_squashing) + 1e-6)
+        # log_pro = log_pro.sum(1, keepdim=True)
         return actions_squashing, log_pro
 
     def act_pro(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
