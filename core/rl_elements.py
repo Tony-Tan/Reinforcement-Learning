@@ -1,3 +1,6 @@
+import copy
+
+import gym
 import numpy as np
 import torch
 import torch.nn as nn
@@ -11,25 +14,28 @@ LOG_GAUSSIAN_NORMAL_CONSTANT = np.log(GAUSSIAN_NORMAL_CONSTANT)
 
 
 class Actor(nn.Module):
-    def __init__(self):
+    def __init__(self, observation_space: gym.Space, action_space: gym.Space):
         super(Actor, self).__init__()
+        self.obs_dim = observation_space.shape[-1]
+        self.action_dim = action_space.shape[-1]
+        self.action_low = torch.tensor(np.array([i for i in action_space.low]), dtype=torch.float32)
+        self.action_high = torch.tensor(np.array([i for i in action_space.high]), dtype=torch.float32)
+        self.action_mean = torch.as_tensor((self.action_low + self.action_high) / 2.0, dtype=torch.float32)
+        self.action_radius = torch.as_tensor((self.action_high - self.action_low) / 2.0, dtype=torch.float32)
 
     def forward(self, x: torch.Tensor):
         raise NotImplement
 
-    def distribution(self, x: torch.Tensor):
-        raise NotImplement
-
-    def act(self, x: torch.Tensor, stochastically=True):
-        raise NotImplement
-
-    def act_pro(self, x: torch.Tensor) -> tuple:
+    def act(self, x: torch.Tensor, stochastically=True, with_log_pro=False):
         raise NotImplement
 
 
 class Critic(nn.Module):
-    def __init__(self):
+    def __init__(self, observation_space: gym.Space,
+                 action_space: gym.Space):
         super(Critic, self).__init__()
+        self.obs_dim = observation_space.shape[-1]
+        self.action_dim = action_space.shape[-1]
         pass
 
     def forward(self, *args):
@@ -54,50 +60,41 @@ class EnvModel:
 
 class Agent:
     def __init__(self, name: str, path='./data/models/'):
+
         self.agent_name = name
         self.actor = None
         self.critic = None
-        self.start_epoch = 1
+        self.start_epoch = 0
         self.path = path
-        self.model_name_ = None
-        self.hyperparameter = Hyperparameter(path)
+        # self.checkpoint={
+        #     'epoch': EPOCH,
+        #     'model_state_dict': net.state_dict(),
+        #     'optimizer_state_dict': optimizer.state_dict(),
+        #     'loss': LOSS,
+        #     }
+        self.checkpoint = {}
 
-    def reaction(self, state: np.ndarray):
+    def reaction(self, obs: np.ndarray):
         raise NotImplement
 
     def simulation(self):
         raise NotImplement
 
-    def save(self, epoch_num):
-        self.model_name_ = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        policy_module_path = os.path.join(self.path, self.model_name_) + '_actor.pt'
-        torch.save(self.actor, policy_module_path)
-        value_module_path = os.path.join(self.path, self.model_name_) + '_critic.pt'
-        torch.save(self.critic, value_module_path)
-        model_rec_file = open(os.path.join(self.path, 'last_models.txt'), 'w+')
-        model_rec_file.write(self.model_name_ + '\n')
-        model_rec_file.write(str(epoch_num) + '\n')
-        model_rec_file.close()
-        print('model saved! ')
+    def save(self, epoch: int):
+        raise NotImplement
 
-    def load(self, model_name=None):
-        self.model_name_ = model_name
-        if self.model_name_ is None:
-            model_name_file_path = os.path.join(self.path, 'last_models.txt')
-            if os.path.exists(model_name_file_path):
-                model_rec_file = open(model_name_file_path, 'r')
-                self.model_name_ = model_rec_file.readline().strip('\n')
-                self.start_epoch = int(model_rec_file.readline().strip('\n')) + 1
-                model_rec_file.close()
-            else:
-                return
-        actor_module_path = os.path.join(self.path, self.model_name_) + '_actor.pt'
-        self.actor = torch.load(actor_module_path, map_location=torch.device('cpu'))
-        critic_module_path = os.path.join(self.path, self.model_name_) + '_critic.pt'
-        self.critic = torch.load(critic_module_path, map_location=torch.device('cpu'))
-        print('================================================================')
-        print('model loaded: ' + self.model_name_)
-        print('================================================================')
+    def load(self):
+        """checkpoint = torch.load(PATH)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        epoch = checkpoint['epoch']
+        loss = checkpoint['loss']
+
+        model.eval()
+        # - or -
+        model.train()
+        """
+        raise NotImplement
 
     def update_actor(self, epoch_num: int, data: DataBuffer, device: str, log_writer: SummaryWriter):
         raise NotImplement
@@ -134,16 +131,16 @@ class RLExperiment:
             # step_num = self.buffer.max_size
             self.buffer.clean()
         step_num = 0
-        current_state = self.env.reset()
+        current_obs = self.env.reset()
         while step_num < total_step_num:
-            action = self.agent.actor.act(current_state)
-            new_state, reward, is_done, _ = self.env.step(action)
-            self.buffer.push([current_state, action, reward, is_done])
+            action = self.agent.actor.act(current_obs)
+            new_obs, reward, is_done, _ = self.env.step(action)
+            self.buffer.push([current_obs, action, reward, is_done])
             step_num += 1
             if is_done:
-                current_state = self.env.reset()
+                current_obs = self.env.reset()
             else:
-                current_state = new_state
+                current_obs = new_obs
 
     def play(self, *args):
         raise NotImplement
@@ -173,95 +170,94 @@ class RLExperiment:
 
 
 class MLPGaussianActor(Actor):
-    def __init__(self, state_dim, action_dim,
-                 hidden_layers_size: list,
-                 hidden_action_fc ):
+    def __init__(self, observation_space: gym.Space, action_space: gym.Space,
+                 hidden_layers_size: list, hidden_action_fc):
         """
-        :param state_dim:
+        :param obs_dim:
         :param action_dim:
         :param hidden_layers_size:
         :param hidden_action_fc:
         :param output_action_fc: dict, {'mu':action, 'std':action}
         """
-        super(MLPGaussianActor, self).__init__()
-        layers = [state_dim, *hidden_layers_size]
+        super(MLPGaussianActor, self).__init__(observation_space, action_space)
+        layers = [self.obs_dim, *hidden_layers_size]
         self.linear_mlp_stack = MLP(layers, hidden_action_fc, hidden_action_fc)
-        self.mu_output = torch.nn.Linear(hidden_layers_size[-1], action_dim)
-        self.log_std_output = torch.nn.Linear(hidden_layers_size[-1], action_dim)
+        self.mu_output = torch.nn.Linear(hidden_layers_size[-1], self.action_dim)
+        self.log_std_output = torch.nn.Linear(hidden_layers_size[-1], self.action_dim)
 
     def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
         x = self.linear_mlp_stack(x)
         mu = self.mu_output(x)
         log_std = self.log_std_output(x)
-        log_std = torch.clamp(log_std, min=-20, max=2)
+        log_std = torch.clamp(log_std, min=-10, max=2)
         std = torch.exp(log_std)
         return mu, std
 
-    def distribution(self, x: torch.Tensor):
-        return self.forward(x)
-
-    def act(self, x: torch.Tensor, stochastically=True):
+    def act(self, x: torch.Tensor, stochastically=True, with_log_pro=False):
+        device = x.device
+        self.action_mean = self.action_mean.to(device)
+        self.action_radius = self.action_radius.to(device)
+        self.action_low = self.action_low.to(device)
+        self.action_high = self.action_high.to(device)
         mu, std = self.forward(x)
+        mu = mu + self.action_mean
+        log_pro = torch.zeros(mu[0]).resize([-1, 1])
         if stochastically:
-            return torch.randn_like(mu) * std + mu
+            action = torch.randn_like(mu) * std + mu
+            action = torch.clamp(action, min=self.action_low, max=self.action_high)
+            if with_log_pro:
+                log_pro = LOG_GAUSSIAN_NORMAL_CONSTANT - torch.log(std) - \
+                          0.5 * (action-mu)*(action-mu).sum(axis=-1, keepdims=True)
+            return action, log_pro
         else:
-            return mu
-
-    def act_pro(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
-        mu, std = self.forward(x)
-        action_noise = torch.randn_like(mu)
-        actions = action_noise*std+mu
-        action_pro = GAUSSIAN_NORMAL_CONSTANT/std * torch.exp(-0.5 * action_noise*action_noise)
-        return actions, action_pro
+            return mu, log_pro
 
 
 class MLPGaussianActorSquashing(MLPGaussianActor):
-    def __init__(self, state_dim, action_dim,
+    def __init__(self, observation_space:gym.Space,
+                 action_space: gym.Space,
                  hidden_layers_size: list,
                  hidden_action_fc):
         super(MLPGaussianActorSquashing,
-              self).__init__(state_dim, action_dim,
-                             hidden_layers_size, hidden_action_fc )
+              self).__init__(observation_space, action_space,
+                             hidden_layers_size, hidden_action_fc)
 
-    def distribution(self, x: torch.Tensor):
-        return self.forward(x)
-
-    def act(self, x: torch.Tensor, stochastically=True):
-        action_raw = super(MLPGaussianActorSquashing, self).act(x, stochastically)
-        return torch.tanh(action_raw)
-
-    def act_logpro(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
+    def act(self, x: torch.Tensor, stochastically=True, with_log_pro=False):
         mu, std = self.forward(x)
-        action_noise = torch.randn_like(mu)
-        actions = action_noise * std + mu
-        actions_squashing = torch.tanh(actions)
-        # da_du = torch.sum(torch.log(1. - torch.tanh(actions) ** 2), dim=1, keepdim=True)
-        da_du = torch.sum(2*np.log(2) - 2 * torch.log(torch.exp(2 * actions + 1) - actions), dim=1, keepdim=True)
-
-        gaussian_normalize_0 = len(mu[-1])*LOG_GAUSSIAN_NORMAL_CONSTANT
-        gaussian_normalize_1 = 0.5 * torch.log((std * std).sum(dim=1, keepdim=True))
-        gaussian_exp = 0.5 * (action_noise * action_noise).sum(dim=1, keepdim=True)
-        log_pro = gaussian_normalize_0 - gaussian_normalize_1 - gaussian_exp - da_du
-        # log_pro = LOG_GAUSSIAN_NORMAL_CONSTANT - torch.log(std) - 0.5 * action_noise * action_noise
-        # log_pro -= torch.log((1 - actions_squashing * actions_squashing) + 1e-6)
-        # log_pro = log_pro.sum(1, keepdim=True)
-        return actions_squashing, log_pro
-
-    def act_pro(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
-        actions, log_pro = self.act_logpro(x)
-        return actions, torch.exp(log_pro)
+        log_pro = None
+        device = x.device
+        self.action_mean = self.action_mean.to(device)
+        if stochastically:
+            self.action_radius = self.action_radius.to(device)
+            action_noise = torch.randn_like(mu)
+            actions = action_noise * std + mu
+            actions_squashing = torch.tanh(actions) * self.action_radius + self.action_mean
+            if with_log_pro:
+                # da_du = torch.sum(torch.log(1. - torch.tanh(actions) ** 2), dim=1, keepdim=True)
+                da_du = torch.sum(2 * np.log(2) - 2 * torch.log(torch.exp(2 * actions + 1) - actions),
+                                  dim=1, keepdim=True)
+                gaussian_normalize_0 = len(mu[-1]) * LOG_GAUSSIAN_NORMAL_CONSTANT
+                gaussian_normalize_1 = 0.5 * torch.log((std * std).sum(dim=1, keepdim=True))
+                gaussian_exp = 0.5 * (action_noise * action_noise).sum(dim=1, keepdim=True)
+                log_pro = gaussian_normalize_0 - gaussian_normalize_1 - gaussian_exp - da_du
+                # log_pro = LOG_GAUSSIAN_NORMAL_CONSTANT - torch.log(std) - 0.5 * action_noise * action_noise
+                # log_pro -= torch.log((1 - actions_squashing * actions_squashing) + 1e-6)
+                # log_pro = log_pro.sum(1, keepdim=True)
+            return actions_squashing, log_pro
+        else:
+            return mu + self.action_mean, log_pro
 
 
 class MLPGaussianActorManuSTD(Actor):
-    def __init__(self, state_dim, action_dim,
+    def __init__(self, observation_space: gym.Space,
+                 action_space: gym.Space,
                  hidden_layers_size: list,
                  hidden_action, output_action,
-                 mu_output_shrink,
-                 std_init: float,
-                 std_decay: float):
+                 std_init=0.1,
+                 std_decay=1.0):
         """
 
-        :param state_dim:
+        :param obs_dim:
         :param action_dim:
         :param hidden_layers_size:
         :param hidden_action:
@@ -269,42 +265,44 @@ class MLPGaussianActorManuSTD(Actor):
         :param std_init:
         :param std_decay:
         """
-        super(MLPGaussianActorManuSTD, self).__init__()
-        self.mu_output_shrink = mu_output_shrink
-        layers = [state_dim, *hidden_layers_size, action_dim]
+        super(MLPGaussianActorManuSTD, self).__init__(observation_space, action_space)
+        layers = [self.obs_dim, *hidden_layers_size, self.action_dim]
         self.linear_mlp_stack = MLP(layers,  hidden_action, output_action)
-        self.std = std_init
+        self.std = torch.tensor(std_init, dtype=torch.float32)
         self.std_decay = std_decay
 
     def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
         mu = self.linear_mlp_stack(x)
-        mu = mu * self.mu_output_shrink
+        mu = mu
         return mu,  self.std
 
     def update_std(self):
         self.std = self.std * self.std_decay
 
-    def distribution(self, x: torch.Tensor):
-        return self.forward(x)
-
-    def act(self, x: torch.Tensor, stochastically=True):
+    def act(self, x: torch.Tensor, stochastically=True, with_log_pro=True):
         mu, std = self.forward(x)
+        mu = mu + self.action_mean
+        log_pro = torch.zeros_like(mu)
         if stochastically:
-            return torch.randn_like(mu) * std + mu
-        else:
-            return mu
+            action_noise = torch.randn_like(mu)
+            actions = action_noise * std + mu
+            action = torch.clamp(actions, min=self.action_mean - self.action_radius,
+                                 max=self.action_mean + self.action_radius)
+            if with_log_pro:
+                log_pro = LOG_GAUSSIAN_NORMAL_CONSTANT - np.log(std) - \
+                          0.5 * (action - mu) * (action - mu).sum(axis=-1, keepdims=True)
+            return action, log_pro
 
-    def act_pro(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
-        mu, std = self.forward(x)
-        actions = torch.randn_like(mu)*std+mu
-        action_pro = GAUSSIAN_NORMAL_CONSTANT/std * torch.exp(-0.5 * torch.pow((actions-mu)/std, 2))
-        return actions, action_pro
+        else:
+            return mu, log_pro
 
 
 class MLPCritic(Critic):
-    def __init__(self, state_dim: int, action_dim: int, hidden_layers_size: list, hidden_action):
-        super(MLPCritic, self).__init__()
-        layers = [state_dim+action_dim, *hidden_layers_size, 1]
+    def __init__(self, observation_space: gym.Space,
+                 action_space: gym.Space,
+                 hidden_layers_size: list, hidden_action):
+        super(MLPCritic, self).__init__(observation_space, action_space)
+        layers = [self.obs_dim + self.action_dim, *hidden_layers_size, 1]
         self.linear_stack = MLP(layers, hidden_action)
 
     def forward(self, obs: torch.Tensor, action: torch.Tensor):
