@@ -36,7 +36,6 @@ class Critic(nn.Module):
         super(Critic, self).__init__()
         self.obs_dim = observation_space.shape[-1]
         self.action_dim = action_space.shape[-1]
-        pass
 
     def forward(self, *args):
         raise NotImplement
@@ -279,19 +278,19 @@ class MLPGaussianActorManuSTD(Actor):
     def update_std(self):
         self.std = self.std * self.std_decay
 
-    def act(self, x: torch.Tensor, stochastically=True, with_log_pro=True):
+    def act(self, x: torch.Tensor, stochastically=True, with_log_pro=False):
         mu, std = self.forward(x)
-        mu = mu + self.action_mean
-        log_pro = torch.zeros_like(mu)
+        device = x.device
+        mu = mu + self.action_mean.to(device)
+        log_pro = None
         if stochastically:
             action_noise = torch.randn_like(mu)
             actions = action_noise * std + mu
-            action = torch.clamp(actions, min=self.action_mean - self.action_radius,
-                                 max=self.action_mean + self.action_radius)
+            actions = torch.clamp(actions, min=self.action_low.to(device), max=self.action_high.to(device))
             if with_log_pro:
                 log_pro = LOG_GAUSSIAN_NORMAL_CONSTANT - np.log(std) - \
-                          0.5 * (action - mu) * (action - mu).sum(axis=-1, keepdims=True)
-            return action, log_pro
+                          0.5 * (actions - mu) * (actions - mu).sum(axis=-1, keepdims=True)
+            return actions, log_pro
 
         else:
             return mu, log_pro
