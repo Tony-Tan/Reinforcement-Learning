@@ -16,7 +16,9 @@ parser.add_argument('--critic_hidden_layer', default=[400, 300], nargs='+', type
 parser.add_argument('--actor_hidden_layer', default=[400, 300], nargs='+', type=int,
                     help='acot hidden perceptron size')
 parser.add_argument('--critic_lr', default=1e-3, type=float, help='critic learning rate')
-parser.add_argument('--actor_lr', default=1e-3, type=float, help='actor learning rate')
+parser.add_argument('--actor_lr', default=1e-4, type=float, help='actor learning rate')
+parser.add_argument('--initialize_nn', default=True, type=bool,
+                    help='initialize networks to the range suggested by the paper')
 parser.add_argument('--batch_size', default=100, type=int, help='actor critic update batch_size')
 parser.add_argument('--discounted_rate', default=0.99, type=float,
                     help='episodic return discounted rate $\\gamma$ in the paper')
@@ -39,48 +41,49 @@ parser.add_argument('--experiment_log_path', default='./data/log', type=str,
                     help='experiment save path')
 args = parser.parse_args()
 
-
-class DDPGMLPCritic(Critic):
-    def __init__(self, observation_space: gym.Space,
-                 action_space: gym.Space,
-                 hidden_layers_size: list, hidden_action):
-
-        super(DDPGMLPCritic, self).__init__(observation_space, action_space)
-        self.Linear_1 = torch.nn.Linear(self.obs_dim, hidden_layers_size[0])
-        self.Linear_2 = torch.nn.Linear(self.action_dim+hidden_layers_size[0], hidden_layers_size[1])
-        self.Linear_3 = torch.nn.Linear(hidden_layers_size[1], 1)
-        self.hidden_action = hidden_action()
-
-    def forward(self, obs: torch.Tensor, action: torch.Tensor):
-        x_1 = self.Linear_1(obs)
-        x_2 = self.hidden_action(x_1)
-        x_3 = torch.cat((x_2, action), 1)
-        x_4 = self.Linear_2(x_3)
-        x_5 = self.hidden_action(x_4)
-        output = self.Linear_3(x_5)
-        return output
+#
+# class DDPGMLPCritic(Critic):
+#     def __init__(self, observation_space: gym.Space,
+#                  action_space: gym.Space,
+#                  hidden_layers_size: list, hidden_action):
+#
+#         super(DDPGMLPCritic, self).__init__(observation_space, action_space)
+#         self.Linear_1 = torch.nn.Linear(self.obs_dim, hidden_layers_size[0])
+#         self.Linear_2 = torch.nn.Linear(self.action_dim + hidden_layers_size[0], hidden_layers_size[1])
+#         self.Linear_3 = torch.nn.Linear(hidden_layers_size[1], 1)
+#         self.hidden_action = hidden_action()
+#
+#     def forward(self, obs: torch.Tensor, action: torch.Tensor):
+#         x_1 = self.Linear_1(obs)
+#         x_2 = self.hidden_action(x_1)
+#         x_3 = torch.cat((x_2, action), 1)
+#         x_4 = self.Linear_2(x_3)
+#         x_5 = self.hidden_action(x_4)
+#         output = self.Linear_3(x_5)
+#         return output
 
 
 class DDPG_Agent(Agent):
     def __init__(self, observation_space, action_space, actor_mlp_hidden_layer,
                  critic_mlp_hidden_layer, path='./data/models'):
         super(DDPG_Agent, self).__init__('DDPG', path)
-        self.actor = MLPGaussianActorManuSTD(observation_space, action_space, actor_mlp_hidden_layer, torch.nn.ReLU,
+        self.actor = MLPGaussianActorManuSTD(observation_space, action_space, actor_mlp_hidden_layer, torch.nn.Tanh,
                                              output_action=torch.nn.Tanh)
+        if args.initialize_nn:
+            def init_weights(m):
+                if isinstance(m, nn.Linear):
+                    m.weight.data.uniform_(-3e-3, 3e-3)
+                    m.bias.data.fill_(0.0001)
+            self.actor.apply(init_weights)
 
-        def init_weights(m):
-            if isinstance(m, nn.Linear):
-                m.weight.data.uniform_(-1e-3, 1e-3)
-                m.bias.data.fill_(0.0001)
-        self.actor.apply(init_weights)
-
-        self.critic = DDPGMLPCritic(observation_space, action_space, critic_mlp_hidden_layer, torch.nn.ReLU)
-
-        def init_weights(m):
-            if isinstance(m, nn.Linear):
-                m.weight.data.uniform_(-1e-4, 1e-4)
-                m.bias.data.fill_(0.0001)
-        self.critic.apply(init_weights)
+        # self.critic = DDPGMLPCritic(observation_space, action_space, critic_mlp_hidden_layer, torch.nn.ReLU)
+        self.critic = MLPCritic(observation_space, action_space, critic_mlp_hidden_layer, torch.nn.Tanh)
+        if args.initialize_nn:
+            def init_weights(m):
+                if isinstance(m, nn.Linear):
+                    m.weight.data.uniform_(-3e-4, 3e-4)
+                    m.bias.data.fill_(0.0001)
+            self.critic.apply(init_weights)
 
         self.actor_tar = copy.deepcopy(self.actor)
         self.critic_tar = copy.deepcopy(self.critic)
@@ -103,7 +106,8 @@ class DDPG_Agent(Agent):
 
     def load(self):
         if os.path.exists(self.path):
-            checkpoint = torch.load(self.path, map_location=torch.device(args.training_device))
+            checkpoint = torch.load(os.path.join(self.path, 'checkpoint.pt'),
+                                    map_location=torch.device(args.training_device))
             self.start_epoch = checkpoint['epoch']
 
             self.actor.load_state_dict(checkpoint['actor_state_dict'])
@@ -141,7 +145,7 @@ class DDPG_Agent(Agent):
             end_ptr = (i + 1) * batch_size
             # update main networks
             with torch.no_grad():
-                new_action_tensor, _ = self.actor_tar(next_obs_tensor[start_ptr:end_ptr])
+                new_action_tensor, _ = self.actor_tar.act(next_obs_tensor[start_ptr:end_ptr], stochastically=False)
                 value_target = reward_tensor[start_ptr:end_ptr] + \
                     gamma * (1 - termination_tensor[start_ptr:end_ptr]) * \
                     self.critic_tar(next_obs_tensor[start_ptr:end_ptr], new_action_tensor)
@@ -171,6 +175,7 @@ class DDPG_Agent(Agent):
 
         if epoch_num % 200 == 0:
             average_residual /= update_time
+            policy_loss /= update_time
             print_time()
             print('\t\t regression state value for advantage; epoch: ' + str(epoch_num))
             print('\t\t value loss: ' + str(average_residual))
@@ -189,6 +194,7 @@ class DDPG_exp(RLExperiment):
         # self.buffer = DataBuffer(buffer_size, data_template)
         # self.trajectory_size = buffer_size
         self.reward_std = None
+        self.reward_mean = None
         self.state_std = None
         self.state_mean = None
         self.normalize = normalize
@@ -219,7 +225,8 @@ class DDPG_exp(RLExperiment):
             new_state, reward, is_done, _ = self.env.step(action)
             if self.normalize:
                 new_state = np.float32((new_state - self.state_mean) / self.state_std)
-                self.buffer.push([current_state, action, new_state, reward / self.reward_std, is_done])
+                self.buffer.push([current_state, action, new_state,
+                                  (reward-self.reward_mean) / self.reward_std, is_done])
             else:
                 self.buffer.push([current_state, action, new_state, reward, is_done])
             if is_done:
@@ -237,39 +244,53 @@ class DDPG_exp(RLExperiment):
             self.state_std = np.load(state_std_path)
             reward_std_path = os.path.join(data_path, 'reward_std.npy')
             self.reward_std = np.load(reward_std_path)
+            reward_mean_path = os.path.join(data_path, 'reward_mean.npy')
+            self.reward_mean = np.load(reward_mean_path)
             print('data loaded .... ')
             print('state mean', self.state_mean)
             print('state std', self.state_std)
+            print('reward mean', self.reward_mean)
             print('reward std', self.reward_std)
         else:
             state_list = []
-            discount_return_list = []
+            reward_list = []
             for i in range(1000):
                 state = self.env.reset()
                 state_list.append(state)
-                total_reward = 0
+                # total_reward = 0
                 step_i = 0
                 while True:
                     random_action = self.env.action_space.sample()
                     new_state, reward, is_done, _ = self.env.step(random_action)
                     state_list.append(new_state)
-                    total_reward += np.power(self.gamma, step_i) * reward
+                    reward_list.append(reward)
                     step_i += 1
                     if is_done:
                         break
-                discount_return_list.append(total_reward)
             self.env.close()
-            reward_np = np.array(discount_return_list, dtype=np.float32)
+            reward_np = np.array(reward_list, dtype=np.float32)
             state_np = np.array(state_list, dtype=np.float32)
-            self.reward_std = np.std(reward_np) + 1e-5  # not be zero
+            self.reward_std = np.std(reward_np)
+            self.reward_std = 1. if self.reward_std <= 1. else self.reward_std
+            self.reward_mean = np.mean(reward_np)
             self.state_std = np.std(state_np, axis=0) + 1e-5  # not be zero
             self.state_mean = np.mean(state_np, axis=0)
             state_mean_path = os.path.join(data_path, 'state_mean.npy')
             np.save(state_mean_path, self.state_mean)
+            print('state mean:')
+            print(self.state_mean)
             state_std_path = os.path.join(data_path, 'state_std.npy')
             np.save(state_std_path, self.state_std)
+            print('state std:')
+            print(self.state_std)
+            reward_mean_path = os.path.join(data_path, 'reward_mean.npy')
+            np.save(reward_mean_path, self.reward_mean)
+            print('reward mean:')
+            print(self.reward_mean)
             reward_std_path = os.path.join(data_path, 'reward_std.npy')
             np.save(reward_std_path, self.reward_std)
+            print('reward std:')
+            print(self.reward_std)
             print('state reward info saved!')
 
     def test(self, round_num: int, test_round_num: int, device):

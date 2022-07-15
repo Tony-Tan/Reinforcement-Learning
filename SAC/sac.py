@@ -90,7 +90,8 @@ class SAC_Agent(Agent):
 
     def load(self):
         if os.path.exists(self.path):
-            checkpoint = torch.load(self.path, map_location=torch.device(args.training_device))
+            checkpoint = torch.load(os.path.join(self.path, 'checkpoint.pt')
+                                    , map_location=torch.device(args.training_device))
             self.start_epoch = checkpoint['epoch']
             self.actor.load_state_dict(checkpoint['actor_state_dict'])
             self.actor_optimizer.load_state_dict(checkpoint['actor_optimizer_state_dict'])
