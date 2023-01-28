@@ -19,11 +19,11 @@ Key papers in deep reinforcement learning suggested by [OpenAI spinningup](https
     - [ ] [Emergence of Locomotion Behaviours in Rich Environments](https://arxiv.org/abs/1707.02286), Heess et al, 2017. *Algorithm: PPO-Penalty.*
     - [ ] [Scalable trust-region method for deep reinforcement learning using Kronecker-factored approximation](https://arxiv.org/abs/1708.05144), Wu et al, 2017. *Algorithm: ACKTR.*
     - [ ] [Sample Efficient Actor-Critic with Experience Replay](https://arxiv.org/abs/1611.01224), Wang et al, 2016. *Algorithm: ACER.*
-    - [ ] [Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor](https://arxiv.org/abs/1801.01290), Haarnoja et al, 2018. *Algorithm: SAC.*
+    - [x] [Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor](https://arxiv.org/abs/1801.01290), Haarnoja et al, 2018. *Algorithm: SAC.*
 - Deterministic Policy Gradients
     - [ ] [Deterministic Policy Gradient Algorithms](http://proceedings.mlr.press/v32/silver14.pdf), Silver et al, 2014. *Algorithm: DPG.*
-    - [ ] [Continuous Control With Deep Reinforcement Learning](https://arxiv.org/abs/1509.02971), Lillicrap et al, 2015. *Algorithm: DDPG.*
-    - [ ] [Addressing Function Approximation Error in Actor-Critic Methods](https://arxiv.org/abs/1802.09477), Fujimoto et al, 2018. *Algorithm: TD3.*
+    - [x] [Continuous Control With Deep Reinforcement Learning](https://arxiv.org/abs/1509.02971), Lillicrap et al, 2015. *Algorithm: DDPG.*
+    - [x] [Addressing Function Approximation Error in Actor-Critic Methods](https://arxiv.org/abs/1802.09477), Fujimoto et al, 2018. *Algorithm: TD3.*
 
 - Distributional RL
     - [ ] [A Distributional Perspective on Reinforcement Learning](https://arxiv.org/abs/1707.06887), Bellemare et al, 2017. *Algorithm: C51.* 
