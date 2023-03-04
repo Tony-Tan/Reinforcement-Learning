@@ -1,5 +1,5 @@
 import gym
-import DQN.Network as Network
+import alg.Network as Network
 import cv2
 import torch
 import torch.optim as optim

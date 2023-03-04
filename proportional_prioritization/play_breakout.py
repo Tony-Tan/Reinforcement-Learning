@@ -1,5 +1,5 @@
 import gym
-import DQN.Network as Network
+import dqn.Network as Network
 import cv2
 import torch
 import numpy as np

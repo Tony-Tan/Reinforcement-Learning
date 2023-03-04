@@ -1,5 +1,5 @@
 import gym
-import DQN.Network as Network
+import dqn.Network as Network
 import cv2
 import torch
 import torch.optim as optim
@@ -12,7 +12,7 @@ import time
 import os
 import copy
 import torch.nn.functional as F
-from DQN.dqn import AgentDQN
+from dqn.alg import AgentDQN
 
 
 class AgentDoublePP(AgentDQN):

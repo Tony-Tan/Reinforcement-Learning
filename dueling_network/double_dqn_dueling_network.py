@@ -1,6 +1,6 @@
 import gym
 import random
-from DQN.dqn import AgentDQN
+from dqn.alg import AgentDQN
 import copy
 import dueling_network.Network as Network
 

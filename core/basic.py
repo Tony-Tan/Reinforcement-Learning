@@ -5,6 +5,17 @@ import time
 from core.exceptions import *
 import json
 import os
+import argparse
+
+
+def script_args(args_list: list, description: str):
+    parser = argparse.ArgumentParser(description=description)
+    for arg_i in args_list:
+        # '--actor_hidden_layer', default=[400, 300], nargs='+', type=int,
+        #                     help='acot hidden perceptron size'
+        parser.add_argument(arg_i[0], default=arg_i[1], type=arg_i[2], help=arg_i[3])
+    args = parser.parse_args()
+    return args
 
 
 def print_time():

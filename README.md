@@ -21,9 +21,9 @@ or follow my twitter:
 - 2001
     1. [A natural policy gradient](./trpo_npg)
 - 2013
-    1. [Playing Atari with Deep Reinforcement Learning](./DQN)
+    1. [Playing Atari with Deep Reinforcement Learning](./dqn)
 - 2015
-    1. [Human-level control through deep reinforcement learning](./DQN)
+    1. [Human-level control through deep reinforcement learning](./dqn)
     2. [Deep Reinforcement Learning with Double Q-learning](./double_DQN)
     3. [Trust Region Policy Optimization](./trpo_npg)
 - 2016
