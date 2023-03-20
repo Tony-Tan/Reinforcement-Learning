@@ -1,9 +1,7 @@
 from core.elements import *
 import gym
 import cv2
-import torch
 import torch.optim as optim
-import numpy as np
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 from collections import deque
@@ -33,7 +31,6 @@ args_list = [
     ['--epsilon_min', 0.001, float, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
     ['--epsilon_decay', 0.9999, float, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2']
 ]
-# epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.9999
 args = script_args(args_list, 'dqn training arguments')
 
 
@@ -112,10 +109,6 @@ class AgentDQN(Agent):
             os.mkdir(save_path)
         self.writer = SummaryWriter(self.save_path)
         self.model_path = self.save_path
-        # try:
-        #     self.load()
-        # except ModelFileNotFind as e:
-        #     print(e)
 
     def receive(self, data: list):
         self.memory.append(data)
@@ -137,10 +130,6 @@ class AgentDQN(Agent):
 
         gray_img = gray_img[args.input_frame_height - args.input_frame_width:args.input_frame_height,
                    0:args.input_frame_width]
-        # cv2.imshow('test', gray_img)
-        # cv2.waitKey(10)
-        # cv2.imshow('debug', gray_img)
-        # cv2.waitKey(0)
         gray_img = gray_img / 255. - 0.5
         return gray_img
 
@@ -271,7 +260,8 @@ class AgentDQN(Agent):
             self.update_steps += 1
             if self.update_steps % args.steps_c == 0:
                 self.synchronize_q_network()
-                print("\t\t"+str(self.update_steps) + "  steps, loss: " + str(loss.item()))
+            if self.update_steps % 1000 == 0:
+                print("\t\t" + str(self.update_steps) + "  steps, loss: " + str(loss.item()))
 
             self.epsilon = 1. - self.update_steps * 0.00000009
             self.epsilon = max(args.epsilon_min, self.epsilon)
@@ -288,37 +278,44 @@ class DQNPlayGround(PlayGround):
         self.agent.phi_reset()
         obs_raw = self.env.reset()
         self.phi_np = self.agent.phi_concat(obs_raw)
-        self.total_reward_recorder = 0
+        self.reward_recorder = 0
+        self.steps_recorder = 0
         self.last_episodic_reward = 0
+        self.last_episodic_steps = 0
 
     def __play_serially(self, max_steps_num: int, display=False):
         steps_num = 0
         while steps_num < max_steps_num:
             action = self.agent.reaction(self.phi_np)
             new_observation, reward, is_done, truncated, _ = self.env.step(action)
+            is_done = is_done or truncated
             if display:
-                cv2.imshow('screen', cv2.resize(cv2.cvtColor(new_observation,cv2.COLOR_BGR2RGB), (480,630)))
+                cv2.imshow('screen', cv2.resize(cv2.cvtColor(new_observation, cv2.COLOR_BGR2RGB), (480, 630)))
                 cv2.waitKey(30)
             for i in range(self.skip_k_frame - 1):
                 if not is_done:
                     self.obs_raw, reward_k, is_done, truncated, _ = self.env.step(action)
+                    is_done = is_done or truncated
                     reward += reward_k
                     if display:
-                        cv2.imshow('screen', cv2.resize(cv2.cvtColor(self.obs_raw,cv2.COLOR_BGR2RGB), (480,630)))
+                        cv2.imshow('screen', cv2.resize(cv2.cvtColor(self.obs_raw, cv2.COLOR_BGR2RGB), (480, 630)))
                         cv2.waitKey(30)
                 else:
                     self.obs_raw = self.env.reset()
                     self.agent.phi_reset()
-                    self.last_episodic_reward = self.total_reward_recorder
-                    self.total_reward_recorder = 0
+                    self.last_episodic_reward = self.reward_recorder
+                    self.last_episodic_steps = self.steps_recorder
+                    self.reward_recorder = 0
+                    self.steps_recorder = 0
                     self.episode_num += 1
                     if display:
-                        cv2.imshow('screen', cv2.resize(cv2.cvtColor(self.obs_raw,cv2.COLOR_BGR2RGB), (480,630)))
+                        cv2.imshow('screen', cv2.resize(cv2.cvtColor(self.obs_raw, cv2.COLOR_BGR2RGB), (480, 630)))
                         cv2.waitKey(30)
                     break
             next_phi = self.agent.phi_concat(self.obs_raw)
             self.agent.receive([self.phi_np, action, reward, is_done, next_phi])
-            self.total_reward_recorder += reward
+            self.reward_recorder += reward
+            self.steps_recorder += 1
             self.phi_np = next_phi
             steps_num += 1
         # return data_list
@@ -334,9 +331,9 @@ if __name__ == '__main__':
     # agent.learning(epsilon_max=1.0, epsilon_min=0.01)
     now = int(round(time.time() * 1000))
     now02 = time.strftime('%m-%d-%H-%M-%S', time.localtime(now / 1000))
-    env_name = "ALE/Phoenix-v5"
+    env_name = "ALE/Boxing-v5"
     env_ = DQNGym(env_name)
-    exp_name = now02+"_"+env_name.replace('/','_')
+    exp_name = now02 + "_" + env_name.replace('/', '_')
     agent = AgentDQN(env_.action_dim, os.path.join('./model/', exp_name))
     dqn_play_ground = DQNPlayGround(env_, agent)
     frame_num = 0
@@ -346,13 +343,10 @@ if __name__ == '__main__':
         dqn_play_ground.play_rounds(1)
         frame_num += 1
         agent.learn()
-        if len(agent.memory) > args.init_data_size and dqn_play_ground.episode_num % 500 == 9 \
-                and dqn_play_ground.episode_num != last_record_episode:
-            last_record_episode = dqn_play_ground.episode_num
-            print('episode '+str(dqn_play_ground.episode_num)+' total reward: ' +
+        if len(agent.memory) > args.init_data_size and agent.update_steps % 500000 == 9:
+            print('episode ' + str(dqn_play_ground.episode_num) + ' total reward: ' +
                   str(dqn_play_ground.last_episodic_reward))
-            agent.record_reward((frame_num-frame_num_last_record)/100., dqn_play_ground.last_episodic_reward,
-                                agent.epsilon, dqn_play_ground.episode_num-9)
+            agent.record_reward(dqn_play_ground.last_episodic_steps, dqn_play_ground.last_episodic_reward,
+                                agent.epsilon, dqn_play_ground.episode_num - 9)
             agent.save()
             frame_num_last_record = frame_num
-
