@@ -11,7 +11,7 @@ or follow my twitter:
 [![Twitter Follow](https://img.shields.io/twitter/follow/anthony_tan?color=1DA1F2&logo=twitter&style=for-the-badge)](https://twitter.com/anthony_s_tan)
 
 
-## This Project Contains All Experiment Codes of the Paper I've Read
+## Algorithms Coded
 <!----![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F________________%3Ffields%3DcitationCount)--->
 
 | No  | Year | Name                                                                                                             |                                                                                                      Citations                                                                                                       |
@@ -35,19 +35,5 @@ or follow my twitter:
 
 
 
-## Map of Reinforcement Learning Algorithms
-[./doc/Maps](doc/Maps) contains all maps of concepts in RL that are coded by graphviz language.
-Command on OS X with graphviz:
-<code>dot the-name-of-your-dot-file.dot -Tsvg -o output-file-name.svg</code>
 
 
-### Concepts in 'Reinforcement Learning: an Introduction'
-![](doc/Maps/RLAI.svg)
-
-
-### Graph of DQN papers
-![](doc/Maps/DQN_graph.svg)
-
-
-### Graph of PG papers
-![](doc/Maps/PG_graph.svg)
