@@ -1,9 +1,9 @@
 import copy
 import torch
-from DDPG.ddpg import *
+from ddpg.ddpg import *
 
 
-parser = argparse.ArgumentParser(description='PyTorch DDPG algorithm for continuous control environment')
+parser = argparse.ArgumentParser(description='PyTorch ddpg algorithm for continuous control environment')
 parser.add_argument('--env_name', default='InvertedDoublePendulum-v2', type=str,
                     help='Mujoco Gym environment (default: InvertedDoublePendulum-v2)')
 parser.add_argument('--critic_hidden_layer', default=[256, 256], nargs='+', type=int,
@@ -51,7 +51,7 @@ class SAC_Agent(Agent):
     def __init__(self, observation_space, action_space,
                  actor_mlp_hidden_layer, critic_mlp_hidden_layer,
                  path='./data/models/checkpoint.pt'):
-        super(SAC_Agent, self).__init__('SAC', path=path)
+        super(SAC_Agent, self).__init__('sac', path=path)
         self.actor = MLPGaussianActorSquashing(observation_space, action_space, actor_mlp_hidden_layer,
                                                hidden_action_fc=torch.nn.ReLU)
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(),

@@ -4,7 +4,7 @@ load all time models from the fold and calculating the average reward and step
 record one episode by video recorder of opencv
 """
 import gym, mujoco_py
-from SAC.sac import *
+from sac.sac import *
 import torch
 import os
 import numpy as np
@@ -17,14 +17,14 @@ env_name = 'Walker2d-v3'
 
 if __name__ == "__main__":
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Be sure to use the lower case
-    out = cv2.VideoWriter('./SAC/data/exp/' + env_name + '.mp4', fourcc, 20.0, (2048, 2048))
+    out = cv2.VideoWriter('./sac/data/exp/' + env_name + '.mp4', fourcc, 20.0, (2048, 2048))
     test_times = 100
     env_ = gym.make(env_name)
     agent_ = SAC_Agent(env_.observation_space, env_.action_space, [256, 256],
-                        [256, 256], './SAC/data/models')
+                       [256, 256], 'sac/data/models')
     agent_.load()
     agent_.actor.to(device)
-    experiment = SAC_exp(env_, agent_, 1, 0.99, False, './SAC/data/log', env_data_path='./SAC/data/models')
+    experiment = SAC_exp(env_, agent_, 1, 0.99, False, 'sac/data/log', env_data_path='sac/data/models')
     total_reward = 0
     total_steps = 0
     for i in range(test_times):

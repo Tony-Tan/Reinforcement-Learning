@@ -1,5 +1,5 @@
 from core.rl_elements import *
-from core.basic import *
+from core.nn_utils import *
 
 
 class GAE:

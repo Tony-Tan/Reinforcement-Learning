@@ -8,7 +8,7 @@ import copy
 import math
 
 
-parser = argparse.ArgumentParser(description='PyTorch DDPG algorithm for continuous control environment')
+parser = argparse.ArgumentParser(description='PyTorch ddpg algorithm for continuous control environment')
 parser.add_argument('--env_name', default='InvertedDoublePendulum-v2', type=str,
                     help='Mujoco Gym environment (default: InvertedDoublePendulum-v2)')
 parser.add_argument('--critic_hidden_layer', default=[400, 300], nargs='+', type=int,
@@ -66,7 +66,7 @@ args = parser.parse_args()
 class DDPG_Agent(Agent):
     def __init__(self, observation_space, action_space, actor_mlp_hidden_layer,
                  critic_mlp_hidden_layer, path='./data/models'):
-        super(DDPG_Agent, self).__init__('DDPG', path)
+        super(DDPG_Agent, self).__init__('ddpg', path)
         self.actor = MLPGaussianActorManuSTD(observation_space, action_space, actor_mlp_hidden_layer, torch.nn.Tanh,
                                              output_action=torch.nn.Tanh)
         if args.initialize_nn:

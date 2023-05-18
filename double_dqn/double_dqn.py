@@ -1,50 +1,34 @@
 import gym
 import random
-from dqn.alg import AgentDQN
+from dqn.dqn import *
 import copy
 
 
-class AgentDouble(AgentDQN):
-    def __init__(self, environment, mini_batch_size=32, episodes_num=100000,
-                 k_frames=4, input_frame_size=84, memory_length=2e4, phi_temp_size=4,
-                 model_path='./model/', log_path='./log/', learning_rate=0.00025, steps_c=100):
-        super(AgentDouble, self).__init__(environment, mini_batch_size, episodes_num,
-                                          k_frames, input_frame_size, memory_length, phi_temp_size,
-                                          model_path, log_path, learning_rate, steps_c, algorithm_version='2015')
-        self.state_action_value_function_temp = copy.deepcopy(self.state_action_value_function)
+class DoubleDQN(DQN):
+    def __init__(self, action_dim: int, save_path: str):
+        super(DoubleDQN, self).__init__(action_dim, save_path)
+        self.value_nn_temp = copy.deepcopy(self.value_nn)
 
-    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.9999):
-        """
-        :param epsilon_max: float number, epsilon start number, 1.0 for most time
-        :param epsilon_min: float number, epsilon end number, 0.1 in the paper
-        :param epsilon_decay: float number, decay coefficient of epsilon
-        :return: nothing
-        """
-        frame_num = self._phi_temp_size
-        epsilon = epsilon_max
-        for episode_i in range(1, self._episodes_num):
-            # set a dynamic epsilon
-            epsilon = max(epsilon_min, epsilon * epsilon_decay)
-            # switch tow sets parameters of network randomly
-            if random.randint(0, 1):
-                self.state_action_value_function_temp.load_state_dict(
-                    self.state_action_value_function.state_dict())
-                self.state_action_value_function.load_state_dict(
-                    self.target_state_action_value_function.state_dict())
-                self.target_state_action_value_function.load_state_dict(
-                    self.state_action_value_function_temp.state_dict())
+    def learn(self):
+        if random.randint(0, 1):
+            self.value_nn_temp.load_state_dict(
+                self.value_nn.state_dict())
+            self.value_nn.load_state_dict(
+                self.target_value_nn.state_dict())
+            self.target_value_nn.load_state_dict(
+                self.value_nn_temp.state_dict())
+        super().learn()
 
-            frame_num_i, reward_i = self.learning_an_episode(epsilon)
-            frame_num += frame_num_i
-            self.record_reward(frame_num, reward_i, epsilon, episode_i)
-            if episode_i % self._steps_c == 0:
-                print('------------------------ updating target state action value function -----------------------')
-                self.target_state_action_value_function.load_state_dict(self.state_action_value_function.state_dict())
-            if episode_i % 500 == 0:
-                self.save_model()
+def execute():
+    now = int(round(time.time() * 1000))
+    now02 = time.strftime('%m-%d-%H-%M-%S', time.localtime(now / 1000))
+    env_name = "ALE/Pong-v5"
+    env_ = DQNGym(env_name)
+    exp_name = now02 + "_" + env_name.replace('/', '_')
+    agent = DQN(env_.action_dim, os.path.join('./model/', exp_name))
+    training = Training(env_, agent, max_episodes=args.episodes_num)
+    training.online_training()
 
 
 if __name__ == '__main__':
-    env = gym.make('Pong-v0')
-    agent = AgentDouble(env, steps_c=100)
-    agent.learning(epsilon_max=1.0, epsilon_min=0.01)
+    execute()

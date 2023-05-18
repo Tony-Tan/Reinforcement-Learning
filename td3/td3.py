@@ -1,12 +1,12 @@
 import copy
 import torch
 from core.rl_elements import *
-from DDPG.ddpg import DDPG_exp
+from ddpg.ddpg import DDPG_exp
 import gym
 import argparse
 
 
-parser = argparse.ArgumentParser(description='PyTorch DDPG algorithm for continuous control environment')
+parser = argparse.ArgumentParser(description='PyTorch ddpg algorithm for continuous control environment')
 parser.add_argument('--env_name', default='InvertedDoublePendulum-v2', type=str,
                     help='Mujoco Gym environment (default: InvertedDoublePendulum-v2)')
 parser.add_argument('--critic_hidden_layer', default=[400, 300], nargs='+', type=int,
@@ -55,7 +55,7 @@ print(args)
 class TD3_Agent(Agent):
     def __init__(self, observation_space, action_space, actor_mlp_hidden_layer,
                  critic_mlp_hidden_layer, path='./data/models'):
-        super(TD3_Agent, self).__init__('TD3', path)
+        super(TD3_Agent, self).__init__('td3', path)
         # initialize neural networks
         self.actor = MLPGaussianActorManuSTD(observation_space, action_space, actor_mlp_hidden_layer, torch.nn.ReLU,
                                              output_action=torch.nn.Tanh)
