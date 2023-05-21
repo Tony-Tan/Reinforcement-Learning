@@ -31,7 +31,10 @@ or follow my twitter:
 | 12  | 2018 | [Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor](./sac)       | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F811df72e210e20de99719539505da54762a11c6d%3Ffields%3DcitationCount)  |
 
 
-
+## Algorithm Framework
+### Online Training Framework
+![](./doc/rl%20training.svg)
+### Offline Training Framework
 
 
 

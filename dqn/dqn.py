@@ -1,14 +1,11 @@
 import gym
-import cv2
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
 from core.nn_utils import *
 from core.agent import *
-from core.env_basic import *
 from core.training import *
 from core.utils import *
-
 
 args_list = [
     ['--env_name', 'InvertedDoublePendulum-v2', str, 'atari game name'],
@@ -25,10 +22,10 @@ args_list = [
     ['--log_path', './log/', str, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
     ['--learning_rate', 1e-5, float, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
     ['--steps_c', 100, int, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--epsilon_update_steps', 1000, int, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--epsilon_max', 1.0, float, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--epsilon_min', 0.01, float, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--epsilon_decay', 0.9999, float, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2']
+    ['--epsilon_min', 0.1, float, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
+    ['--epsilon_for_test', 0.05, float, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
+    ['--model_saving_period', 80000, int, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
+
 ]
 args = script_args(args_list, 'dqn training arguments')
 
@@ -81,7 +78,7 @@ def obs_pre_process(obs: np.ndarray):
     gray_img = cv2.resize(gray_img, (args.input_frame_width, args.input_frame_height))
 
     gray_img = gray_img[args.input_frame_height - args.input_frame_width:args.input_frame_height,
-               0:args.input_frame_width]
+                        0:args.input_frame_width]
     gray_img = gray_img / 128. - 1.
     return gray_img
 
@@ -92,7 +89,7 @@ class DQN(Agent):
         super().__init__(args.memory_length)
         self.critic = DQNCritic(args.phi_temp_size, action_dim)
         self.action_n = action_dim
-        self.epsilon = args.epsilon_max
+        self.epsilon = 1.0
         self.episodes_num = args.episodes_num
         self.phi = deque(maxlen=args.phi_temp_size)
         self.phi_np = None
@@ -101,10 +98,10 @@ class DQN(Agent):
         self.skip_k_frame_reward_sum = 0
         self.last_action = 0
         self.update_steps = 1
-        self.last_10_episodic_reward = deque(maxlen=10)
-        self.last_10_episodic_steps = deque(maxlen=10)
-        self.last_episodic_reward = 0
-        self.last_episodic_steps = 0
+        # self.last_10_episodic_reward = deque(maxlen=10)
+        # self.last_10_episodic_steps = deque(maxlen=10)
+        # self.last_episodic_reward = 0
+        # self.last_episodic_steps = 0
         # critic networks settings
         self.action_dim = action_dim
         self.value_nn = DQNCritic(args.phi_temp_size, self.action_dim)
@@ -116,23 +113,23 @@ class DQN(Agent):
         self.target_value_nn.to(self.device)
         self.save_path = save_path
         if not os.path.exists(save_path):
-            os.mkdir(save_path)
+            os.makedirs(save_path)
         self.recoder = Recorder(self.save_path)
         self.model_path = self.save_path
         self.phi_reset()
 
-    def observe(self, obs, action, reward, terminated, truncated, inf):
+    def observe(self, obs, action, reward, terminated, truncated, inf, save_obs=True):
         if terminated or truncated:
             self.phi_reset()
             self.skip_k_frame_counter = 0
             self.skip_k_frame_reward_sum = 0
             # recorder
-            self.last_10_episodic_reward.append(self.last_episodic_reward)
-            self.last_10_episodic_steps.append(self.last_episodic_steps)
-            self.last_episodic_reward = 0
-            self.last_episodic_steps = 0
+            # self.last_10_episodic_reward.append(self.last_episodic_reward)
+            # self.last_10_episodic_steps.append(self.last_episodic_steps)
+            # self.last_episodic_reward = 0
+            # self.last_episodic_steps = 0
 
-        elif (self.skip_k_frame_counter % self.skip_k_frame) == 0:
+        elif (self.skip_k_frame_counter % self.skip_k_frame) == 0 and save_obs:
             self.skip_k_frame_reward_sum += reward
             self.memory.append([self.phi_np, action, self.skip_k_frame_reward_sum, terminated, truncated,
                                 np.zeros_like(self.phi_np)])
@@ -140,15 +137,15 @@ class DQN(Agent):
                 self.memory[-2][-1] = self.phi_np
             self.skip_k_frame_counter += 1
             self.skip_k_frame_reward_sum = 0
-            self.last_episodic_reward += reward
-            self.last_episodic_steps += 1
+            # self.last_episodic_reward += reward
+            # self.last_episodic_steps += 1
         else:
             self.skip_k_frame_counter += 1
             self.skip_k_frame_reward_sum += reward
-            self.last_episodic_reward += reward
-            self.last_episodic_steps += 1
+            # self.last_episodic_reward += reward
+            # self.last_episodic_steps += 1
 
-    def react(self, obs: np.ndarray):
+    def react(self, obs: np.ndarray, testing=False):
         if (self.skip_k_frame_counter % self.skip_k_frame) == 0:
             obs = obs_pre_process(obs)
             # cv2.imshow('test', obs)
@@ -157,7 +154,7 @@ class DQN(Agent):
             self.phi_np = np.array(self.phi).astype(np.float32)
             with torch.no_grad():
                 phi = torch.as_tensor(self.phi_np.astype(np.float32)).to(self.device)
-                self.last_action = self.generate_action(phi)
+                self.last_action = self.generate_action(phi, args.epsilon_for_test if testing else self.epsilon)
         return self.last_action
 
     def phi_reset(self):
@@ -176,11 +173,11 @@ class DQN(Agent):
         torch.save(self.value_nn.state_dict(), self.save_path + '/' + now02 + '_value.pth')
         torch.save(self.target_value_nn.state_dict(), self.save_path + '/' + now02 + '_value_target.pth')
 
-    def generate_action(self, phi_t: torch.Tensor):
+    def generate_action(self, phi_t: torch.Tensor, epsilon: float = None):
         obs_input = phi_t.unsqueeze(0)
         state_action_values = self.value_nn(obs_input).cpu().detach().numpy()
         value_of_action_list = state_action_values[0]
-        return epsilon_greedy(value_of_action_list, self.epsilon)
+        return epsilon_greedy(value_of_action_list, epsilon)
 
     def synchronize_q_network(self):
         self.target_value_nn.load_state_dict(self.value_nn.state_dict())
@@ -194,12 +191,8 @@ class DQN(Agent):
             reward_array = []
             is_done_array = []
             for sample_i in samples:
-                # self.phi_np,
-                # action,
-                # self.skip_k_frame_reward_sum,
-                # terminated,
-                # truncated,
-                # self.phi_np
+                # obs, action, self.skip_k_frame_reward_sum,
+                # terminated, truncated, next_obs
                 obs_array.append(sample_i[0])
                 action_array.append([sample_i[1]])
                 reward_array.append(sample_i[2])
@@ -224,7 +217,7 @@ class DQN(Agent):
             reward_array = torch.from_numpy(reward_array)
             reward_array = torch.clamp(reward_array, min=-1., max=1.)
             q_value = reward_array + args.gamma * max_next_state_value
-            
+
             action_array = torch.Tensor(action_array).long()
             # train the model
             inputs = torch.from_numpy(obs_array).to(self.device)
@@ -244,16 +237,7 @@ class DQN(Agent):
             self.update_steps += 1
             if self.update_steps % args.steps_c == 0:
                 self.synchronize_q_network()
-            if self.update_steps % 40000 == 1:
-                info_text = str(self.update_steps) + "  steps, loss: " + str(loss.item())
-                standard_info_print(info_text)
-                # dqn_play_ground.last_episodic_steps, dqn_play_ground.last_episodic_reward,
-                #     #                             agent.epsilon, dqn_play_ground.episode_num - 9
-                self.recoder(self.update_steps, {'reward': [np.mean(np.array(self.last_10_episodic_reward)), 'reward'],
-                                                 'steps': [np.mean(np.array(self.last_10_episodic_steps)), 'steps'],
-                                                 'epsilon': [self.epsilon, 'epsilon']
-                                                 })
-            if self.update_steps % 80000 == 0:
+            if self.update_steps % args.model_saving_period == 0:
                 self.save()
             self.epsilon = 1. - self.update_steps * 0.0000009
             self.epsilon = max(args.epsilon_min, self.epsilon)
@@ -265,8 +249,10 @@ def execute():
     env_name = "ALE/Pong-v5"
     env_ = DQNGym(env_name)
     exp_name = now02 + "_" + env_name.replace('/', '_')
-    agent = DQN(env_.action_dim, os.path.join('./model/', exp_name))
-    training = Training(env_, agent, max_episodes=args.episodes_num)
+    agent_path = os.path.join('./exp/', exp_name)
+    agent = DQN(env_.action_dim, agent_path)
+    training = Training(env_, agent, max_episodes=args.episodes_num, test_period_steps=40000,
+                        log_path=agent_path)
     training.online_training()
 
 

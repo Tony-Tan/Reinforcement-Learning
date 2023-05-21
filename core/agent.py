@@ -9,11 +9,12 @@ class Agent:
         self.memory = Memory(memory_size)
         pass
 
-    def react(self, obs: np.ndarray) -> np.ndarray:
+    def react(self, obs: np.ndarray, testing=False) -> np.ndarray:
         raise NotImplement
 
-    def observe(self, obs, action, reward, terminated, truncated, info):
-        self.memory.append([obs, action, reward, terminated, truncated, info])
+    def observe(self, obs, action, reward, terminated, truncated, info, save_obs=True):
+        if save_obs:
+            self.memory.append([obs, action, reward, terminated, truncated, info])
 
     def learn(self):
         raise NotImplement
