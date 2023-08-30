@@ -7,12 +7,9 @@ This project has been supported by
 
 You can find my blog and research notes on: [![website_online](./logo_online.png)](https://anthony-tan.com)
 
-follow my twitter: 
+or follow my twitter: 
 [![Twitter Follow](https://img.shields.io/twitter/follow/anthony_tan?color=1DA1F2&logo=twitter&style=for-the-badge)](https://twitter.com/anthony_s_tan)
-or email me:
-[tony.face2ai@gmail.com](mailto://tony.face2ai@gmail.com)
 
-This project contains the some well-known algorithms of reinforcement learning, like ddpg, tpo, td3,sac and somemore 
 
 ## Algorithms Coded
 <!----![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F________________%3Ffields%3DcitationCount)--->

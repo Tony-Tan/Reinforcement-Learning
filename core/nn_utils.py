@@ -2,6 +2,7 @@ import numpy as np
 from torch.utils.data import Dataset
 import torch
 
+
 # todo
 # this is necessary for rebuild
 # class Hyperparameter:
@@ -120,8 +121,8 @@ import torch
 
 def MLP(size_of_layer: list, action_fc, output_action=torch.nn.Identity):
     layers = []
-    for i in range(len(size_of_layer)-2):
-        layers += [torch.nn.Linear(size_of_layer[i], size_of_layer[i+1]), action_fc()]
+    for i in range(len(size_of_layer) - 2):
+        layers += [torch.nn.Linear(size_of_layer[i], size_of_layer[i + 1]), action_fc()]
     layers += [torch.nn.Linear(size_of_layer[-2], size_of_layer[-1]), output_action()]
     return torch.nn.Sequential(*layers)
 
@@ -137,3 +138,38 @@ def polyak_average(model1, model2, beta, dist_model):
             dict_params2[name1].data.copy_(beta * param1.data + (1 - beta) * dict_params2[name1].data)
 
     dist_model.load_state_dict(dict_params2)
+
+
+class MLPGaussianActor(torch.nn.Module):
+    def __init__(self, obs_dim: int,
+                 action_dim: int,
+                 hidden_layers_size: list,
+                 hidden_action, output_action=torch.nn.Identity):
+        """
+
+        :param obs_dim:
+        :param action_dim:
+        :param hidden_layers_size:
+        :param hidden_action:
+        :param output_action:
+        """
+        super(MLPGaussianActor, self).__init__()
+        layers = [obs_dim, *hidden_layers_size, action_dim]
+        self.linear_mlp_stack = MLP(layers, hidden_action, output_action)
+
+    def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
+        mu = self.linear_mlp_stack(x)
+        return mu
+
+
+class MLPCritic(torch.nn.Module):
+    def __init__(self, obs_dim: int, action_dim: int,
+                 hidden_layers_size: list, hidden_action):
+        super(MLPCritic, self).__init__()
+        layers = [obs_dim + action_dim, *hidden_layers_size, 1]
+        self.linear_stack = MLP(layers, hidden_action)
+
+    def forward(self, obs: torch.Tensor, action: torch.Tensor):
+        x = torch.cat((obs, action), 1)
+        output = self.linear_stack(x)
+        return output

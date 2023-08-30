@@ -66,7 +66,7 @@ class Training:
                 self.learning_steps < self.max_steps:
             action = self.agent.react(obs)
             obs_next, reward, terminated, truncated, info = self.env.step(action)
-            self.agent.observe(obs, action, reward, terminated, truncated, info)
+            self.agent.observe(obs, action, reward, terminated, truncated, info, save_obs=True)
             self.agent.learn()
             self.learning_steps += 1
             if terminated or truncated:

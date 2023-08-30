@@ -4,6 +4,8 @@ from datetime import datetime
 import argparse
 import time
 import os
+import cv2
+
 
 
 def epsilon_greedy(values: np.ndarray, epsilon: float, ) -> int:
@@ -19,14 +21,14 @@ def standard_info_print(info: str):
     print("[%s]: %s" % (datetime.now(), info))
 
 
-def script_args(args_list: list, description: str):
-    parser = argparse.ArgumentParser(description=description)
-    for arg_i in args_list:
-        # '--actor_hidden_layer', default=[400, 300], nargs='+', type=int,
-        #                     help='acot hidden perceptron size'
-        parser.add_argument(arg_i[0], default=arg_i[1], type=arg_i[2], help=arg_i[3])
-    args = parser.parse_args()
-    return args
+# def script_args(args_list: list, description: str):
+#     parser = argparse.ArgumentParser(description=description)
+#     for arg_i in args_list:
+#         # '--actor_hidden_layer', default=[400, 300], nargs='+', type=int,
+#         #                     help='acot hidden perceptron size'
+#         parser.add_argument(arg_i[0], default=arg_i[1], type=arg_i[2], help=arg_i[3])
+#     args = parser.parse_args()
+#     return args
 
 
 def discount_cumulate(reward_array: np.ndarray, termination_array: np.ndarray, discount_rate=0.99):
@@ -50,4 +52,3 @@ def discount_cumulate(reward_array: np.ndarray, termination_array: np.ndarray, d
         else:
             g[step_i] = reward_i + discount_rate * g[step_i + 1]
     return g.reshape((-1, 1))
-

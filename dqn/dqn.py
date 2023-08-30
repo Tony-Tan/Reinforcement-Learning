@@ -7,27 +7,31 @@ from core.agent import *
 from core.training import *
 from core.utils import *
 
-args_list = [
-    ['--env_name', 'InvertedDoublePendulum-v2', str, 'atari game name'],
-    ['--mini_batch_size', 32, int, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--episodes_num', 100000, int, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--k_frames', 4, int, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--input_frame_width', 84, int, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--input_frame_height', 110, int, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--memory_length', 15000, int, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--init_data_size', 2000, int, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--phi_temp_size', 4, int, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--gamma', 0.99, float, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--model_path', './model/', str, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--log_path', './log/', str, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--learning_rate', 1e-5, float, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--steps_c', 100, int, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--epsilon_min', 0.1, float, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--epsilon_for_test', 0.05, float, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
-    ['--model_saving_period', 80000, int, 'Mujoco Gym environment，default: InvertedDoublePendulum-v2'],
 
-]
-args = script_args(args_list, 'dqn training arguments')
+# args = script_args(args_list, 'dqn training arguments')
+parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
+parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
+                    help='openai gym environment (default: ALE/Pong-v5)')
+parser.add_argument('--mini_batch_size', default=32, type=int, help='ccn training batch size，default: 32')
+parser.add_argument('--episodes_num', default=100000, type=int, help='max training episodes，default: 100000')
+parser.add_argument('--k_frames', default=4, type=int, help='dqn skip k frames each step，default: 4')
+parser.add_argument('--input_frame_width', default=84, type=int, help='cnn input image width, default: 84')
+parser.add_argument('--input_frame_height', default=110, type=int, help='cnn input image height，default: 110')
+parser.add_argument('--memory_length', default=15000, type=int, help='memory buffer size ，default: 15000')
+parser.add_argument('--init_data_size', default=2000, type=int, help='min data size before training cnn ，default: 2000')
+parser.add_argument('--gamma', default=0.99, type=float, help='value decay, default: 0.99')
+parser.add_argument('--model_path', default='./model/', type=str, help='model save path ，default: ./model/')
+parser.add_argument('--log_path', default='./log/', type=str, help='log save path，default: ./log/')
+parser.add_argument('--learning_rate', default=1e-5, type=float, help='cnn learning rate，default: 1e-5')
+parser.add_argument('--steps_c', default=100, type=int,
+                    help='synchronise target value network periods，default: 100')
+parser.add_argument('--epsilon_min', default=0.1, type=float,
+                    help='min epsilon of epsilon-greedy，default: 0.1')
+parser.add_argument('--epsilon_for_test', default=0.05, type=float,
+                    help='epsilon of epsilon-greedy for testing agent，default: 0.05')
+parser.add_argument('--model_saving_period', default=80000, type=int,
+                    help='model saving period(step)，default: 80000')
+args = parser.parse_args()
 
 
 class DQNGym(Env):

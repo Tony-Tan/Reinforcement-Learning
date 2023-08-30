@@ -9,10 +9,26 @@ class Agent:
         self.memory = Memory(memory_size)
         pass
 
-    def react(self, obs: np.ndarray, testing=False) -> np.ndarray:
+    def react(self, obs: np.ndarray, testing: bool = False) -> np.ndarray:
+        """
+        :param obs:
+        :param testing:
+        :return:
+        """
         raise NotImplement
 
-    def observe(self, obs, action, reward, terminated, truncated, info, save_obs=True):
+    def observe(self, obs: np.ndarray, action: np.ndarray, reward: int, terminated: bool,
+                truncated: bool, info: dict, save_obs: bool = True):
+        """
+        :param obs:
+        :param action:
+        :param reward:
+        :param terminated:
+        :param truncated:
+        :param info:
+        :param save_obs:
+        :return:
+        """
         if save_obs:
             self.memory.append([obs, action, reward, terminated, truncated, info])
 
@@ -39,5 +55,3 @@ class Memory:
 
     def sample(self, size: int):
         return random.sample(self.memory_buffer, size)
-
-

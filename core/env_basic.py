@@ -7,7 +7,15 @@ class Env:
         pass
 
     def reset(self) -> np.ndarray:
+        """
+        :return: obs
+        """
         raise NotImplement
 
-    def step(self, action) -> tuple:
+    def step(self, action: np.ndarray) -> tuple:
+        """
+
+        :param action:
+        :return:
+        """
         raise NotImplement
