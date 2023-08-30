@@ -1,11 +1,7 @@
 # Reinforcement Learning ![](https://img.shields.io/github/stars/Tony-Tan/Reinforcement-Learning?style=social)
-This project has been supported by 
-[jetbrains](https://www.jetbrains.com/) 
 
 
-[![](./jetbrains-variant-2.png)](https://www.jetbrains.com/) 
-
-You can find my blog and research notes on: [![website_online](./logo_online.png)](https://anthony-tan.com)
+You can find my blog and research notes on: [![website_online](./doc/logo_online.png)](https://anthony-tan.com)
 
 or follow my twitter: 
 [![Twitter Follow](https://img.shields.io/twitter/follow/anthony_tan?color=1DA1F2&logo=twitter&style=for-the-badge)](https://twitter.com/anthony_s_tan)
