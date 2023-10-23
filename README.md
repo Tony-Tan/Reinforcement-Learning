@@ -1,39 +1,85 @@
-# Reinforcement Learning ![](https://img.shields.io/github/stars/Tony-Tan/Reinforcement-Learning?style=social)
+Creating an open-source reinforcement learning project that follows a structure similar to Stable Baselines3 (SB3) is a good approach. Below is a suggested framework structure for your project, listing and briefly describing each file and class:
 
+```plaintext
+my_rl_project/
+│
+├── my_rl_project/
+│   ├── __init__.py
+│   ├── agents/
+│   │   ├── __init__.py
+│   │   ├── dqn.py              # Implementation of the DQN algorithm
+│   │   ├── ddpg.py             # Implementation of the DDPG algorithm
+│   │   ├── trpo.py             # Implementation of the TRPO algorithm
+│   │   ├── td3.py              # Implementation of the TD3 algorithm
+│   │   ├── sac.py              # Implementation of the SAC algorithm
+│   │   └── ...
+│   │
+│   ├── environments/
+│   │   ├── __init__.py
+│   │   ├── my_environment.py   # Custom RL environment if needed
+│   │   └── ...
+│   │
+│   ├── common/
+│   │   ├── __init__.py
+│   │   ├── hyperparams.py      # Hyperparameter configurations for algorithms
+│   │   └── ...
+│   │
+│   ├── evaluation/
+│   │   ├── __init__.py
+│   │   ├── evaluate.py         # Evaluation functions for trained agents
+│   │   └── ...
+│   │
+│   └── ...
+│
+├── tests/
+│   ├── __init__.py
+│   ├── test_dqn.py
+│   ├── test_ddpg.py
+│   ├── test_trpo.py
+│   ├── test_td3.py
+│   ├── test_sac.py
+│   └── ...
+│
+├── docs/
+│   ├── index.rst
+│   ├── getting_started.rst
+│   ├── algorithms/
+│   │   ├── dqn.rst
+│   │   ├── ddpg.rst
+│   │   ├── trpo.rst
+│   │   ├── td3.rst
+│   │   ├── sac.rst
+│   │   └── ...
+│   ├── ...
+│
+├── README.md
+├── LICENSE
+├── setup.py
+└── requirements.txt
+```
 
-You can find my blog and research notes on: [![website_online](./doc/logo_online.png)](https://anthony-tan.com)
+Now, let's describe each file and class briefly:
 
-or follow my twitter: 
-[![Twitter Follow](https://img.shields.io/twitter/follow/anthony_tan?color=1DA1F2&logo=twitter&style=for-the-badge)](https://twitter.com/anthony_s_tan)
+- `my_rl_project/__init__.py`: An empty Python file that marks the directory as a Python package.
 
+- `my_rl_project/agents/`: This directory contains implementations of different RL algorithms. For example, `dqn.py` contains the Deep Q-Network (DQN) algorithm implementation.
 
-## Algorithms Coded
-<!----![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F________________%3Ffields%3DcitationCount)--->
+- `my_rl_project/environments/`: If you have custom RL environments, place them in this directory. For example, `my_environment.py` could contain your custom environment.
 
-| No  | Year | Name                                                                                                             |                                                                                                       Citations                                                                                                       |
-|:---:|:----:|:-----------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-|  1  | 1951 | [A Stochastic Approximation Method](./robbins_monro)                                                             | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F34ddd8865569c2c32dec9bf7ffc817ff42faaa01%3Ffields%3DcitationCount)  | 
-|  2  | 1986 | [Stochastic approximation for Monte Carlo optimization](./Stochastic_Approximation_for_Monte_Carlo_Optimization) | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F08bcd967e6ca896eb85d6e03561aabf138df65d1%3Ffields%3DcitationCount)  |  
-|  3  | 2001 | [A natural policy gradient](./trpo_npg)                                                                          | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2Fb18833db0de9393d614d511e60821a1504fc6cd1%3Ffields%3DcitationCount)  |
-|  4  | 2013 | [Playing Atari with Deep Reinforcement Learning](./dqn)                                                          | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F2319a491378867c7049b3da055c5df60e1671158%3Ffields%3DcitationCount)  | 
-|  5  | 2015 | [Human-level control through deep reinforcement learning](./dqn)                                                 | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2Fe0e9a94c4a6ba219e768b4e59f72c18f0a22e23d%3Ffields%3DcitationCount)  |
-|  6  | 2015 | [Trust Region Policy Optimization](./trpo_npg)                                                                   | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F66cdc28dc084af6507e979767755e99fe0b46b39%3Ffields%3DcitationCount)  |
-|  7  | 2015 | [Continuous control with deep reinforcement learning](./ddpg)                                                    | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F024006d4c2a89f7acacc6e4438d156525b60a98f%3Ffields%3DcitationCount)  |
-|  8  | 2015 | [Deep Reinforcement Learning with Double Q-Learning](./double_dqn)                                               | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F3b9732bb07dc99bde5e1f9f75251c6ea5039373e%3Ffields%3DcitationCount)  |
-|  8  | 2016 | [Dueling Network Architectures for Deep Reinforcement Learning](./dueling_network)                               | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F4c05d7caa357148f0bbd61720bdd35f0bc05eb81%3Ffields%3DcitationCount)  |
-|  9  | 2016 | [Prioritized Experience Replay](./proportional_prioritization)                                                   | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2Fc6170fa90d3b2efede5a2e1660cb23e1c824f2ca%3Ffields%3DcitationCount)  |
-| 10  | 2017 | [Proximal Policy Optimization Algorithms](./ppo)                                                                 | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2Fdce6f9d4017b1785979e7520fd0834ef8cf02f4b%3Ffields%3DcitationCount)  |
-| 11  | 2018 | [Addressing Function Approximation Error in Actor-Critic Methods](./td3)                                         | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F4debb99c0c63bfaa97dd433bc2828e4dac81c48b%3Ffields%3DcitationCount)  |
-| 12  | 2018 | [Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor](./sac)       | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F811df72e210e20de99719539505da54762a11c6d%3Ffields%3DcitationCount)  |
+- `my_rl_project/utils/`: Utility functions used across algorithms and hyperparameter configurations can be placed here. `common.py` contains utility functions, while `hyperparams.py` defines hyperparameters for algorithms.
 
+- `my_rl_project/evaluation/`: This directory can contain evaluation scripts and functions for assessing trained agents' performance.
 
-## Algorithm Framework
-### Online Training Framework
-![](./doc/rl%20training.svg)
-### Offline Training Framework
+- `tests/`: This directory contains unit tests for your project. For each algorithm, there should be a corresponding test file, e.g., `test_dqn.py`, which tests the DQN implementation.
 
+- `docs/`: Documentation for your project. Each algorithm should have its documentation file, e.g., `dqn.rst`, which explains the algorithm, how to use it, and any important details.
 
+- `README.md`: A readme file that provides an overview of your project, its goals, installation instructions, and usage examples.
 
+- `LICENSE`: The license file for your project, specifying the terms under which others can use, modify, and distribute your code.
 
+- `setup.py`: A setup script for packaging and distributing your project.
 
+- `requirements.txt`: A list of dependencies needed to run your project.
 
+This framework structure closely follows the organization of Stable Baselines3 and should help you maintain a well-structured and organized open-source RL project.
