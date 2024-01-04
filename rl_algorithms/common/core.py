@@ -23,10 +23,10 @@ class Logger:
         :return:
         """
         time_strip = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        complet_info = '{time_strip:<10}: {info:<10}'.format(time_strip=time_strip, info=info)
-        self.log_file.write(complet_info+'\n')
+        complete_info = '{time_strip:<10}: {info:<10}'.format(time_strip=time_strip, info=info)
+        self.log_file.write(complete_info+'\n')
         if self.print_in_terminal:
-            print(complet_info)
+            print(complete_info)
 
 
 # callbacks for training process

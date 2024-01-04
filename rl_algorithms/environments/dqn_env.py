@@ -1,7 +1,7 @@
-from rl_algorithms.environments.env import Env
+from rl_algorithms.environments.envwrapper import EnvWrapper
 
 
-class DQNGym(Env):
+class DQNGym(EnvWrapper):
     def __init__(self, env_name):
         super().__init__()
         self.env = gym.make(env_name)

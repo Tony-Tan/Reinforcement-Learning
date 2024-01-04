@@ -1,3 +1,4 @@
+import copy
 import os
 import numpy as np
 import cv2
@@ -9,12 +10,12 @@ from rl_algorithms.agents.base_agent import Agent
 from rl_algorithms.networks.dqn_nn import DQNAtari
 from collections import deque
 from rl_algorithms.common.core import Logger
-from rl_algorithms.environments.env import Env
+from rl_algorithms.environments.envwrapper import EnvWrapper
 from rl_algorithms.common.exploration import *
 
 
 # args = script_args(args_list, 'dqn training arguments')
-# class DQNGym(Env):
+# class DQNGym(EnvWrapper):
 #     def __init__(self, env_name):
 #         super().__init__()
 #         self.env = gym.make(env_name)
@@ -29,11 +30,11 @@ from rl_algorithms.common.exploration import *
 
 
 class DQN(Agent):
-    def __init__(self, env: Env, phi_temp_size: int,
-                 replay_buffer_size: int, skip_k_frame: int, device: str,
-                 save_path: str, logger: Logger, mini_batch_size: int, learning_rate: float,
-                 input_frame_width: int, input_frame_height: int, min_sample_size_necessary: int,
-                 gamma: float, step_c: int, model_saving_period: int):
+    def __init__(self, env: EnvWrapper, phi_temp_size: int,
+                 replay_buffer_size: int, skip_k_frame: int, mini_batch_size: int, learning_rate: float,
+                 input_frame_width: int, input_frame_height: int, init_data_size: int, max_training_steps:int,
+                 gamma: float, step_c: int, model_saving_period: int, device: str,
+                 save_path: str, logger: Logger):
         # agent elements settings
         super().__init__(env, replay_buffer_size, save_path, logger)
         self.input_frame_width = input_frame_width
@@ -43,27 +44,26 @@ class DQN(Agent):
         self.phi = deque(maxlen=phi_temp_size)
         self.phi_np = None
         self.skf = skip_k_frame
-        self.skf_counter = 0
         self.skf_reward_sum = 0
-        self.last_action = 0
         self.update_steps = 1
-        self.min_sample_size_necessary = min_sample_size_necessary
+        self.min_sample_size_necessary = init_data_size
         self.gamma = gamma
         self.step_c = step_c
         self.model_saving_period = model_saving_period
         # interaction with environment
         self.env = env
+        self.env_test = copy.deepcopy(env)
         self.action_dim = env.action_space.shape  # todo
-
         # Networks settings
         self.value_nn = DQNAtari(phi_temp_size, self.action_dim)
         self.target_value_nn = DQNAtari(phi_temp_size, self.action_dim)
         self.device = device  # torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.mini_batch_size = mini_batch_size
+        self.max_training_steps = max_training_steps
+        self.test_episode = 100
         self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
         self.value_nn.to(self.device)
         self.target_value_nn.to(self.device)
-
         # make save folder
         if not os.path.exists(save_path):
             os.makedirs(save_path)
@@ -84,9 +84,10 @@ class DQN(Agent):
         gray_img = gray_img / 128. - 1.
         return gray_img
 
-    def __phi_load(self, obs: np.ndarray):
+    def __phi_load(self, obs: np.ndarray)->np.ndarray:
         self.phi.append(obs)
         self.phi_np = np.array(self.phi).astype(np.float32)
+        return self.phi_np
 
     def __phi_reset(self):
         self.phi.clear()
@@ -121,19 +122,13 @@ class DQN(Agent):
     #         # self.last_episodic_steps += 1
     # def generate_action(self, phi_t: torch.Tensor, epsilon: float = None):
 
-    def react(self, obs: np.ndarray, epsilon: float):
-        if (self.skf_counter % self.skf) == 0:
-            obs = self.__obs_pre_process(obs)
-            # cv2.imshow('tests', obs)
-            # cv2.waitKey(10)
-            self.__phi_load(obs)
-            with torch.no_grad():
-                phi = torch.as_tensor(self.phi_np.astype(np.float32)).to(self.device)
-                obs_input = phi.unsqueeze(0)
-                state_action_values = self.value_nn(obs_input).cpu().detach().numpy()
-                value_of_action_list = state_action_values[0]
-                self.last_action = epsilon_greedy(value_of_action_list, epsilon)
-        return self.last_action
+    def react(self, obs_phi: np.ndarray, epsilon: float):
+        with torch.no_grad():
+            phi = torch.as_tensor(self.phi_np.astype(np.float32)).to(self.device)
+            obs_input = phi.unsqueeze(0)
+            state_action_values = self.value_nn(obs_input).cpu().detach().numpy()
+            value_of_action_list = state_action_values[0]
+            return epsilon_greedy(value_of_action_list, epsilon)
 
     def load(self, map_location=torch.device('cpu')):
         self.value_nn.load_state_dict(torch.load(self.save_path, map_location))
@@ -149,7 +144,7 @@ class DQN(Agent):
     def __synchronize_q_network(self):
         self.target_value_nn.load_state_dict(self.value_nn.state_dict())
 
-    def learn(self, epsilon):
+    def learn(self):
         if len(self.replay_buffer) > self.min_sample_size_necessary:
             samples = random.sample(self.replay_buffer, self.mini_batch_size)
             obs_array = []
@@ -211,37 +206,66 @@ class DQN(Agent):
             # self.epsilon = 1. - self.update_steps * 0.0000009
             # self.epsilon = max(args.epsilon_min, self.epsilon)
 
-
-
     def training(self):
+        epsilon = 1
         obs = self.env.reset()
-        while self.learning_episodes < self.max_episodes and \
-                self.learning_steps < self.max_steps:
-            action = self.agent.react(obs)
+        self.__phi_reset()
+        obs_processed = self.__obs_pre_process(obs)
+        phi_np = self.__phi_load(obs_processed)
+        action = self.react(phi_np, epsilon)
+        reward_kf = 0
+        for i in range(1, self.max_training_steps + 1):
             obs_next, reward, terminated, truncated, info = self.env.step(action)
-            self.agent.observe(obs, action, reward, terminated, truncated, info, save_obs=True)
-            self.agent.learn()
-            self.learning_steps += 1
-            if terminated or truncated:
-                obs = self.env.reset()
-                self.learning_episodes += 1
+            if i % self.skf == 0:
+                obs_next_processed = self.__obs_pre_process(obs_next)
+                phi_next_np = self.__phi_load(obs_next_processed)
+                self.replay_buffer_append([phi_np, reward_kf + reward, terminated, truncated, phi_next_np])
+                self.learn()
+                reward_kf = 0
+                if terminated or truncated:
+                    obs = self.env.reset()
+                    obs_processed = self.__obs_pre_process(obs)
+                    self.__phi_reset()
+                    phi_np = self.__phi_load(obs_processed)
+                else:
+                    phi_np = phi_next_np
+                if i % self.model_saving_period == 0:
+                    self.test()
+
+                epsilon = 1 - i * 0.0000009
+                action = self.react(phi_np, epsilon)
             else:
-                obs = obs_next
-            if self.learning_steps % self.test_period_steps == 0:
-                self.test()
-
-def execute():
-    now = int(round(time.time() * 1000))
-    now02 = time.strftime('%m-%d-%H-%M-%S', time.localtime(now / 1000))
-    env_name = "ALE/Pong-v5"
-    env_ = DQNGym(env_name)
-    exp_name = now02 + "_" + env_name.replace('/', '_')
-    agent_path = os.path.join('./exp/', exp_name)
-    agent = DQN(env_.action_dim, agent_path)
-    training = Training(env_, agent, max_episodes=args.episodes_num, test_period_steps=40000,
-                        log_path=agent_path)
-    training.online_training()
+                if terminated or truncated:
+                    obs = self.env.reset()
+                    obs_processed = self.__obs_pre_process(obs)
+                    self.__phi_reset()
+                    phi_np = self.__phi_load(obs_processed)
+                    action = self.react(phi_np, epsilon)
+                    reward_kf = 0
+                else:
+                    reward_kf += reward
 
 
-if __name__ == '__main__':
-    execute()
+    def test(self):
+        self.__phi_reset()
+        obs = self.env_test.reset()
+        obs_processed = self.__obs_pre_process(obs)
+        phi_np = self.__phi_load(obs_processed)
+        episode_num = 0
+        reward_sum_list = []
+        reward_sum = 0
+        while episode_num < self.test_episode:
+            action = self.react(phi_np, epsilon)
+            obs_next, reward, terminated, truncated, info = self.env_test.step(action)
+            reward_sum += reward
+            obs_next_processed = self.__obs_pre_process(obs_next)
+            phi_next_np = self.__phi_load(obs_next_processed)
+            if terminated or truncated:
+                obs = self.env_test.reset()
+                obs_processed = self.__obs_pre_process(obs)
+                self.__phi_reset()
+                phi_np = self.__phi_load(obs_processed)
+                episode_num += 1
+            else:
+                phi_np = phi_next_np
+

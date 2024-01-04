@@ -6,7 +6,7 @@ import numpy as np
 custom_env_list = []
 
 
-class Env:
+class EnvWrapper:
     def __init__(self, env_id: str, logger: Logger):
         self.env_type = None
         if env_id in gym.envs.registry.keys():
@@ -25,15 +25,16 @@ class Env:
 
     def reset(self):
         """Implement the `reset` method that initializes the environment to its initial state"""
-        pass
+        if self.env_type is 'OpenAI GYM':
+            return self.env.reset()
 
     def step(self, action):
-        self.env.step(action)
         """
         Design the `step` method to execute an action in the environment and return the new state,
         reward, and done flag.
         """
-        pass
+        if self.env_type is 'OpenAI GYM':
+            return self.env.step(action)
 
     def render(self):
         """
