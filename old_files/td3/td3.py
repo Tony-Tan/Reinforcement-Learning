@@ -55,7 +55,7 @@ class TD3_Agent(Agent):
     def __init__(self, observation_space, action_space, actor_mlp_hidden_layer,
                  critic_mlp_hidden_layer, path='./data/models'):
         super(TD3_Agent, self).__init__('td3', path)
-        # initialize neural networks
+        # initialize neural models
         self.actor = MLPGaussianActorManuSTD(observation_space, action_space, actor_mlp_hidden_layer, torch.nn.ReLU,
                                              output_action=torch.nn.Tanh)
         self.actor_tar = copy.deepcopy(self.actor)
@@ -139,7 +139,7 @@ class TD3_Agent(Agent):
         for i in range(update_time):
             start_ptr = i * batch_size
             end_ptr = (i + 1) * batch_size
-            # update main networks
+            # update main models
             with torch.no_grad():
                 new_action_tensor, _ = self.actor_tar(next_obs_tensor[start_ptr:end_ptr])
                 action_noise = torch.randn_like(new_action_tensor).to(device) * args.action_noise

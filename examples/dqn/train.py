@@ -1,8 +1,6 @@
-import os
 import argparse
-from rl_algorithms.agents.dqn import DQN
-from rl_algorithms.environments.envwrapper import EnvWrapper
-from rl_algorithms.common.core import *
+from agents import DQN
+from environments.envwrapper import EnvWrapper
 
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
 parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,

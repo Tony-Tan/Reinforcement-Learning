@@ -16,7 +16,7 @@ parser.add_argument('--actor_hidden_layer', default=[400, 300], nargs='+', type=
 parser.add_argument('--critic_lr', default=1e-3, type=float, help='critic learning rate')
 parser.add_argument('--actor_lr', default=1e-4, type=float, help='actor learning rate')
 parser.add_argument('--initialize_nn', default=True, type=bool,
-                    help='initialize networks to the range suggested by the paper')
+                    help='initialize models to the range suggested by the paper')
 parser.add_argument('--batch_size', default=100, type=int, help='actor critic update batch_size')
 parser.add_argument('--discounted_rate', default=0.99, type=float,
                     help='episodic return discounted rate $\\gamma$ in the paper')
@@ -149,7 +149,7 @@ class DDPG(Agent):
         for i in range(update_times_per_learning):
             start_ptr = i * batch_size
             end_ptr = (i + 1) * batch_size
-            # update main networks
+            # update main models
             with torch.no_grad():
                 new_action_tensor, _ = self.actor_tar.act(next_obs_tensor[start_ptr:end_ptr], stochastically=False)
                 value_target = reward_tensor[start_ptr:end_ptr] + \

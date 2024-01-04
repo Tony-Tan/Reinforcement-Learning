@@ -129,7 +129,7 @@ class SAC_Agent(Agent):
         for i in range(update_time):
             start_ptr = i * batch_size
             end_ptr = (i + 1) * batch_size
-            # update main networks
+            # update main models
             with torch.no_grad():
                 action, log_pro = self.actor.act(next_obs_tensor[start_ptr:end_ptr],
                                                  with_log_pro=True)

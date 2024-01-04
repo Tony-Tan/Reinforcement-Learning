@@ -1,4 +1,4 @@
-from rl_algorithms.environments.envwrapper import EnvWrapper
+from environments.envwrapper import EnvWrapper
 
 
 class DQNGym(EnvWrapper):

@@ -1,17 +1,15 @@
 import copy
 import os
-import numpy as np
 import cv2
 import torch.optim
 import time
 import torch.nn.functional as F
 
-from rl_algorithms.agents.base_agent import Agent
-from rl_algorithms.networks.dqn_nn import DQNAtari
+from agents.base_agent import Agent
+from models.dqn_nn import DQNAtari
 from collections import deque
-from rl_algorithms.common.core import Logger
-from rl_algorithms.environments.envwrapper import EnvWrapper
-from rl_algorithms.common.exploration import *
+from utils.core import Logger
+from environments.envwrapper import EnvWrapper
 
 
 # args = script_args(args_list, 'dqn training arguments')

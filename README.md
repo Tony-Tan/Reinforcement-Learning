@@ -1,85 +1,59 @@
 Creating an open-source reinforcement learning project that follows a structure similar to Stable Baselines3 (SB3) is a good approach. Below is a suggested framework structure for your project, listing and briefly describing each file and class:
 
 ```plaintext
-my_rl_project/
+reinforcement_learning_project/
 │
-├── my_rl_project/
-│   ├── __init__.py
-│   ├── agents/
-│   │   ├── __init__.py
-│   │   ├── dqn.py              # Implementation of the DQN algorithm
-│   │   ├── ddpg.py             # Implementation of the DDPG algorithm
-│   │   ├── trpo.py             # Implementation of the TRPO algorithm
-│   │   ├── td3.py              # Implementation of the TD3 algorithm
-│   │   ├── sac.py              # Implementation of the SAC algorithm
-│   │   └── ...
-│   │
-│   ├── environments/
-│   │   ├── __init__.py
-│   │   ├── my_environment.py   # Custom RL environment if needed
-│   │   └── ...
-│   │
-│   ├── common/
-│   │   ├── __init__.py
-│   │   ├── hyperparams.py      # Hyperparameter configurations for algorithms
-│   │   └── ...
-│   │
-│   ├── evaluation/
-│   │   ├── __init__.py
-│   │   ├── evaluate.py         # Evaluation functions for trained agents
-│   │   └── ...
-│   │
-│   └── ...
+├── agents/
+│   ├── base_agent.py          # Abstract base class for all agents
+│   ├── dqn_agent.py           # Agent implementation for DQN
+│   ├── sac_agent.py           # Agent implementation for SAC
+│   ├── td3_agent.py           # Agent implementation for TD3
+│   └── trpo_agent.py          # Agent implementation for TRPO
+│
+├── environments/
+│   ├── custom_env.py          # Custom environment implementation
+│   └── __init__.py            # Initialize module
+│
+├── models/
+│   ├── neural_networks.py     # Neural network models for agents
+│   └── __init__.py            # Initialize module
+│
+├── utils/
+│   ├── replay_memory.py       # Experience replay memory implementation
+│   ├── exploration.py         # Exploration strategy functions
+│   ├── logger.py              # Logging and visualization tools
+│   └── __init__.py            # Initialize module
 │
 ├── tests/
-│   ├── __init__.py
-│   ├── test_dqn.py
-│   ├── test_ddpg.py
-│   ├── test_trpo.py
-│   ├── test_td3.py
-│   ├── test_sac.py
-│   └── ...
+│   ├── test_agents.py         # Tests for agent functionalities
+│   ├── test_environments.py   # Tests for environment interactions
+│   └── __init__.py            # Initialize module
 │
-├── docs/
-│   ├── index.rst
-│   ├── getting_started.rst
-│   ├── algorithms/
-│   │   ├── dqn.rst
-│   │   ├── ddpg.rst
-│   │   ├── trpo.rst
-│   │   ├── td3.rst
-│   │   ├── sac.rst
-│   │   └── ...
-│   ├── ...
-│
-├── README.md
-├── LICENSE
-├── setup.py
-└── requirements.txt
+├── main_train.py              # Main script for training agents
+├── main_test.py               # Main script for testing trained agents
+├── requirements.txt           # List of project dependencies
+└── README.md                  # Project description and instructions
+
 ```
 
-Now, let's describe each file and class briefly:
 
-- `my_rl_project/__init__.py`: An empty Python file that marks the directory as a Python package.
+```agents/```: Contains implementations of various RL agents. Each agent (like DQN, SAC, etc.) has its own Python file.
 
-- `my_rl_project/agents/`: This directory contains implementations of different RL algorithms. For example, `dqn.py` contains the Deep Q-Network (DQN) algorithm implementation.
+```environments/```: This directory holds custom environment implementations, if you're not solely relying on pre-built 
+ones like OpenAI Gym environments.
 
-- `my_rl_project/environments/`: If you have custom RL environments, place them in this directory. For example, `my_environment.py` could contain your custom environment.
+```models/```: Contains neural network architectures used by different agents.
 
-- `my_rl_project/utils/`: Utility functions used across algorithms and hyperparameter configurations can be placed here. `common.py` contains utility functions, while `hyperparams.py` defines hyperparameters for algorithms.
+```utils/```: Utility functions and classes like experience replay memory, exploration strategies, and logging are stored 
+here.
 
-- `my_rl_project/evaluation/`: This directory can contain evaluation scripts and functions for assessing trained agents' performance.
+```tests/```: Unit tests for different components of your framework.
 
-- `tests/`: This directory contains unit tests for your project. For each algorithm, there should be a corresponding test file, e.g., `test_dqn.py`, which tests the DQN implementation.
+```main_train.py```: The main script for training RL agents. This script will use the components from the 
+<code>agents</code>, <code>environments</code>, and <code>utils</code> directories.</li>
 
-- `docs/`: Documentation for your project. Each algorithm should have its documentation file, e.g., `dqn.rst`, which explains the algorithm, how to use it, and any important details.
+```main_test.py```: The main script for testing the trained agents. It evaluates agent performance in given environments.
 
-- `README.md`: A readme file that provides an overview of your project, its goals, installation instructions, and usage examples.
+```requirements.txt```: Lists all the Python package dependencies for your project.</li>
 
-- `LICENSE`: The license file for your project, specifying the terms under which others can use, modify, and distribute your code.
-
-- `setup.py`: A setup script for packaging and distributing your project.
-
-- `requirements.txt`: A list of dependencies needed to run your project.
-
-This framework structure closely follows the organization of Stable Baselines3 and should help you maintain a well-structured and organized open-source RL project.
+```README.md```: A markdown file providing an overview of your project, how to set it up, and how to use it.
