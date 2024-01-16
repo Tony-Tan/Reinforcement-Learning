@@ -1,14 +1,11 @@
 import numpy as np
 import torch
-import torch.nn.functional as F
 import torch.nn as nn
-import environments.tetris as tetris
+from online_rl import environments as tetris
+import environments as pt
 from torch.utils.tensorboard import SummaryWriter
-import environments.generate_trajectories_set as gts
-import environments.print_time as pt
 import os
 import time
-from multiprocessing import Pool
 
 DEBUG_FLAG = False
 TETRIS_WIDTH = 5

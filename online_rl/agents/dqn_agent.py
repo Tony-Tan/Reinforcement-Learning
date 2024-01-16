@@ -5,10 +5,10 @@ import torch.optim
 import time
 import torch.nn.functional as F
 
-from agents.base_agent import Agent
-from models.dqn_nn import DQNAtari
+from online_rl.agents.base_agent import Agent
+from models import DQNAtari
 from collections import deque
-from utils.core import Logger
+from utils.commons import Logger
 from environments.envwrapper import EnvWrapper
 
 

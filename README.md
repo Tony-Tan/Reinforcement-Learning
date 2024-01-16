@@ -1,5 +1,4 @@
-Creating an open-source reinforcement learning project that follows a structure similar to Stable Baselines3 (SB3) is a good approach. Below is a suggested framework structure for your project, listing and briefly describing each file and class:
-
+## File structure
 ```plaintext
 reinforcement_learning_project/
 │
@@ -36,24 +35,19 @@ reinforcement_learning_project/
 
 ```
 
+## Main files
 
-```agents/```: Contains implementations of various RL agents. Each agent (like DQN, SAC, etc.) has its own Python file.
-
-```environments/```: This directory holds custom environment implementations, if you're not solely relying on pre-built 
+1. ```agents/```: Contains implementations of various RL agents. Each agent (like DQN, SAC, etc.) has its own Python file.
+2. ```environments/```: This directory holds custom environment implementations, if you're not solely relying on pre-built 
 ones like OpenAI Gym environments.
-
-```models/```: Contains neural network architectures used by different agents.
-
-```utils/```: Utility functions and classes like experience replay memory, exploration strategies, and logging are stored 
+3. ```models/```: Contains neural network architectures used by different agents.
+4. ```utils/```: Utility functions and classes like experience replay memory, exploration strategies, and logging are stored 
 here.
-
-```tests/```: Unit tests for different components of your framework.
-
-```main_train.py```: The main script for training RL agents. This script will use the components from the 
+5. ```tests/```: Unit tests for different components of your framework.
+6. ```main_train.py```: The main script for training RL agents. This script will use the components from the 
 <code>agents</code>, <code>environments</code>, and <code>utils</code> directories.</li>
+7. ```main_test.py```: The main script for testing the trained agents. It evaluates agent performance in given environments.
+8. ```requirements.txt```: Lists all the Python package dependencies for your project.</li>
+9. ```README.md```: A markdown file providing an overview of your project, how to set it up, and how to use it.
 
-```main_test.py```: The main script for testing the trained agents. It evaluates agent performance in given environments.
 
-```requirements.txt```: Lists all the Python package dependencies for your project.</li>
-
-```README.md```: A markdown file providing an overview of your project, how to set it up, and how to use it.
