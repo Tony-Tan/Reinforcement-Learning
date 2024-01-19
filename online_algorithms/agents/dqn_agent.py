@@ -5,8 +5,8 @@ import torch.optim
 import time
 import torch.nn.functional as F
 
-from online_rl.agents.base_agent import Agent
-from models import DQNAtari
+from online_algorithms.agents.base_agent import AgentOnline
+from online_algorithms.models.dqn_networks import DQNAtari
 from collections import deque
 from utils.commons import Logger
 from environments.envwrapper import EnvWrapper
@@ -27,14 +27,14 @@ from environments.envwrapper import EnvWrapper
 #         return obs
 
 
-class DQN(Agent):
+class DQN(AgentOnline):
     def __init__(self, env: EnvWrapper, phi_temp_size: int,
                  replay_buffer_size: int, skip_k_frame: int, mini_batch_size: int, learning_rate: float,
                  input_frame_width: int, input_frame_height: int, init_data_size: int, max_training_steps:int,
                  gamma: float, step_c: int, model_saving_period: int, device: str,
                  save_path: str, logger: Logger):
         # agent elements settings
-        super().__init__(env, replay_buffer_size, save_path, logger)
+        super().__init__( replay_buffer_size, save_path, logger)
         self.input_frame_width = input_frame_width
         self.input_frame_height = input_frame_height
         self.epsilon = 1.0
@@ -120,7 +120,7 @@ class DQN(Agent):
     #         # self.last_episodic_steps += 1
     # def generate_action(self, phi_t: torch.Tensor, epsilon: float = None):
 
-    def react(self, obs_phi: np.ndarray, epsilon: float):
+    def select_action(self, *args: np.ndarray):
         with torch.no_grad():
             phi = torch.as_tensor(self.phi_np.astype(np.float32)).to(self.device)
             obs_input = phi.unsqueeze(0)
@@ -210,7 +210,7 @@ class DQN(Agent):
         self.__phi_reset()
         obs_processed = self.__obs_pre_process(obs)
         phi_np = self.__phi_load(obs_processed)
-        action = self.react(phi_np, epsilon)
+        action = self.select_action(phi_np, epsilon)
         reward_kf = 0
         for i in range(1, self.max_training_steps + 1):
             obs_next, reward, terminated, truncated, info = self.env.step(action)
@@ -231,14 +231,14 @@ class DQN(Agent):
                     self.test()
 
                 epsilon = 1 - i * 0.0000009
-                action = self.react(phi_np, epsilon)
+                action = self.select_action(phi_np, epsilon)
             else:
                 if terminated or truncated:
                     obs = self.env.reset()
                     obs_processed = self.__obs_pre_process(obs)
                     self.__phi_reset()
                     phi_np = self.__phi_load(obs_processed)
-                    action = self.react(phi_np, epsilon)
+                    action = self.select_action(phi_np, epsilon)
                     reward_kf = 0
                 else:
                     reward_kf += reward
@@ -253,7 +253,7 @@ class DQN(Agent):
         reward_sum_list = []
         reward_sum = 0
         while episode_num < self.test_episode:
-            action = self.react(phi_np, epsilon)
+            action = self.select_action(phi_np, epsilon)
             obs_next, reward, terminated, truncated, info = self.env_test.step(action)
             reward_sum += reward
             obs_next_processed = self.__obs_pre_process(obs_next)

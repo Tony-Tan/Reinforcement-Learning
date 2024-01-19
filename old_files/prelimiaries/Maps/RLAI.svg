@@ -230,7 +230,7 @@
 <polygon fill="none" stroke="black" points="2311.5,-756 2262.5,-756 2262.5,-720 2317.5,-720 2317.5,-750 2311.5,-756"/>
 <polyline fill="none" stroke="black" points="2311.5,-756 2311.5,-750 "/>
 <polyline fill="none" stroke="black" points="2317.5,-750 2311.5,-750 "/>
-<text text-anchor="middle" x="2290" y="-734.3" font-family="Avenir" font-size="14.00" fill="#008b8b">Agent</text>
+<text text-anchor="middle" x="2290" y="-734.3" font-family="Avenir" font-size="14.00" fill="#008b8b">AgentOnline</text>
 </g>
 <!-- action -->
 <g id="node11" class="node">

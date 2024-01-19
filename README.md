@@ -4,10 +4,10 @@ reinforcement_learning_project/
 │
 ├── agents/
 │   ├── base_agent.py          # Abstract base class for all agents
-│   ├── dqn_agent.py           # Agent implementation for DQN
-│   ├── sac_agent.py           # Agent implementation for SAC
-│   ├── td3_agent.py           # Agent implementation for TD3
-│   └── trpo_agent.py          # Agent implementation for TRPO
+│   ├── dqn_agent.py           # AgentOnline implementation for DQN
+│   ├── sac_agent.py           # AgentOnline implementation for SAC
+│   ├── td3_agent.py           # AgentOnline implementation for TD3
+│   └── trpo_agent.py          # AgentOnline implementation for TRPO
 │
 ├── environments/
 │   ├── custom_env.py          # Custom environment implementation

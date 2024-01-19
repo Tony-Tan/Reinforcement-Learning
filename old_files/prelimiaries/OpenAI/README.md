@@ -39,7 +39,7 @@ Key papers in deep reinforcement learning suggested by [OpenAI spinningup](https
     - [ ] [Trust-PCL: An Off-Policy Trust Region Method for Continuous Control](https://arxiv.org/abs/1707.01891), Nachum et al, 2017. *Algorithm: Trust-PCL.*
 - Other Directions for Combining Policy-Learning and Q-Learning
     - [ ] [Combining Policy Gradient and Q-learning](https://arxiv.org/abs/1611.01626), O'Donoghue et al, 2016. *Algorithm: PGQL.*
-    - [ ] [The Reactor: A Fast and Sample-Efficient Actor-Critic Agent for Reinforcement Learning](https://arxiv.org/abs/1704.04651), Gruslys et al, 2017. *Algorithm: Reactor.*
+    - [ ] [The Reactor: A Fast and Sample-Efficient Actor-Critic AgentOnline for Reinforcement Learning](https://arxiv.org/abs/1704.04651), Gruslys et al, 2017. *Algorithm: Reactor.*
     - [ ] [Interpolated Policy Gradient: Merging On-Policy and Off-Policy Gradient Estimation for Deep Reinforcement Learning](http://papers.nips.cc/paper/6974-interpolated-policy-gradient-merging-on-policy-and-off-policy-gradient-estimation-for-deep-reinforcement-learning), Gu et al, 2017. *Algorithm: IPG.*
     - [ ] [Equivalence Between Policy Gradients and Soft Q-Learning](https://arxiv.org/abs/1704.06440), Schulman et al, 2017. *Contribution:* Reveals a theoretical link between these two families of RL algorithms.
 - Evolutionary Algorithms
@@ -65,7 +65,7 @@ Key papers in deep reinforcement learning suggested by [OpenAI spinningup](https
 - [ ] [Progressive Neural Networks](https://arxiv.org/abs/1606.04671), Rusu et al, 2016. *Algorithm: Progressive Networks.*
 - [ ] [Universal Value Function Approximators](http://proceedings.mlr.press/v37/schaul15.pdf), Schaul et al, 2015. *Algorithm: UVFA.*
 - [ ] [Reinforcement Learning with Unsupervised Auxiliary Tasks](https://arxiv.org/abs/1611.05397), Jaderberg et al, 2016. *Algorithm: UNREAL.*
-- [ ] [The Intentional Unintentional Agent: Learning to Solve Many Continuous Control Tasks Simultaneously](https://arxiv.org/abs/1707.03300), Cabi et al, 2017. *Algorithm: IU Agent.*
+- [ ] [The Intentional Unintentional AgentOnline: Learning to Solve Many Continuous Control Tasks Simultaneously](https://arxiv.org/abs/1707.03300), Cabi et al, 2017. *Algorithm: IU AgentOnline.*
 - [ ] [PathNet: Evolution Channels Gradient Descent in Super Neural Networks](https://arxiv.org/abs/1701.08734), Fernando et al, 2017. *Algorithm: PathNet.*
 - [ ] [Mutual Alignment Transfer Learning](https://arxiv.org/abs/1707.07907), Wulfmeier et al, 2017. *Algorithm: MATL.*
 - [ ] [Learning an Embedding Space for Transferable Robot Skills](https://openreview.net/forum?idrk07ZXZRb&noteIdrk07ZXZRb), Hausman et al, 2018. 
@@ -80,7 +80,7 @@ Key papers in deep reinforcement learning suggested by [OpenAI spinningup](https
 - [ ] [Model-Free Episodic Control](https://arxiv.org/abs/1606.04460), Blundell et al, 2016. *Algorithm: MFEC.*
 - [ ] [Neural Episodic Control](https://arxiv.org/abs/1703.01988), Pritzel et al, 2017. *Algorithm: NEC.*
 - [ ] [Neural Map: Structured Memory for Deep Reinforcement Learning](https://arxiv.org/abs/1702.08360), Parisotto and Salakhutdinov, 2017. *Algorithm: Neural Map.*
-- [ ] [Unsupervised Predictive Memory in a Goal-Directed Agent](https://arxiv.org/abs/1803.10760), Wayne et al, 2018. *Algorithm: MERLIN.*
+- [ ] [Unsupervised Predictive Memory in a Goal-Directed AgentOnline](https://arxiv.org/abs/1803.10760), Wayne et al, 2018. *Algorithm: MERLIN.*
 - [ ] [Relational Recurrent Neural Networks](https://arxiv.org/abs/1806.01822), Santoro et al, 2018. *Algorithm: RMC.*
 
 ### Model-Based RL

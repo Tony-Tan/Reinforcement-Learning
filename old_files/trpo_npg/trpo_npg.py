@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from online_rl import environments as tetris
+from online_algorithms import environments as tetris
 import environments as pt
 from torch.utils.tensorboard import SummaryWriter
 import os

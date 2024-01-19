@@ -6,8 +6,8 @@ import sys
 
 # log class
 class Logger:
-    def __init__(self, log_path: str, print_in_terminal: bool = True):
-        self.log_file = open(os.path.join(log_path), 'a+')
+    def __init__(self, log_name: str, log_path: str, print_in_terminal: bool = True):
+        self.log_file = open(os.path.join(log_path, log_name), 'a+')
         self.print_in_terminal = print_in_terminal
         pass
 
@@ -54,6 +54,22 @@ class Callbacks:
         pass
 
 
+# exceptions
+class MethodNotImplement(Exception):
+    def __init__(self, info=None):
+        self.info = info
+
+    def __str__(self):
+        if self.info is None:
+            return 'The Method Has Not Been Implemented'
+        return self.info
+
+
+class EnvNotExist(Exception):
+    def __str__(self):
+        return 'environment name or id not exist'
+
+
 if __name__ == '__main__':
-    logger_ = Logger('./test_log.txt')
+    logger_ = Logger(log_name='test_log.txt', log_path='./')
     logger_('test logger...')

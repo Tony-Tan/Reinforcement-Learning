@@ -1,16 +1,17 @@
 from collections import deque
 import copy
+import numpy as np
+from utils.commons import *
+from utils.replay_memory import *
 
 
-class Agent:
-    def __init__(self, env: EnvWrapper, replay_buffer_size: int, save_path: str, logger: Logger):
-        self.env = env
-        self.env4test = copy.deepcopy(env)
-        self.logger = logger
-        self.save_path = save_path
-        self.replay_buffer = deque(maxlen=replay_buffer_size)
+class AgentOnline:
+    def __init__(self, memory_size: int, *args):
+        self.memory_size = memory_size
+        self.replay_buffer = ReplayBuffer(memory_size)
+        raise MethodNotImplement("Design the `act` method that returns the agent's action based on the current state.")
 
-    def react(self, *args) -> np.ndarray:
+    def select_action(self, states: np.ndarray, **kwargs) -> np.ndarray:
         raise MethodNotImplement("Design the `act` method that returns the agent's action based on the current state.")
 
     def replay_buffer_append(self, transition: list):
@@ -19,7 +20,7 @@ class Agent:
     def learn(self, *args):
         raise MethodNotImplement("This method is responsible for training the agent. It takes the total number of "
                                  "time steps as input and updates the agent's policy and value function based on "
-                                  "interactions with the environment.")
+                                 "interactions with the environment.")
 
     def test(self, *args):
         raise MethodNotImplement("test model")
@@ -29,5 +30,3 @@ class Agent:
 
     def load(self):
         raise MethodNotImplement("store and restore agent parameters")
-
-

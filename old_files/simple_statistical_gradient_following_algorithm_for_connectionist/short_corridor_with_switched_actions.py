@@ -1,4 +1,4 @@
-# this environment comes from algorithms 13.1 on page 323 of
+# this environment comes from learning_algorithms 13.1 on page 323 of
 # the second edition on Reinforcement learning: an introduction
 # Richard S. Sutton and Andrew G.Barto
 #

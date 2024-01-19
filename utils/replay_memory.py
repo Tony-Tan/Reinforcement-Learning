@@ -7,7 +7,7 @@ class ReplayBuffer:
         self.max_memory_size = max_memory_size
         self.buffer = deque(maxlen=max_memory_size)
 
-    def append_step(self, new_data):
+    def append(self, new_data):
         self.buffer.append(new_data)
 
     def append_trajectory(self, new_data):

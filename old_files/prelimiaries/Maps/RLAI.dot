@@ -39,7 +39,7 @@ digraph RL_main{
         style=filled fillcolor="cornsilk"
         label="Reinforcement Learning Problem";
         env[label="Environment" ];
-        agent[label="Agent" ];
+        agent[label="AgentOnline" ];
         state[label="State" ];
         reward[label="Reward" ];
         action[label="Action" ];
