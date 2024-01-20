@@ -13,7 +13,7 @@ class EnvWrapper:
             self.env = gym.make(env_id)
             self.env_type = 'OpenAI GYM'
             self.action_space = self.env.action_space
-            self.observation_space = self.env.observation_space
+            self.state_space = self.env.observation_space
             self.logger = logger
         else:
             # todo

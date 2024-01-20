@@ -10,32 +10,18 @@ from online_algorithms.models.dqn_networks import DQNAtari
 from collections import deque
 from utils.commons import Logger
 from environments.envwrapper import EnvWrapper
-from gymnasium.spaces import Space
-from core.policy import *
-
-
-class DQNPolicy(Policy):
-    def __init__(self):
-        super().__init__()
-        pass
-
-    def distribution(self, states: np.ndarray):
-        pass
-
-    def select_action(self, states: np.ndarray):
-        pass
 
 
 class DQN(AgentOnline):
-    def __init__(self, env: EnvWrapper, replay_buffer_size: int, skip_k_frame: int,
-                 phi_temp_size: int, mini_batch_size: int, learning_rate: float,
+    def __init__(self, env: EnvWrapper, phi_temp_size: int,
+                 replay_buffer_size: int, skip_k_frame: int, mini_batch_size: int, learning_rate: float,
                  input_frame_width: int, input_frame_height: int, init_data_size: int, max_training_steps: int,
                  gamma: float, step_c: int, model_saving_period: int, device: str,
                  save_path: str, logger: Logger):
         # agent elements settings
-        super().__init__(env, replay_buffer_size)
-        # self.input_frame_width = input_frame_width todo state_space
-        # self.input_frame_height = input_frame_height todo state_space
+        super().__init__( replay_buffer_size, save_path, logger)
+        self.input_frame_width = input_frame_width
+        self.input_frame_height = input_frame_height
         self.epsilon = 1.0
         self.phi_temp_size = phi_temp_size
         self.phi = deque(maxlen=phi_temp_size)

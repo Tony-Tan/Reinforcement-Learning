@@ -6,8 +6,12 @@ import sys
 
 # log class
 class Logger:
-    def __init__(self, log_name: str, log_path: str, print_in_terminal: bool = True):
-        self.log_file = open(os.path.join(log_path, log_name), 'a+')
+    def __init__(self, log_name: str = '', log_path: str = './', print_in_terminal: bool = True):
+        if log_name == '':
+            log_name_ = datetime.utcnow().strftime('%Y-%m-%d-%H-%M-%S')
+        else:
+            log_name_ = log_name
+        self.log_file = open(os.path.join(log_path, log_name_), 'a+')
         self.print_in_terminal = print_in_terminal
         pass
 
@@ -68,6 +72,11 @@ class MethodNotImplement(Exception):
 class EnvNotExist(Exception):
     def __str__(self):
         return 'environment name or id not exist'
+
+
+class PolicyNotImplement(Exception):
+    def __str__(self):
+        return 'Policy Has Not Been Implemented'
 
 
 if __name__ == '__main__':

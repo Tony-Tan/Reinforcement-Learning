@@ -247,7 +247,7 @@ class PPO_exp(RLExperiment):
         current_state = self.env.reset()
         while step_num < total_step_num:
             current_state = np.float32((current_state - self.state_mean) / self.state_std)
-            action, mu, std = self.agent.reaction(current_state)
+            action, mu, std = self.agent.react(current_state)
             gaussian_normalize = 1. / (std * np.sqrt(2 * np.pi))
             action_likelihood = gaussian_normalize * np.exp(-0.5 * ((mu - action) / std) ** 2)
             new_state, reward, is_done, _ = self.env.step(action)

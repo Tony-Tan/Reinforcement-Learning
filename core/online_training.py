@@ -11,7 +11,7 @@ def agent_test(agent: AgentOnline, env: EnvWrapper, test_episodes: int, logger: 
         state = env.reset()
         done = False
         while not done:
-            action = agent.select_action(state, **kwargs)
+            action = agent.react(state, **kwargs)
             next_state, reward, done, _ = env.step(action)
             state = next_state
             reward_array[episode_i] += reward
@@ -28,7 +28,7 @@ def online_training(agent: AgentOnline, env: EnvWrapper, env_test: EnvWrapper,
         state = env.reset()
         done = False
         while not done:
-            action = agent.select_action(state, **kwargs)
+            action = agent.react(state, **kwargs)
             next_state, reward, done, _ = env.step(action)
             state = next_state
 

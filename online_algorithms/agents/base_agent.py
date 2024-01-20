@@ -1,20 +1,21 @@
-from collections import deque
-import copy
-import numpy as np
 from utils.commons import *
-from utils.replay_memory import *
+from core.replay_memory import *
+from core.policy import *
+from gymnasium.spaces import Space
+from environments.envwrapper import *
 
 
 class AgentOnline:
-    def __init__(self, memory_size: int, *args):
+    def __init__(self, env: EnvWrapper, memory_size: int):
+        self.state_space = env.state_space
+        self.action_space = env.action_space
         self.memory_size = memory_size
         self.replay_buffer = ReplayBuffer(memory_size)
-        raise MethodNotImplement("Design the `act` method that returns the agent's action based on the current state.")
 
-    def select_action(self, states: np.ndarray, **kwargs) -> np.ndarray:
-        raise MethodNotImplement("Design the `act` method that returns the agent's action based on the current state.")
+    def react(self, states: np.ndarray, **kwargs) -> np.ndarray:
+        raise MethodNotImplement("Design the `react` method that returns the agent's action based on the current state.")
 
-    def replay_buffer_append(self, transition: list):
+    def observe(self, transition: list):
         self.replay_buffer.append(transition)
 
     def learn(self, *args):
