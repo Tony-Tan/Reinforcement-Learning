@@ -17,7 +17,7 @@ class DoubleDQN(DQN):
                 self.target_value_nn.state_dict())
             self.target_value_nn.load_state_dict(
                 self.value_nn_temp.state_dict())
-        super().learn()
+        super().update()
 
 def execute():
     now = int(round(time.time() * 1000))

@@ -6,28 +6,32 @@ from environments.envwrapper import *
 
 
 class AgentOnline:
-    def __init__(self, env: EnvWrapper, memory_size: int):
-        self.state_space = env.state_space
-        self.action_space = env.action_space
+    def __init__(self, memory_size: int, save_path: str):
         self.memory_size = memory_size
+        self.save_path = save_path
         self.replay_buffer = ReplayBuffer(memory_size)
+        self.__save_folder_create()
 
-    def react(self, states: np.ndarray, **kwargs) -> np.ndarray:
-        raise MethodNotImplement("Design the `react` method that returns the agent's action based on the current state.")
+    def __save_folder_create(self):
+        if not os.path.exists(self.save_path):
+            os.makedirs(self.save_path)
 
-    def observe(self, transition: list):
-        self.replay_buffer.append(transition)
+    def react(self, **kwargs) -> np.ndarray:
+        raise MethodNotImplement("react of the agent should be implemented")
 
-    def learn(self, *args):
+    def observe(self, **kwargs):
+        self.replay_buffer.append(kwargs['transition'])
+
+    def learn(self, **kwargs):
         raise MethodNotImplement("This method is responsible for training the agent. It takes the total number of "
                                  "time steps as input and updates the agent's policy and value function based on "
                                  "interactions with the environment.")
 
-    def test(self, *args):
+    def test(self, **kwargs):
         raise MethodNotImplement("test model")
 
-    def save(self):
+    def save(self, **kwargs):
         raise MethodNotImplement("store and restore agent parameters")
 
-    def load(self):
+    def load(self, **kwargs):
         raise MethodNotImplement("store and restore agent parameters")

@@ -19,7 +19,7 @@ class DQN(AgentOnline):
                  gamma: float, step_c: int, model_saving_period: int, device: str,
                  save_path: str, logger: Logger):
         # agent elements settings
-        super().__init__( replay_buffer_size, save_path, logger)
+        super().__init__(replay_buffer_size, save_path)
         self.input_frame_width = input_frame_width
         self.input_frame_height = input_frame_height
         self.epsilon = 1.0

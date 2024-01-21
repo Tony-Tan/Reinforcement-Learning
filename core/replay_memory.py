@@ -17,6 +17,9 @@ class ReplayBuffer:
     def __getitem__(self, item):
         return self.buffer[item]
 
+    def __setitem__(self, key, value):
+        self.buffer[key] = value
+
     def __len__(self):
         return len(self.buffer)
 

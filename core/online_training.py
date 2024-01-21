@@ -29,7 +29,9 @@ def online_training(agent: AgentOnline, env: EnvWrapper, env_test: EnvWrapper,
         done = False
         while not done:
             action = agent.react(state, **kwargs)
-            next_state, reward, done, _ = env.step(action)
+            next_state, reward, done, truncated, info = env.step(action)
+            agent.observe(transition=[next_state, reward, done, truncated, info])
+            agent.learn(**kwargs)
             state = next_state
 
         if episode_i % test_interval == 0:
