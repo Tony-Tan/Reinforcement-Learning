@@ -2,7 +2,7 @@ import numpy as np
 from utils.commons import *
 from core.exploration import *
 from environments.envwrapper import *
-from core.replay_memory import *
+from core.experience_replay import *
 from abc import ABC, abstractmethod
 
 

@@ -1,5 +1,16 @@
 from collections import deque
 import random
+from abc import ABC, abstractmethod
+
+
+class ExperienceReplay(ABC):
+    @abstractmethod
+    def store(self, experience):
+        pass
+
+    @abstractmethod
+    def sample(self, batch_size):
+        pass
 
 
 class ReplayBuffer:

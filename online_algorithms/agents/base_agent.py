@@ -1,5 +1,5 @@
 from utils.commons import *
-from core.replay_memory import *
+from core.experience_replay import *
 from core.policy import *
 from gymnasium.spaces import Space
 from environments.envwrapper import *
