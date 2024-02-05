@@ -1,6 +1,4 @@
-import numpy as np
-
-from online_algorithms.agents.base_agent import *
+from rl_abc.agent import *
 from environments.envwrapper import *
 from utils.commons import *
 

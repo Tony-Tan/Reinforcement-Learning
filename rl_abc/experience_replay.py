@@ -36,3 +36,4 @@ class ReplayBuffer:
 
     def sample(self, size: int):
         return random.sample(self.buffer, size)
+

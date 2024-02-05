@@ -1,5 +1,5 @@
 import argparse
-from online_algorithms.agents import DQN
+from agents import DQN
 from environments.envwrapper import EnvWrapper
 
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
