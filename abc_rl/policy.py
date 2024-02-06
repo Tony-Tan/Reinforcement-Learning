@@ -1,8 +1,8 @@
 import numpy as np
 from utils.commons import *
-from rl_abc.exploration import *
+from abc_rl.exploration import *
 from environments.envwrapper import *
-from rl_abc.experience_replay import *
+from abc_rl.experience_replay import *
 from abc import ABC, abstractmethod
 
 
@@ -38,7 +38,7 @@ class ValueFunction(ABC):
         ...
 
     @abstractmethod
-    def update(self):
+    def update(self,  **kwargs):
         ...
 
 

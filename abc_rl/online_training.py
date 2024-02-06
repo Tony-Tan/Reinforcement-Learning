@@ -1,4 +1,4 @@
-from rl_abc.agent import *
+from abc_rl.agent import *
 from environments.envwrapper import *
 from utils.commons import *
 

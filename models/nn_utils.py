@@ -62,7 +62,7 @@ import torch
 #
 #     def push(self, data_list: list):
 #         """
-#         when the buffer is full, the oldest rl_abc will be removed
+#         when the buffer is full, the oldest abc_rl will be removed
 #
 #         """
 #         data_list_idx = 0

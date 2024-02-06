@@ -5,7 +5,7 @@ import torch.optim
 import time
 import torch.nn.functional as F
 
-from rl_abc.agent import AgentOnline
+from abc_rl.agent import AgentOnline
 from models.dqn_networks import DQNAtari
 from collections import deque
 from utils.commons import Logger
