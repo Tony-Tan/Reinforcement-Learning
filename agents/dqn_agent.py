@@ -109,133 +109,66 @@ class SkipKFramesPhi(PerceptionMapping):
         gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         gray_img = cv2.resize(gray_img, (self.input_frame_width, self.input_frame_height))
         gray_img = gray_img[self.input_frame_height - self.input_frame_width: self.input_frame_height,
-                   0: self.input_frame_width]
+                            0: self.input_frame_width]
         gray_img = gray_img / 128. - 1.
         return gray_img
-
-    def map(self, state: np.ndarray) -> np.ndarray:
-        pass
-
-
-class DQNAgent(Agent):
-    def __init__(self, env_train: EnvWrapper, env_test: EnvWrapper,
-                 mini_batch_size: int, memory_size: int, min_update_sample_size: int, skip_k_frame: int,
-                 learning_rate: float, input_frame_width: int, input_frame_height: int, phi_temp_size: int,
-                 gamma: float, training_episodes: int, phi_channel: int, device: torch.device):
-        super(DQNAgent, self).__init__()
-        # basic elements initialize
-        self.env_train = env_train
-        self.env_test = env_test
-        self.value_function = DQNValueFunction(phi_temp_size, env_train.action_space, learning_rate, gamma, device)
-        self.exploration_method = DecayingEpsilonGreedy(1, 0.0001, 1)  # todo
-        self.memory = UniformExerienceReplay(memory_size)
-
-        # hyperparameters
-        self.mini_batch_size = mini_batch_size
-        self.update_sample_size = min_update_sample_size
-        # self.learning_rate = learning_rate
-        self.training_episodes = training_episodes
 
     def __phi_load(self, obs: np.ndarray):
         self.phi.append(obs)
 
-    def select_action(self) -> np.ndarray:
-        value_list = self.value_function.value(np.array(self.phi).astype(np.float32))
-        return self.exploration_method(value_list)
-
-    def __episode_reset(self):
+    def reset(self):
         self.phi.clear()
         for i in range(self.phi_channel):
             self.phi.append(np.zeros([self.input_frame_width, self.input_frame_width]))
         self.skip_k_frame_step_counter = 0
         self.skip_k_frame_reward_sum = 0
 
-    def store(self, obs, action, reward, terminated, truncated, inf):
-        self.skip_k_frame_step_counter += 1
-        if terminated or truncated:
-            self.__episode_reset()
+    def __call__(self, state: np.ndarray, reward: float = 0) -> list:
+        obs = [None, None]
+        if self.skip_k_frame_step_counter % self.skip_k_frame == 0:
+            self.skip_k_frame_reward_sum += reward
+            # preprocess the obs to a certain size and load it to phi
+            self.__phi_load(self.__pre_process(state))
+            obs[0] = np.array(self.phi)
+            obs[1] = 1 if self.skip_k_frame_reward_sum > 0 else 0
+            self.skip_k_frame_reward_sum = 0
         else:
+            self.skip_k_frame_step_counter += 1
+            self.skip_k_frame_reward_sum += reward
+        self.skip_k_frame_step_counter += 1
+        return obs
 
-            if self.skip_k_frame_step_counter % self.skip_k_frame == 0:
-                self.skip_k_frame_reward_sum += reward
-                # preprocess the obs to a certain size and load it to phi
-                self.__phi_load(self.__obs_pre_process(obs))
-                self.memory.store([self.phi, action, 1 if self.skip_k_frame_reward_sum > 0 else 0,
-                                   terminated, truncated, None])
-                if len(self.memory) > 1:
-                    self.memory[-2][-1] = self.phi
-                self.skip_k_frame_reward_sum = 0
-            else:
-                self.skip_k_frame_step_counter += 1
-                self.skip_k_frame_reward_sum += reward
 
-    def learn(self):
+class DQNAgent(Agent):
+    def __init__(self, input_frame_width: int, input_frame_height: int, action_space,
+                 mini_batch_size: int, memory_size: int, min_update_sample_size: int, skip_k_frame: int,
+                 learning_rate: float,  phi_temp_size: int,
+                 gamma: float, training_episodes: int, phi_channel: int, device: torch.device):
+        super(DQNAgent, self).__init__()
+        # basic elements initialize
+        self.value_function = DQNValueFunction(phi_temp_size, action_space, learning_rate, gamma, device)
+        self.exploration_method = DecayingEpsilonGreedy(1, 0.0001, 1)  # todo
+        self.memory = UniformExerienceReplay(memory_size)
+        self.perception_mapping = SkipKFramesPhi(phi_channel, skip_k_frame, input_frame_width, input_frame_height)
+        # hyperparameters
+        self.mini_batch_size = mini_batch_size
+        self.update_sample_size = min_update_sample_size
+        # self.learning_rate = learning_rate
+        self.training_episodes = training_episodes
+
+    def select_action(self, phi: np.ndarray) -> np.ndarray:
+        if phi is None:
+            return self.memory[-1][1]
+        value_list = self.value_function.value(np.array(phi).astype(np.float32))
+        return self.exploration_method(value_list)
+
+    def store(self, phi, action, reward, terminated, truncated, inf):
+        self.memory.store([phi, action, reward, terminated, truncated, None])
+        if len(self.memory) > 1:
+            self.memory[-2][-1] = phi
+
+    def train_step(self):
         if len(self.memory) > self.update_sample_size:
             samples = self.memory.sample(self.mini_batch_size)
             self.value_function.update(samples)
 
-    #
-    #
-    #
-    #
-    # def training(self):
-    #     epsilon = 1
-    #     obs = self.env.reset()
-    #     self.__phi_reset()
-    #     obs_processed = self.__obs_pre_process(obs)
-    #     phi_np = self.__phi_load(obs_processed)
-    #     action = self.react(phi_np)
-    #     reward_kf = 0
-    #     for i in range(1, self.max_training_steps + 1):
-    #         obs_next, reward, terminated, truncated, info = self.env.step(action)
-    #         if i % self.skf == 0:
-    #             obs_next_processed = self.__obs_pre_process(obs_next)
-    #             phi_next_np = self.__phi_load(obs_next_processed)
-    #             self.observe([phi_np, reward_kf + reward, terminated, truncated, phi_next_np])
-    #             self.learn()
-    #             reward_kf = 0
-    #             if terminated or truncated:
-    #                 obs = self.env.reset()
-    #                 obs_processed = self.__obs_pre_process(obs)
-    #                 self.__phi_reset()
-    #                 phi_np = self.__phi_load(obs_processed)
-    #             else:
-    #                 phi_np = phi_next_np
-    #             if i % self.model_saving_period == 0:
-    #                 self.test()
-    #
-    #             epsilon = 1 - i * 0.0000009
-    #             action = self.react(phi_np)
-    #         else:
-    #             if terminated or truncated:
-    #                 obs = self.env.reset()
-    #                 obs_processed = self.__obs_pre_process(obs)
-    #                 self.__phi_reset()
-    #                 phi_np = self.__phi_load(obs_processed)
-    #                 action = self.react(phi_np)
-    #                 reward_kf = 0
-    #             else:
-    #                 reward_kf += reward
-    #
-    # def test(self):
-    #     self.__phi_reset()
-    #     obs = self.env_test.reset()
-    #     obs_processed = self.__obs_pre_process(obs)
-    #     phi_np = self.__phi_load(obs_processed)
-    #     episode_num = 0
-    #     reward_sum_list = []
-    #     reward_sum = 0
-    #     while episode_num < self.test_episode:
-    #         action = self.react(phi_np)
-    #         obs_next, reward, terminated, truncated, info = self.env_test.step(action)
-    #         reward_sum += reward
-    #         obs_next_processed = self.__obs_pre_process(obs_next)
-    #         phi_next_np = self.__phi_load(obs_next_processed)
-    #         if terminated or truncated:
-    #             obs = self.env_test.reset()
-    #             obs_processed = self.__obs_pre_process(obs)
-    #             self.__phi_reset()
-    #             phi_np = self.__phi_load(obs_processed)
-    #             episode_num += 1
-    #         else:
-    #             phi_np = phi_next_np

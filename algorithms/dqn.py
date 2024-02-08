@@ -30,8 +30,7 @@ args = parser.parse_args()
 
 
 logger_ = Logger(args.log_path)
-env_train = EnvWrapper(args.env_name, logger_)
-env_test = EnvWrapper(args.env_name, logger_)
+env = EnvWrapper(args.env_name, logger_)
 dqn_agent = DQNAgent(network, replay_buffer)
 
 
@@ -39,11 +38,15 @@ num_episodes = 1000
 for episode in range(args.training_episodes):
     state = env.reset()
     done = False
+    reward_raw = 0
+    truncated = 0
+    inf = None
     while not done:
-        action = dqn_agent.select_action(state)
-        next_state, reward, done, _ = env.step(action)
-        dqn_agent.replay_buffer.store((state, action, reward, next_state, done))
+        phi, reward = dqn_agent.perception_mapping(state, reward_raw)
+        action = dqn_agent.select_action(phi)
+        dqn_agent.store(phi, action, reward, done, truncated, inf)
         dqn_agent.train_step()
+        next_state, reward_raw, done, truncated, inf = env.step(action)
         state = next_state
 
 

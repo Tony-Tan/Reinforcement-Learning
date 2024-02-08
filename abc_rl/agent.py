@@ -20,7 +20,7 @@ class Agent(ABC):
         ...
 
     @abstractmethod
-    def learn(self, **kwargs):
+    def train_step(self, **kwargs):
         ...
 
     @abstractmethod

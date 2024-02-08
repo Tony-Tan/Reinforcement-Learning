@@ -7,5 +7,5 @@ class PerceptionMapping(ABC):
         ...
 
     @abstractmethod
-    def map(self, state: np.ndarray) -> np.ndarray:
+    def __call__(self, state: np.ndarray) -> np.ndarray:
         ...
