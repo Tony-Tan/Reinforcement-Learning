@@ -29,24 +29,23 @@ parser.add_argument('--model_saving_period', default=80000, type=int,
 args = parser.parse_args()
 
 
-logger_ = Logger(args.log_path)
-env = EnvWrapper(args.env_name, logger_)
-dqn_agent = DQNAgent(network, replay_buffer)
-
-
-num_episodes = 1000
-for episode in range(args.training_episodes):
-    state = env.reset()
-    done = False
-    reward_raw = 0
-    truncated = 0
-    inf = None
-    while not done:
-        phi, reward = dqn_agent.perception_mapping(state, reward_raw)
-        action = dqn_agent.select_action(phi)
-        dqn_agent.store(phi, action, reward, done, truncated, inf)
-        dqn_agent.train_step()
-        next_state, reward_raw, done, truncated, inf = env.step(action)
-        state = next_state
+if __name__ == '__main__':
+    logger_ = Logger(args.log_path)
+    env = EnvWrapper(args.env_name, logger_)
+    dqn_agent = DQNAgent(network, replay_buffer)
+    num_episodes = 1000
+    for episode in range(args.training_episodes):
+        state, _ = env.reset()
+        done = False
+        reward_raw = 0
+        truncated = 0
+        inf = None
+        while not done:
+            phi, reward = dqn_agent.perception_mapping(state, reward_raw)
+            action = dqn_agent.select_action(phi)
+            dqn_agent.store(phi, action, reward, done, truncated, inf)
+            dqn_agent.train_step()
+            next_state, reward_raw, done, truncated, inf = env.step(action)
+            state = next_state
 
 
