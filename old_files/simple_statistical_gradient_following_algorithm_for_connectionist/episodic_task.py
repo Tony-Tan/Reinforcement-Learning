@@ -1,7 +1,7 @@
 # Williams, Ronald J. “Simple Statistical Gradient-Following Algorithms for
 # Connectionist Reinforcement Learning.” Machine Learning 8, no. 3 (1992): 229–56.
 # episodic task
-# learning_algorithms 13.1 short corridor with switched actions in reinforcement leanring: an introduction
+# algorithms 13.1 short corridor with switched actions in reinforcement leanring: an introduction
 # by Richard S. Sutton
 import copy
 

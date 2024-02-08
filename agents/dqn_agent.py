@@ -10,6 +10,7 @@ from environments.envwrapper import EnvWrapper
 from abc_rl.policy import *
 from abc_rl.exploration import *
 from abc_rl.experience_replay import *
+from abc_rl.perception_mapping import *
 
 
 class DQNValueFunction(ValueFunction):
@@ -85,25 +86,11 @@ class DQNValueFunction(ValueFunction):
             return state_action_values
 
 
-class DQNAgent(Agent):
-    def __init__(self, env_train: EnvWrapper, env_test: EnvWrapper,
-                 mini_batch_size: int, memory_size: int, min_update_sample_size: int, skip_k_frame: int,
-                 learning_rate: float, input_frame_width: int, input_frame_height: int, phi_temp_size: int,
-                 gamma: float, training_episodes: int, phi_channel: int, device: torch.device):
-        super(DQNAgent, self).__init__()
-        # basic elements initialize
-        self.env_train = env_train
-        self.env_test = env_test
-        self.value_function = DQNValueFunction(phi_temp_size, env_train.action_space, learning_rate, gamma, device)
-        self.exploration_method = DecayingEpsilonGreedy(1, 0.0001, 1) # todo
-        self.memory = UniformExerienceReplay(memory_size)
-        self.phi = deque(maxlen=phi_temp_size)
-
-        # hyperparameters
-        self.mini_batch_size = mini_batch_size
-        self.update_sample_size = min_update_sample_size
-        # self.learning_rate = learning_rate
-        self.training_episodes = training_episodes
+class SkipKFramesPhi(PerceptionMapping):
+    def __init__(self, phi_channel: int, skip_k_frame: int, input_frame_width: int, input_frame_height: int):
+        super().__init__()
+        self.phi_channel = phi_channel
+        self.phi = deque(maxlen=phi_channel)
         self.phi_channel = phi_channel
         self.skip_k_frame = skip_k_frame
         self.input_frame_width = input_frame_width
@@ -112,7 +99,7 @@ class DQNAgent(Agent):
         self.skip_k_frame_step_counter = 0
         self.skip_k_frame_reward_sum = 0
 
-    def __obs_pre_process(self, obs: np.ndarray):
+    def __pre_process(self, obs: np.ndarray):
         """
         :param obs: 2-d int matrix, original state of environment
         :return: 2-d float matrix, 1-channel image with size of self.down_sample_size
@@ -125,6 +112,29 @@ class DQNAgent(Agent):
                    0: self.input_frame_width]
         gray_img = gray_img / 128. - 1.
         return gray_img
+
+    def map(self, state: np.ndarray) -> np.ndarray:
+        pass
+
+
+class DQNAgent(Agent):
+    def __init__(self, env_train: EnvWrapper, env_test: EnvWrapper,
+                 mini_batch_size: int, memory_size: int, min_update_sample_size: int, skip_k_frame: int,
+                 learning_rate: float, input_frame_width: int, input_frame_height: int, phi_temp_size: int,
+                 gamma: float, training_episodes: int, phi_channel: int, device: torch.device):
+        super(DQNAgent, self).__init__()
+        # basic elements initialize
+        self.env_train = env_train
+        self.env_test = env_test
+        self.value_function = DQNValueFunction(phi_temp_size, env_train.action_space, learning_rate, gamma, device)
+        self.exploration_method = DecayingEpsilonGreedy(1, 0.0001, 1)  # todo
+        self.memory = UniformExerienceReplay(memory_size)
+
+        # hyperparameters
+        self.mini_batch_size = mini_batch_size
+        self.update_sample_size = min_update_sample_size
+        # self.learning_rate = learning_rate
+        self.training_episodes = training_episodes
 
     def __phi_load(self, obs: np.ndarray):
         self.phi.append(obs)
@@ -140,7 +150,7 @@ class DQNAgent(Agent):
         self.skip_k_frame_step_counter = 0
         self.skip_k_frame_reward_sum = 0
 
-    def observe(self, obs, action, reward, terminated, truncated, inf):
+    def store(self, obs, action, reward, terminated, truncated, inf):
         self.skip_k_frame_step_counter += 1
         if terminated or truncated:
             self.__episode_reset()
@@ -163,15 +173,6 @@ class DQNAgent(Agent):
         if len(self.memory) > self.update_sample_size:
             samples = self.memory.sample(self.mini_batch_size)
             self.value_function.update(samples)
-
-
-
-
-
-
-
-
-
 
     #
     #

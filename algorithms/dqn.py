@@ -1,5 +1,5 @@
 import argparse
-from agents import DQN
+from agents.dqn_agent import *
 from environments.envwrapper import EnvWrapper
 
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
@@ -7,7 +7,7 @@ parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--mini_batch_size', default=32, type=int, help='ccn training batch size，default: 32')
 parser.add_argument('--replay_buffer_size', default=15000, type=int, help='memory buffer size ，default: 15000')
-parser.add_argument('--max_training_steps', default=100000, type=int, help='max training episodes，default: 100000')
+parser.add_argument('--training_episodes', default=100000, type=int, help='max training episodes，default: 100000')
 parser.add_argument('--skip_k_frame', default=4, type=int, help='dqn skip k frames each step，default: 4')
 parser.add_argument('--phi_temp_size', default=4, type=int, help='phi temp size, default: 4')
 parser.add_argument('--device', default='cuda', type=str, help='calculation device default: cuda')
@@ -29,11 +29,21 @@ parser.add_argument('--model_saving_period', default=80000, type=int,
 args = parser.parse_args()
 
 
-if __name__ == '__main__':
-    logger_ = Logger(args.log_path)
-    env_ = EnvWrapper(args.env_name, logger_)
-    agent = DQN(env_, args.phi_temp_size, args.replay_buffer_size,
-                args.skip_k_frame, args.mini_batch_size, args.learning_rate,
-                args.input_frame_width, args.input_frame_height, args.init_data_size, args.max_training_steps,
-                args.gamma, args.step_c, args.model_saving_period, args.device, args.save_path, logger_)
-    agent.training()
+logger_ = Logger(args.log_path)
+env_train = EnvWrapper(args.env_name, logger_)
+env_test = EnvWrapper(args.env_name, logger_)
+dqn_agent = DQNAgent(network, replay_buffer)
+
+
+num_episodes = 1000
+for episode in range(args.training_episodes):
+    state = env.reset()
+    done = False
+    while not done:
+        action = dqn_agent.select_action(state)
+        next_state, reward, done, _ = env.step(action)
+        dqn_agent.replay_buffer.store((state, action, reward, next_state, done))
+        dqn_agent.train_step()
+        state = next_state
+
+

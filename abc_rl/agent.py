@@ -16,7 +16,7 @@ class Agent(ABC):
         ...
 
     @abstractmethod
-    def observe(self, **kwargs):
+    def store(self, **kwargs):
         ...
 
     @abstractmethod
