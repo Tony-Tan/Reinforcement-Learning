@@ -5,7 +5,7 @@ import torch
 
 
 class DQNAtari(nn.Module):
-    def __init__(self, input_channel_size, output_size):
+    def __init__(self, input_channel_size: int, output_size:int):
         super(DQNAtari, self).__init__()
         self.conv1 = nn.Conv2d(input_channel_size, 32, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)

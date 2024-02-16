@@ -1,24 +1,90 @@
 import cv2
+import numpy as np
 import torch.optim
 import torch.nn.functional as F
 
 from abc_rl.agent import Agent
 from models.dqn_networks import DQNAtari
-from collections import deque
-from utils.commons import Logger
-from environments.envwrapper import EnvWrapper
 from abc_rl.policy import *
 from abc_rl.exploration import *
 from abc_rl.experience_replay import *
 from abc_rl.perception_mapping import *
+from abc_rl.reward_shaping import *
+from exploration.epsilon_greedy import *
+
+
+class DQNAtariReward(RewardShaping):
+    def __init__(self, skip_k_frame: int):
+        super().__init__()
+        self.skip_k_frame = skip_k_frame
+        self.reward_cumulated = 0
+        pass
+
+    def reset(self):
+        self.reward_cumulated = 0
+
+    def __call__(self, reward, step_i: int):
+        if step_i % self.skip_k_frame == 0:
+            # preprocess the obs to a certain size and load it to phi
+            reward_rs = self.reward_cumulated
+            self.reset()
+            return 1 if reward_rs != 0 else 0
+        else:
+            self.reward_cumulated += reward
+        return None
+
+
+class DQNPerceptionMapping(PerceptionMapping):
+    def __init__(self, phi_channel: int, skip_k_frame: int, input_frame_width: int,
+                 input_frame_height: int):
+        super().__init__()
+        self.phi_channel = phi_channel
+        self.phi = deque(maxlen=phi_channel)
+        self.phi_channel = phi_channel
+        self.skip_k_frame = skip_k_frame
+        self.input_frame_width = input_frame_width
+        self.input_frame_height = input_frame_height
+
+    def __pre_process(self, obs: np.ndarray):
+        """
+        :param obs: 2-d int matrix, original state of environment
+        :return: 2-d float matrix, 1-channel image with size of self.down_sample_size
+                 and the value is converted to [-0.5,0.5]
+        """
+        image = np.array(obs)
+        gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        gray_img = cv2.resize(gray_img, (self.input_frame_width, self.input_frame_height))
+        gray_img = gray_img[self.input_frame_height - self.input_frame_width: self.input_frame_height,
+                   0: self.input_frame_width]
+        gray_img = gray_img / 128. - 1.
+        return gray_img
+
+    def __phi_append(self, obs: np.ndarray):
+        self.phi.append(obs)
+
+    def reset(self):
+        self.phi.clear()
+        for i in range(self.phi_channel):
+            self.phi.append(np.zeros([self.input_frame_width, self.input_frame_width]))
+
+    def __call__(self, state: np.ndarray, step_i: int = 0) -> np.ndarray:
+        if step_i == 0:
+            self.reset()
+        obs = None
+        if step_i % self.skip_k_frame == 0:
+            # preprocess the obs to a certain size and load it to phi
+            self.__phi_append(self.__pre_process(state))
+            obs = np.array(self.phi)
+            self.skip_k_frame_reward_sum = 0
+        return obs
 
 
 class DQNValueFunction(ValueFunction):
-    def __init__(self, input_channel: int, action_space, learning_rate: float,
+    def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
                  gamma: float, step_c: int, model_saving_period: int, device: torch.device):
         super(DQNValueFunction, self).__init__()
-        self.value_nn = DQNAtari(input_channel, action_space)
-        self.target_value_nn = DQNAtari(input_channel, action_space)
+        self.value_nn = DQNAtari(input_channel, action_dim)
+        self.target_value_nn = DQNAtari(input_channel, action_dim)
         self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
         self.learning_rate = learning_rate
         self.gamma = gamma
@@ -34,33 +100,34 @@ class DQNValueFunction(ValueFunction):
     def __synchronize_value_nn(self):
         self.value_nn.load_state_dict(self.target_value_nn.state_dict())
 
-    def update(self, samples: np.ndarray):
-        obs_array = samples[:, 0]  # np.array(obs_array)
-        action_array = samples[:, 1]  #
-        reward_array = samples[:, 2]  # np.array(reward_array).astype(np.float32)
-        is_done_array = samples[:, 3]  # np.array(is_done_array).astype(np.float32)
-        next_obs_array = samples[:, 5]  # np.array(next_obs_array)
+    def update(self, samples: list):
+        obs_array = samples[0]  # np.array(obs_array)
+        action_array = samples[1]  #
+        reward_array = samples[2]  # np.array(reward_array).astype(np.float32)
+        is_done_array = samples[3]  # np.array(is_done_array).astype(np.float32)
+        next_obs_array = samples[5]  # np.array(next_obs_array)
         # next state value predicted by target value networks
-        max_next_state_value = []
-        outputs = self.target_value_nn(next_obs_array)
-        _, predictions = np.max(outputs, 1)
+        # max_next_state_value = []
+        outputs = self.target_value_nn(torch.as_tensor(next_obs_array))
+        max_next_state_value, _ = torch.max(outputs, dim=1, keepdim=True)
         # predictions = predictions.cpu().numpy()
-        for p_i in range(len(predictions)):
-            max_next_state_value.append(outputs[p_i][predictions[p_i]])
-        max_next_state_value = np.array(max_next_state_value).astype(np.float32)
-        max_next_state_value = (1.0 - is_done_array) * max_next_state_value
+        # for p_i in range(len(predictions)):
+        #     max_next_state_value.append(outputs[p_i][predictions[p_i]])
+        # max_next_state_value = np.array(max_next_state_value).astype(np.float32)
+        is_done_tensor = torch.as_tensor(is_done_array).resize_as(max_next_state_value)
+        max_next_state_value = ((1.0 - is_done_tensor) * max_next_state_value)
         # reward array
-        reward_array = torch.from_numpy(reward_array)
+        reward_array = torch.from_numpy(reward_array).resize_as(max_next_state_value)
         reward_array = torch.clamp(reward_array, min=-1., max=1.)
         # calculate q value
         q_value = reward_array + self.gamma * max_next_state_value
         # action array
-        action_array = torch.Tensor(action_array).long()
+        action_array = torch.from_numpy(action_array).resize_as(reward_array)
         # train the model
         inputs = torch.from_numpy(obs_array).to(self.device)
         q_value = q_value.to(self.device).view(-1, 1)
 
-        actions = action_array.to(self.device)
+        actions = action_array.to(self.device).long()
         # zero the parameter gradients
         # forward + backward + optimize
         outputs = self.target_value_nn(inputs)
@@ -86,89 +153,40 @@ class DQNValueFunction(ValueFunction):
             return state_action_values
 
 
-class SkipKFramesPhi(PerceptionMapping):
-    def __init__(self, phi_channel: int, skip_k_frame: int, input_frame_width: int, input_frame_height: int):
-        super().__init__()
-        self.phi_channel = phi_channel
-        self.phi = deque(maxlen=phi_channel)
-        self.phi_channel = phi_channel
-        self.skip_k_frame = skip_k_frame
-        self.input_frame_width = input_frame_width
-        self.input_frame_height = input_frame_height
-        # dqn elements
-        self.skip_k_frame_step_counter = 0
-        self.skip_k_frame_reward_sum = 0
-
-    def __pre_process(self, obs: np.ndarray):
-        """
-        :param obs: 2-d int matrix, original state of environment
-        :return: 2-d float matrix, 1-channel image with size of self.down_sample_size
-                 and the value is converted to [-0.5,0.5]
-        """
-        image = np.array(obs)
-        gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        gray_img = cv2.resize(gray_img, (self.input_frame_width, self.input_frame_height))
-        gray_img = gray_img[self.input_frame_height - self.input_frame_width: self.input_frame_height,
-                            0: self.input_frame_width]
-        gray_img = gray_img / 128. - 1.
-        return gray_img
-
-    def __phi_load(self, obs: np.ndarray):
-        self.phi.append(obs)
-
-    def reset(self):
-        self.phi.clear()
-        for i in range(self.phi_channel):
-            self.phi.append(np.zeros([self.input_frame_width, self.input_frame_width]))
-        self.skip_k_frame_step_counter = 0
-        self.skip_k_frame_reward_sum = 0
-
-    def __call__(self, state: np.ndarray, reward: float = 0) -> list:
-        obs = [None, None]
-        if self.skip_k_frame_step_counter % self.skip_k_frame == 0:
-            self.skip_k_frame_reward_sum += reward
-            # preprocess the obs to a certain size and load it to phi
-            self.__phi_load(self.__pre_process(state))
-            obs[0] = np.array(self.phi)
-            obs[1] = 1 if self.skip_k_frame_reward_sum > 0 else 0
-            self.skip_k_frame_reward_sum = 0
-        else:
-            self.skip_k_frame_step_counter += 1
-            self.skip_k_frame_reward_sum += reward
-        self.skip_k_frame_step_counter += 1
-        return obs
-
-
 class DQNAgent(Agent):
     def __init__(self, input_frame_width: int, input_frame_height: int, action_space,
-                 mini_batch_size: int, memory_size: int, min_update_sample_size: int, skip_k_frame: int,
-                 learning_rate: float,  phi_temp_size: int,
+                 mini_batch_size: int, replay_buffer_size: int, min_update_sample_size: int, skip_k_frame: int,
+                 learning_rate: float, step_c: int, model_saving_period: int,
                  gamma: float, training_episodes: int, phi_channel: int, device: torch.device):
         super(DQNAgent, self).__init__()
         # basic elements initialize
-        self.value_function = DQNValueFunction(phi_temp_size, action_space, learning_rate, gamma, device)
-        self.exploration_method = DecayingEpsilonGreedy(1, 0.0001, 1)  # todo
-        self.memory = UniformExerienceReplay(memory_size)
-        self.perception_mapping = SkipKFramesPhi(phi_channel, skip_k_frame, input_frame_width, input_frame_height)
+        self.value_function = DQNValueFunction(phi_channel, action_space.n, learning_rate, gamma, step_c,
+                                               model_saving_period, device)
+        self.exploration_method = DecayingEpsilonGreedy(1, 0.0001, training_episodes)  # todo
+        self.memory = UniformExperienceReplay(replay_buffer_size)
+        self.perception_mapping = DQNPerceptionMapping(phi_channel, skip_k_frame, input_frame_width, input_frame_height)
+        self.reward_shaping = DQNAtariReward(skip_k_frame)
         # hyperparameters
         self.mini_batch_size = mini_batch_size
+        self.skip_k_frame = skip_k_frame
         self.update_sample_size = min_update_sample_size
         # self.learning_rate = learning_rate
         self.training_episodes = training_episodes
+        self.last_action = None
 
-    def select_action(self, phi: np.ndarray) -> np.ndarray:
-        if phi is None:
-            return self.memory[-1][1]
-        value_list = self.value_function.value(np.array(phi).astype(np.float32))
-        return self.exploration_method(value_list)
+    def select_action(self, obs: np.ndarray) -> np.ndarray:
+        if obs is not None:
+            value_list = self.value_function.value(np.array(obs).astype(np.float32))[0]
+            self.last_action = self.exploration_method(value_list)
+        return self.last_action
 
-    def store(self, phi, action, reward, terminated, truncated, inf):
-        self.memory.store([phi, action, reward, terminated, truncated, None])
-        if len(self.memory) > 1:
-            self.memory[-2][-1] = phi
+    def store(self, obs, action, reward, terminated, truncated, inf):
+        if obs is not None:
+            self.memory.store([obs, action, reward, terminated, truncated, np.zeros_like(obs)])
+            if len(self.memory) > 1:
+                self.memory[-1][-1] = obs
 
-    def train_step(self):
-        if len(self.memory) > self.update_sample_size:
+    def train_step(self, step_i=0):
+        if (len(self.memory) > self.update_sample_size) and (step_i % self.skip_k_frame == 0):
             samples = self.memory.sample(self.mini_batch_size)
             self.value_function.update(samples)
-

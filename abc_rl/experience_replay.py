@@ -1,6 +1,7 @@
 from collections import deque
 import random
 from abc import ABC, abstractmethod
+import numpy as np
 
 
 class ExperienceReplay(ABC):
@@ -13,47 +14,38 @@ class ExperienceReplay(ABC):
         pass
 
 
-class UniformExerienceReplay(ExperienceReplay):
-    def __init__(self, memory_size:int):
-        self.memory = deque(maxlen=memory_size)
+class UniformExperienceReplay(ExperienceReplay):
+    def __init__(self, memory_size: int):
+        self.replay_buffer = deque(maxlen=memory_size)
 
     def store(self, transition: list):
-        self.memory.append(transition)
+        if len(self.replay_buffer) == 0:
+            for t_i in transition:
+                self.replay_buffer.append([t_i])
+        else:
+            for i, t_i in enumerate(transition):
+                self.replay_buffer[i].append(t_i)
 
     def sample(self, batch_size: int):
-        return random.sample(self.memory, batch_size)
+        idx = np.arange(self.__len__())
+        selected = np.random.choice(idx, batch_size, replace=True)
+        sampled_transitions = []
+        for element_i in self.replay_buffer:
+            data_i = []
+            for selected_idx in selected:
+                data_i.append(element_i[selected_idx])
+            sampled_transitions.append(np.array(data_i, dtype=np.float32))
+        return sampled_transitions
 
     def __len__(self):
-        return len(self.memory)
+        if len(self.replay_buffer) == 0:
+            return 0
+        else:
+            return len(self.replay_buffer[0])
 
     def __getitem__(self, item):
-        return self.memory[item]
+        return self.replay_buffer[item]
 
-    def __setitem__(self, key, value):
-        self.memory[key] = value
-
-#
-# class ReplayBuffer(ExperienceReplay):
-#     def __init__(self, max_memory_size):
-#         self.max_memory_size = max_memory_size
-#         self.buffer = deque(maxlen=max_memory_size)
-#
-#     def append(self, new_data):
-#         self.buffer.append(new_data)
-#
-#     def append_trajectory(self, new_data):
-#         for step_i in new_data:
-#             self.buffer.append(step_i)
-#
-#     def __getitem__(self, item):
-#         return self.buffer[item]
-#
-#     def __setitem__(self, key, value):
-#         self.buffer[key] = value
-#
-#     def __len__(self):
-#         return len(self.buffer)
-#
-#     def sample(self, size: int):
-#         return random.sample(self.buffer, size)
+    # def __setitem__(self, key, transition: list):
+    #     return self.replay_buffer[key]
 

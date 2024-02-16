@@ -1,7 +1,5 @@
-from utils.commons import *
 from abc import ABC, abstractmethod
-from gymnasium.spaces import Space
-from environments.envwrapper import *
+from environments.env_wrapper import *
 
 
 class Agent(ABC):
@@ -23,8 +21,5 @@ class Agent(ABC):
     def train_step(self, **kwargs):
         ...
 
-    @abstractmethod
-    def test(self, **kwargs):
-        ...
 
 

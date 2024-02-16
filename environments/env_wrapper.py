@@ -1,5 +1,6 @@
 # main class of env
 import gymnasium as gym
+from gymnasium import envs
 from utils.commons import *
 
 custom_env_list = []
@@ -24,19 +25,19 @@ class EnvWrapper:
 
     def reset(self):
         """Implement the `reset` method that initializes the environment to its initial state"""
-        if self.env_type is 'OpenAI GYM':
+        if self.env_type == 'OpenAI GYM':
             return self.env.reset()
 
     def step(self, action):
-        """
-        Design the `step` method to execute an action in the environment and return the new state,
-        reward, and done flag.
-        """
-        if self.env_type is 'OpenAI GYM':
-            return self.env.step(action)
+        return self.env.step(action)
 
     def render(self):
         """
         Include a `render` method for visualizing the environment's current state.
         """
         pass
+
+
+if __name__ == '__main__':
+    for key_i in envs.registry.keys():
+        print(key_i)
