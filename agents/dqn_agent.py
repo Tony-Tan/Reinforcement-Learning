@@ -83,8 +83,8 @@ class DQNValueFunction(ValueFunction):
     def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
                  gamma: float, step_c: int, model_saving_period: int, device: torch.device):
         super(DQNValueFunction, self).__init__()
-        self.value_nn = DQNAtari(input_channel, action_dim)
-        self.target_value_nn = DQNAtari(input_channel, action_dim)
+        self.value_nn = DQNAtari(input_channel, action_dim).to(device)
+        self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
         self.learning_rate = learning_rate
         self.gamma = gamma
@@ -93,44 +93,42 @@ class DQNValueFunction(ValueFunction):
         self.step_c = step_c
         self.model_saving_period = model_saving_period
 
-    def __networks_init(self):
-        self.value_nn.to(self.device)
-        self.target_value_nn.to(self.device)
+    # def __networks_init(self):
+    #     self.value_nn.to(self.device)
+    #     self.target_value_nn.to(self.device)
 
     def __synchronize_value_nn(self):
-        self.value_nn.load_state_dict(self.target_value_nn.state_dict())
+        self.target_value_nn.load_state_dict(self.value_nn.state_dict())
 
     def update(self, samples: list):
-        obs_array = samples[0]  # np.array(obs_array)
-        action_array = samples[1]  #
-        reward_array = samples[2]  # np.array(reward_array).astype(np.float32)
-        is_done_array = samples[3]  # np.array(is_done_array).astype(np.float32)
-        next_obs_array = samples[5]  # np.array(next_obs_array)
+        obs_tensor = torch.as_tensor(samples[0]).to(self.device)  # np.array(obs_array)
+        action_tensor = torch.as_tensor(samples[1]).to(self.device)  #
+        reward_tensor = torch.as_tensor(samples[2]).to(self.device)  # np.array(reward_array).astype(np.float32)
+        is_done_tensor = torch.as_tensor(samples[3]).to(self.device)  # np.array(is_done_array).astype(np.float32)
+        next_obs_tensor = torch.as_tensor(samples[5]).to(self.device)  # np.array(next_obs_array)
         # next state value predicted by target value networks
         # max_next_state_value = []
-        outputs = self.target_value_nn(torch.as_tensor(next_obs_array))
+        outputs = self.target_value_nn(next_obs_tensor)
         max_next_state_value, _ = torch.max(outputs, dim=1, keepdim=True)
         # predictions = predictions.cpu().numpy()
         # for p_i in range(len(predictions)):
         #     max_next_state_value.append(outputs[p_i][predictions[p_i]])
         # max_next_state_value = np.array(max_next_state_value).astype(np.float32)
-        is_done_tensor = torch.as_tensor(is_done_array).resize_as(max_next_state_value)
+        is_done_tensor = is_done_tensor.resize_as(max_next_state_value)
         max_next_state_value = ((1.0 - is_done_tensor) * max_next_state_value)
         # reward array
-        reward_array = torch.from_numpy(reward_array).resize_as(max_next_state_value)
-        reward_array = torch.clamp(reward_array, min=-1., max=1.)
+        reward_tensor = reward_tensor.resize_as(max_next_state_value)
+        reward_tensor = torch.clamp(reward_tensor, min=-1., max=1.)
         # calculate q value
-        q_value = reward_array + self.gamma * max_next_state_value
+        q_value = reward_tensor + self.gamma * max_next_state_value
         # action array
-        action_array = torch.from_numpy(action_array).resize_as(reward_array)
+        action_tensor = action_tensor.resize_as(reward_tensor)
         # train the model
-        inputs = torch.from_numpy(obs_array).to(self.device)
-        q_value = q_value.to(self.device).view(-1, 1)
-
-        actions = action_array.to(self.device).long()
+        q_value = q_value.view(-1, 1)
+        actions = action_tensor.long()
         # zero the parameter gradients
         # forward + backward + optimize
-        outputs = self.target_value_nn(inputs)
+        outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
         loss = F.mse_loss(obs_action_value, q_value)
         # Minimize the loss
@@ -162,7 +160,9 @@ class DQNAgent(Agent):
         # basic elements initialize
         self.value_function = DQNValueFunction(phi_channel, action_space.n, learning_rate, gamma, step_c,
                                                model_saving_period, device)
-        self.exploration_method = DecayingEpsilonGreedy(1, 0.0001, training_episodes)  # todo
+        # 1,000,000 from the paper
+        self.exploration_method = DecayingEpsilonGreedy(1, 0.01, 1000000)
+
         self.memory = UniformExperienceReplay(replay_buffer_size)
         self.perception_mapping = DQNPerceptionMapping(phi_channel, skip_k_frame, input_frame_width, input_frame_height)
         self.reward_shaping = DQNAtariReward(skip_k_frame)

@@ -6,6 +6,14 @@ from utils.commons import *
 custom_env_list = []
 
 
+class EnvError(Exception):
+    def __init__(self, error_inf):
+        self.error_inf = error_inf
+
+    def __str__(self):
+        return 'Environment error: ' + self.error_inf
+
+
 class EnvWrapper:
     def __init__(self, env_id: str, logger: Logger):
         self.env_type = None
@@ -17,11 +25,10 @@ class EnvWrapper:
             self.state_space = self.env.observation_space
             self.logger = logger
         else:
-            # todo
-            # custom environments
-            pass
-        self.logger('environment {env_id} from {env_type} had be built'.format(env_id=self.env_id,
-                                                                               env_type=self.env_type))
+            raise EnvError('not exist env_id')
+
+        self.logger('env_wrapper.py| EnvWrapper init: {env_id} from {env_type} had be built'.
+                    format(env_id=self.env_id, env_type=self.env_type))
 
     def reset(self):
         """Implement the `reset` method that initializes the environment to its initial state"""
