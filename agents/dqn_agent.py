@@ -74,7 +74,7 @@ class DQNPerceptionMapping(PerceptionMapping):
         gray_img = cv2.resize(gray_img, (self.input_frame_width, self.input_frame_height))
         gray_img = gray_img[self.input_frame_height - self.input_frame_width: self.input_frame_height,
                    0: self.input_frame_width]
-        gray_img = gray_img / 128. - 1.
+        # gray_img = gray_img / 128. - 1.
         return gray_img
 
     def __phi_append(self, obs: np.ndarray):
@@ -119,11 +119,11 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn.load_state_dict(self.value_nn.state_dict())
 
     def update(self, samples: list):
-        obs_tensor = torch.as_tensor(samples[0]).to(self.device)  # np.array(obs_array)
+        obs_tensor = torch.as_tensor(samples[0]).to(self.device)/128. - 1  # np.array(obs_array)
         action_tensor = torch.as_tensor(samples[1]).to(self.device)  #
         reward_tensor = torch.as_tensor(samples[2]).to(self.device)  # np.array(reward_array).astype(np.float32)
         is_done_tensor = torch.as_tensor(samples[3]).to(self.device)  # np.array(is_done_array).astype(np.float32)
-        next_obs_tensor = torch.as_tensor(samples[5]).to(self.device)  # np.array(next_obs_array)
+        next_obs_tensor = torch.as_tensor(samples[5]).to(self.device)/128 - 1  # np.array(next_obs_array)
         # next state value predicted by target value networks
         # max_next_state_value = []
         outputs = self.target_value_nn(next_obs_tensor)
@@ -195,7 +195,8 @@ class DQNAgent(Agent):
 
     def select_action(self, obs: np.ndarray, exploration_method: EpsilonGreedy = None) -> np.ndarray:
         if obs is not None:
-            value_list = self.value_function.value(np.array(obs).astype(np.float32))[0]
+            obs_scaled = np.array(obs).astype(np.float32) / 128. - 1.
+            value_list = self.value_function.value(obs_scaled)[0]
             if exploration_method is None:
                 self.last_action = self.exploration_method(value_list)
             else:

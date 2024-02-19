@@ -98,6 +98,7 @@ def train_dqn():
                 if step_i % args.batch_num_per_epoch == 0:
                     epoch_i += 1
             episode_i += 1
+        logger_(f'agent train: replay buffer current length: {len(dqn_agent.memory)}')
         test(dqn_agent)
 
 
