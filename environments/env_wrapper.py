@@ -27,7 +27,7 @@ class EnvWrapper:
         else:
             raise EnvError('not exist env_id')
 
-        self.logger('env_wrapper.py| EnvWrapper init: {env_id} from {env_type} had be built'.
+        self.logger('EnvWrapper init: {env_id} from {env_type} had be built'.
                     format(env_id=self.env_id, env_type=self.env_type))
 
     def reset(self):

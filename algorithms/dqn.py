@@ -5,7 +5,6 @@ import copy
 from exploration.epsilon_greedy import *
 from tqdm import tqdm
 
-
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
 parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
@@ -13,7 +12,7 @@ parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='ccn training batch size，default: 32')
 parser.add_argument('--batch_num_per_epoch', default=5000, type=int,
                     help='each epoch contains how many updates，default: 32')
-parser.add_argument('--replay_buffer_size', default=1000000, type=int,
+parser.add_argument('--replay_buffer_size', default=100000, type=int,
                     help='memory buffer size ，default: 15000')
 parser.add_argument('--training_episodes', default=100000, type=int,
                     help='max training episodes，default: 100000')
@@ -54,8 +53,7 @@ args = parser.parse_args()
 
 def test(agent: DQNAgent):
     env = EnvWrapper(args.env_name, logger_)
-    agent_test = copy.deepcopy(agent)
-    agent_test.exploration_method = EpsilonGreedy(args.epsilon_for_test)
+    exploration_method = EpsilonGreedy(args.epsilon_for_test)
     reward_cum = 0
     for i in range(args.agent_test_episodes):
         state, _ = env.reset()
@@ -63,7 +61,7 @@ def test(agent: DQNAgent):
         step_i = 0
         while not done:
             obs = agent.perception_mapping(state, step_i)
-            action = agent.select_action(obs)
+            action = agent.select_action(obs, exploration_method)
             next_state, reward, done, truncated, inf = env.step(action)
             reward_cum += reward
             state = next_state

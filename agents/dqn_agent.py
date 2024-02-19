@@ -7,10 +7,28 @@ from abc_rl.agent import Agent
 from models.dqn_networks import DQNAtari
 from abc_rl.policy import *
 from abc_rl.exploration import *
-from abc_rl.experience_replay import *
+from experience_replay.uniform_experience_replay import *
 from abc_rl.perception_mapping import *
 from abc_rl.reward_shaping import *
 from exploration.epsilon_greedy import *
+
+
+class DQNReplayBuffer(UniformExperienceReplay):
+    def __init__(self, memory_size: int):
+        super().__init__(memory_size)
+
+    def sample(self, batch_size: int):
+        idx = np.arange(self.__len__()-1)
+        selected_idx = np.random.choice(idx, batch_size, replace=True)
+        sampled_transitions = [[] for _ in range(self.dim()+1)]
+        for idx_i in selected_idx:
+            i = 0
+            for i, data_i in enumerate(self.buffer[idx_i]):
+                sampled_transitions[i].append(data_i)
+            sampled_transitions[i+1].append(self.buffer[idx_i + 1][0])
+        for s_i in range(len(sampled_transitions)):
+            sampled_transitions[s_i] = np.array(sampled_transitions[s_i], dtype=np.float32)
+        return sampled_transitions
 
 
 class DQNAtariReward(RewardShaping):
@@ -114,15 +132,15 @@ class DQNValueFunction(ValueFunction):
         # for p_i in range(len(predictions)):
         #     max_next_state_value.append(outputs[p_i][predictions[p_i]])
         # max_next_state_value = np.array(max_next_state_value).astype(np.float32)
-        is_done_tensor = is_done_tensor.resize_as(max_next_state_value)
+        is_done_tensor.resize_as_(max_next_state_value)
         max_next_state_value = ((1.0 - is_done_tensor) * max_next_state_value)
         # reward array
-        reward_tensor = reward_tensor.resize_as(max_next_state_value)
+        reward_tensor.resize_as_(max_next_state_value)
         reward_tensor = torch.clamp(reward_tensor, min=-1., max=1.)
         # calculate q value
         q_value = reward_tensor + self.gamma * max_next_state_value
         # action array
-        action_tensor = action_tensor.resize_as(reward_tensor)
+        action_tensor.resize_as_(reward_tensor)
         # train the model
         q_value = q_value.view(-1, 1)
         actions = action_tensor.long()
@@ -163,7 +181,8 @@ class DQNAgent(Agent):
         # 1,000,000 from the paper
         self.exploration_method = DecayingEpsilonGreedy(1, 0.01, 1000000)
 
-        self.memory = UniformExperienceReplay(replay_buffer_size)
+        self.memory = DQNReplayBuffer(replay_buffer_size)
+        # self.memory = UniformExperienceReplay(replay_buffer_size)
         self.perception_mapping = DQNPerceptionMapping(phi_channel, skip_k_frame, input_frame_width, input_frame_height)
         self.reward_shaping = DQNAtariReward(skip_k_frame)
         # hyperparameters
@@ -174,17 +193,21 @@ class DQNAgent(Agent):
         self.training_episodes = training_episodes
         self.last_action = None
 
-    def select_action(self, obs: np.ndarray) -> np.ndarray:
+    def select_action(self, obs: np.ndarray, exploration_method: EpsilonGreedy = None) -> np.ndarray:
         if obs is not None:
             value_list = self.value_function.value(np.array(obs).astype(np.float32))[0]
-            self.last_action = self.exploration_method(value_list)
+            if exploration_method is None:
+                self.last_action = self.exploration_method(value_list)
+            else:
+                self.last_action = exploration_method(value_list)
         return self.last_action
 
     def store(self, obs, action, reward, terminated, truncated, inf):
         if obs is not None:
-            self.memory.store([obs, action, reward, terminated, truncated, np.zeros_like(obs)])
-            if len(self.memory) > 1:
-                self.memory[-1][-1] = obs
+            self.memory.store([obs, action, reward, terminated, truncated])
+            # self.memory.store([obs, action, reward, terminated, truncated, np.zeros_like(obs)])
+            # if len(self.memory) > 1:
+            #     self.memory[-1][-1] = obs
 
     def train_step(self, step_i=0):
         if (len(self.memory) > self.update_sample_size) and (step_i % self.skip_k_frame == 0):
