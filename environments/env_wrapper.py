@@ -15,7 +15,7 @@ class EnvError(Exception):
 
 
 class EnvWrapper:
-    def __init__(self, env_id: str, logger: Logger):
+    def __init__(self, env_id: str):
         self.env_type = None
         if env_id in gym.envs.registry.keys():
             self.env_id = env_id
@@ -23,12 +23,12 @@ class EnvWrapper:
             self.env_type = 'OpenAI GYM'
             self.action_space = self.env.action_space
             self.state_space = self.env.observation_space
-            self.logger = logger
+
         else:
             raise EnvError('not exist env_id')
 
-        self.logger('EnvWrapper init: {env_id} from {env_type} had be built'.
-                    format(env_id=self.env_id, env_type=self.env_type))
+        # self.logger('EnvWrapper init: {env_id} from {env_type} had be built'.
+        #             format(env_id=self.env_id, env_type=self.env_type))
 
     def reset(self):
         """Implement the `reset` method that initializes the environment to its initial state"""
