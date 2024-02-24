@@ -35,13 +35,13 @@ parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')
 parser.add_argument('--log_path', default='../exps/dqn/', type=str,
                     help='log save path，default: ./log/')
-parser.add_argument('--learning_rate', default=0.00025, type=float,
+parser.add_argument('--learning_rate', default=0.00001, type=float,
                     help='cnn learning rate，default: 0.000025')
 parser.add_argument('--step_c', default=1000, type=int,
                     help='synchronise target value network periods，default: 100')
 parser.add_argument('--epsilon_min', default=0.1, type=float,
                     help='min epsilon of epsilon-greedy，default: 0.1')
-parser.add_argument('--epsilon_for_test', default=0.01, type=float,
+parser.add_argument('--epsilon_for_test', default=0.05, type=float,
                     help='epsilon of epsilon-greedy for testing agent，default: 0.05')
 parser.add_argument('--agent_test_period', default=1000, type=int,
                     help='agent test period(episode)，default: 100')
