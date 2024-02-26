@@ -102,7 +102,7 @@ class DQNValueFunction(ValueFunction):
         super(DQNValueFunction, self).__init__()
         self.value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
-        self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95)
+        self.optimizer = torch.optim.SGD(self.value_nn.parameters(), lr=learning_rate, momentum=0.95)
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device
@@ -118,11 +118,15 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn.load_state_dict(self.value_nn.state_dict())
 
     def update(self, samples: list):
-        obs_tensor = torch.as_tensor(samples[0], dtype=torch.float32).to(self.device)/255.  # np.array(obs_array)
+        obs_tensor = torch.as_tensor(samples[0], dtype=torch.float32).to(self.device) / 255. - 0.5
+        # np.array(obs_array)
         action_tensor = torch.as_tensor(samples[1], dtype=torch.float32).to(self.device)  #
-        reward_tensor = torch.as_tensor(samples[2], dtype=torch.float32).to(self.device)  # np.array(reward_array).astype(np.float32)
-        is_done_tensor = torch.as_tensor(samples[3], dtype=torch.float32).to(self.device)  # np.array(is_done_array).astype(np.float32)
-        next_obs_tensor = torch.as_tensor(samples[5], dtype=torch.float32).to(self.device)/255.  # np.array(next_obs_array)
+        reward_tensor = torch.as_tensor(samples[2], dtype=torch.float32).to(
+            self.device)  # np.array(reward_array).astype(np.float32)
+        is_done_tensor = torch.as_tensor(samples[3], dtype=torch.float32).to(
+            self.device)  # np.array(is_done_array).astype(np.float32)
+        next_obs_tensor = torch.as_tensor(samples[5], dtype=torch.float32).to(
+            self.device) / 255. - 0.5  # np.array(next_obs_array)
         # next state value predicted by target value networks
         # max_next_state_value = []
         outputs = self.target_value_nn(next_obs_tensor)
@@ -172,13 +176,14 @@ class DQNAgent(Agent):
     def __init__(self, input_frame_width: int, input_frame_height: int, action_space,
                  mini_batch_size: int, replay_buffer_size: int, min_update_sample_size: int, skip_k_frame: int,
                  learning_rate: float, step_c: int, model_saving_period: int,
-                 gamma: float, training_episodes: int, phi_channel: int, device: torch.device):
+                 gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,
+                 exploration_steps: int, device: torch.device):
         super(DQNAgent, self).__init__()
         # basic elements initialize
         self.value_function = DQNValueFunction(phi_channel, action_space.n, learning_rate, gamma, step_c,
                                                model_saving_period, device)
         # 1,000,000 from the paper
-        self.exploration_method = DecayingEpsilonGreedy(1, 0.01, 10000000)
+        self.exploration_method = DecayingEpsilonGreedy(epsilon_max, epsilon_min, exploration_steps)
 
         # self.memory = DQNReplayBuffer(replay_buffer_size)
         self.memory = UniformExperienceReplay(replay_buffer_size)
@@ -195,9 +200,9 @@ class DQNAgent(Agent):
 
     def select_action(self, obs: np.ndarray, exploration_method: EpsilonGreedy = None) -> np.ndarray:
         if obs is not None:
-            obs_scaled = np.array(obs).astype(np.float32) / 255.
+            obs_scaled = np.array(obs).astype(np.float32) / 255. - 0.5
             value_list = self.value_function.value(obs_scaled)[0]
-            self.last_max_value = max(self.last_max_value, max(value_list))
+            self.last_max_value = max(self.last_max_value, np.mean(value_list))
             if exploration_method is None:
                 self.last_action = self.exploration_method(value_list)
             else:
