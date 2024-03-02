@@ -36,14 +36,18 @@ parser.add_argument('--save_path', default='./data_log/', type=str,
 parser.add_argument('--log_path', default='../exps/dqn/', type=str,
                     help='log save path，default: ./log/')
 parser.add_argument('--learning_rate', default=0.00001, type=float,
-                    help='cnn learning rate，default: 0.000025')
-parser.add_argument('--step_c', default=1000, type=int,
+                    help='cnn learning rate，default: 0.00001')
+parser.add_argument('--step_c', default=100, type=int,
                     help='synchronise target value network periods，default: 100')
+parser.add_argument('--epsilon_max', default=1., type=float,
+                    help='max epsilon of epsilon-greedy，default: 1.')
 parser.add_argument('--epsilon_min', default=0.1, type=float,
                     help='min epsilon of epsilon-greedy，default: 0.1')
+parser.add_argument('--exploration_steps', default=1000000, type=int,
+                    help='min epsilon of epsilon-greedy，default: 1000000')
 parser.add_argument('--epsilon_for_test', default=0.05, type=float,
                     help='epsilon of epsilon-greedy for testing agent，default: 0.05')
-parser.add_argument('--agent_test_period', default=1000, type=int,
+parser.add_argument('--agent_test_period', default=500, type=int,
                     help='agent test period(episode)，default: 100')
 parser.add_argument('--agent_test_episodes', default=10, type=int,
                     help='agent test episode，default: 10')
@@ -70,8 +74,9 @@ def test(agent: DQNAgent, test_episodes: int):  # , return_queue: Queue):
             step_i += 1
         step_cum += step_i
     # return_queue.put(reward_cum)
-    logger_(f'agent test: average reward of an episode: {reward_cum/args.agent_test_episodes}')
+    logger_(f'agent test: average reward of an episode: {reward_cum / args.agent_test_episodes}')
     logger_(f'agent test: average steps of an episode: {step_cum / args.agent_test_episodes}')
+
 
 # def multi_process_test(agent: DQNAgent, num_processes: int = 8):
 #     set_start_method('spawn', force=True)  # for cuda
@@ -96,7 +101,8 @@ def train_dqn():
     dqn_agent = DQNAgent(args.input_frame_width, args.input_frame_height, env.action_space, args.mini_batch_size,
                          args.replay_buffer_size, args.replay_start_size, args.skip_k_frame,
                          args.learning_rate, args.step_c, args.agent_saving_period, args.gamma, args.training_episodes,
-                         args.phi_channel, args.device)
+                         args.phi_channel, args.epsilon_max, args.epsilon_min,
+                         args.exploration_steps, args.device)
     epoch_i = 0
     episode_i = 0
     for training_group_i in range(int(args.training_episodes / args.agent_test_period)):
@@ -127,5 +133,5 @@ def train_dqn():
 
 
 if __name__ == '__main__':
-    logger_ = Logger(args.log_path)
+    logger_ = Logger(args.env_name,args.log_path)
     train_dqn()
