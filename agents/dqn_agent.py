@@ -65,16 +65,19 @@ class DQNPerceptionMapping(PerceptionMapping):
 
     def __pre_process(self, obs: np.ndarray):
         """
+        to encode a single frame we take the maximum value for each pixel colour value over the frame being encoded
+        and the previous frame. This was necessary to remove flickering that is present in games where some objects
+        appear only in even frames while other objects appear only in odd frames, an artefact caused by the limited
+        number of sprites Atari 2600 can display at once. Second, we then extract the Y channel, also known as
+        luminance, from the RGB frame and rescale it to 84 3 84.
         :param obs: 2-d int matrix, original state of environment
-        :return: 2-d float matrix, 1-channel image with size of self.down_sample_size
-                 and the value is converted to [-0.5,0.5]
+        :return: 2-d float matrix, 1-channel image with size of self.down_sample_size and the value is
+        converted to [-0.5,0.5]
         """
         image = np.array(obs)
-        gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        gray_img = cv2.resize(gray_img, (self.input_frame_width, self.input_frame_height))
-        gray_img = gray_img[self.input_frame_height - self.input_frame_width: self.input_frame_height,
-                   0: self.input_frame_width]
-        return gray_img
+        img_y_channel = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)[:, :, 0]
+        img_y_channel = cv2.resize(img_y_channel, (self.input_frame_width, self.input_frame_height))
+        return img_y_channel
 
     def __phi_append(self, obs: np.ndarray):
         self.phi.append(obs)

@@ -1,7 +1,6 @@
 import argparse
 from agents.dqn_agent import *
 from environments.env_wrapper import EnvWrapper
-import copy
 from exploration.epsilon_greedy import *
 from tqdm import tqdm
 from multiprocessing import Process, Queue, set_start_method
@@ -25,8 +24,8 @@ parser.add_argument('--device', default='cuda', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--input_frame_width', default=84, type=int,
                     help='cnn input image width, default: 84')
-parser.add_argument('--input_frame_height', default=110, type=int,
-                    help='cnn input image height，default: 110')
+parser.add_argument('--input_frame_height', default=84, type=int,
+                    help='cnn input image height，default: 84')
 parser.add_argument('--replay_start_size', default=6000, type=int,
                     help='min data size before training cnn ，default: 6000')
 parser.add_argument('--gamma', default=0.99, type=float,
@@ -122,6 +121,8 @@ def train_dqn():
                 dqn_agent.train_step(step_i)
                 next_state, reward_raw, done, truncated, inf = env.step(action)
                 state = next_state
+                # for test
+
                 step_i += 1
                 if step_i % args.batch_num_per_epoch == 0:
                     epoch_i += 1
@@ -133,5 +134,5 @@ def train_dqn():
 
 
 if __name__ == '__main__':
-    logger_ = Logger(args.env_name,args.log_path)
+    logger_ = Logger(args.env_name, args.log_path)
     train_dqn()
