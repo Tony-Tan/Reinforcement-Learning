@@ -128,6 +128,8 @@ class DQNValueFunction(ValueFunction):
             self.device)  # np.array(reward_array).astype(np.float32)
         is_done_tensor = torch.as_tensor(samples[3], dtype=torch.float32).to(
             self.device)  # np.array(is_done_array).astype(np.float32)
+        truncated_tensor = torch.as_tensor(samples[4], dtype=torch.float32).to(
+            self.device)  # np.array(is_done_array).astype(np.float32)
         next_obs_tensor = torch.as_tensor(samples[5], dtype=torch.float32).to(
             self.device) / 255. - 0.5  # np.array(next_obs_array)
         # next state value predicted by target value networks
@@ -139,7 +141,8 @@ class DQNValueFunction(ValueFunction):
         #     max_next_state_value.append(outputs[p_i][predictions[p_i]])
         # max_next_state_value = np.array(max_next_state_value).astype(np.float32)
         is_done_tensor.resize_as_(max_next_state_value)
-        max_next_state_value = ((1.0 - is_done_tensor) * max_next_state_value)
+        truncated_tensor.resize_as_(max_next_state_value)
+        max_next_state_value = (1.0 - is_done_tensor) * (1.0 - truncated_tensor) * max_next_state_value
         # reward array
         reward_tensor.resize_as_(max_next_state_value)
         reward_tensor = torch.clamp(reward_tensor, min=-1., max=1.)
@@ -219,7 +222,7 @@ class DQNAgent(Agent):
             if len(self.memory) > 1:
                 self.memory[-1][-1] = obs
 
-    def train_step(self, step_i=0):
+    def train_step(self, step_i: int):
         if (len(self.memory) > self.update_sample_size) and (step_i % self.skip_k_frame == 0):
             samples = self.memory.sample(self.mini_batch_size)
             self.value_function.update(samples)

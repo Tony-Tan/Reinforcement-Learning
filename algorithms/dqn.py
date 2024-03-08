@@ -36,7 +36,7 @@ parser.add_argument('--log_path', default='../exps/dqn/', type=str,
                     help='log save path，default: ./log/')
 parser.add_argument('--learning_rate', default=0.00001, type=float,
                     help='cnn learning rate，default: 0.00001')
-parser.add_argument('--step_c', default=100, type=int,
+parser.add_argument('--step_c', default=10000, type=int,
                     help='synchronise target value network periods，default: 100')
 parser.add_argument('--epsilon_max', default=1., type=float,
                     help='max epsilon of epsilon-greedy，default: 1.')
@@ -55,7 +55,7 @@ parser.add_argument('--agent_saving_period', default=80000, type=int,
 args = parser.parse_args()
 
 
-def test(agent: DQNAgent, test_episodes: int):  # , return_queue: Queue):
+def test(agent: DQNAgent, test_episodes: int, logger):  # , return_queue: Queue):
     env = EnvWrapper(args.env_name)
     exploration_method = EpsilonGreedy(args.epsilon_for_test)
     reward_cum = 0
@@ -73,8 +73,8 @@ def test(agent: DQNAgent, test_episodes: int):  # , return_queue: Queue):
             step_i += 1
         step_cum += step_i
     # return_queue.put(reward_cum)
-    logger_(f'agent test: average reward of an episode: {reward_cum / args.agent_test_episodes}')
-    logger_(f'agent test: average steps of an episode: {step_cum / args.agent_test_episodes}')
+    logger(f'agent test: average reward of an episode: {reward_cum / args.agent_test_episodes}')
+    logger(f'agent test: average steps of an episode: {step_cum / args.agent_test_episodes}')
 
 
 # def multi_process_test(agent: DQNAgent, num_processes: int = 8):
@@ -95,7 +95,7 @@ def test(agent: DQNAgent, test_episodes: int):  # , return_queue: Queue):
 #     logger_(f'agent test: average reward of an episode: {average_reward}')
 
 
-def train_dqn():
+def train_dqn(logger):
     env = EnvWrapper(args.env_name)
     dqn_agent = DQNAgent(args.input_frame_width, args.input_frame_height, env.action_space, args.mini_batch_size,
                          args.replay_buffer_size, args.replay_start_size, args.skip_k_frame,
@@ -104,8 +104,9 @@ def train_dqn():
                          args.exploration_steps, args.device)
     epoch_i = 0
     episode_i = 0
+    total_step = 0
     for training_group_i in range(int(args.training_episodes / args.agent_test_period)):
-        for i in tqdm(range(0, args.agent_test_period), desc=f'training dqn episode {episode_i} '
+        for _ in tqdm(range(0, args.agent_test_period), desc=f'training dqn episode {episode_i} '
                                                              f'to {episode_i + args.agent_test_period}'):
             state, _ = env.reset()
             done = False
@@ -113,7 +114,7 @@ def train_dqn():
             truncated = False
             inf = ''
             step_i = 0
-            while not done:
+            while (not done) and (not truncated):
                 obs = dqn_agent.perception_mapping(state, step_i)
                 reward = dqn_agent.reward_shaping(reward_raw, step_i)
                 action = dqn_agent.select_action(obs)
@@ -122,17 +123,18 @@ def train_dqn():
                 next_state, reward_raw, done, truncated, inf = env.step(action)
                 state = next_state
                 # for test
-
                 step_i += 1
+                total_step += 1
                 if step_i % args.batch_num_per_epoch == 0:
                     epoch_i += 1
             episode_i += 1
-        logger_(f'agent train: replay buffer current length: {len(dqn_agent.memory)}')
-        logger_(f'agent train: epsilon in train: {dqn_agent.exploration_method.epsilon}')
-        logger_(f'agent train: last max value: {dqn_agent.last_max_value}')
-        test(dqn_agent, args.agent_test_episodes)
+        logger(f'agent train: replay buffer current length: {len(dqn_agent.memory)}')
+        logger(f'agent train: epsilon in train: {dqn_agent.exploration_method.epsilon}')
+        logger(f'agent train: last max value: {dqn_agent.last_max_value}')
+        logger(f'agent train: training step: {total_step}')
+        test(dqn_agent, args.agent_test_episodes, logger)
 
 
 if __name__ == '__main__':
     logger_ = Logger(args.env_name, args.log_path)
-    train_dqn()
+    train_dqn(logger_)
