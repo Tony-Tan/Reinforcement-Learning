@@ -105,7 +105,8 @@ class DQNValueFunction(ValueFunction):
         super(DQNValueFunction, self).__init__()
         self.value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
-        self.optimizer = torch.optim.SGD(self.value_nn.parameters(), lr=learning_rate, momentum=0.95)
+        self.__synchronize_value_nn()
+        self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device
@@ -157,7 +158,9 @@ class DQNValueFunction(ValueFunction):
         # forward + backward + optimize
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
-        loss = F.mse_loss(obs_action_value, q_value)
+        loss = torch.clip(obs_action_value-q_value, min=-1, max=1)
+        loss = F.mse_loss(loss, torch.zeros_like(loss))
+
         # Minimize the loss
         self.optimizer.zero_grad()
         loss.backward()

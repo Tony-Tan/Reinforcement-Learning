@@ -12,8 +12,8 @@ parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='ccn training batch size，default: 32')
 parser.add_argument('--batch_num_per_epoch', default=5000, type=int,
                     help='each epoch contains how many updates，default: 32')
-parser.add_argument('--replay_buffer_size', default=100000, type=int,
-                    help='memory buffer size ，default: 1,000,000')
+parser.add_argument('--replay_buffer_size', default=200_000, type=int,
+                    help='memory buffer size ，default: 200,000')
 parser.add_argument('--training_episodes', default=100000, type=int,
                     help='max training episodes，default: 100000')
 parser.add_argument('--skip_k_frame', default=4, type=int,
@@ -34,7 +34,7 @@ parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')
 parser.add_argument('--log_path', default='../exps/dqn/', type=str,
                     help='log save path，default: ./log/')
-parser.add_argument('--learning_rate', default=0.00001, type=float,
+parser.add_argument('--learning_rate', default=0.000025, type=float,
                     help='cnn learning rate，default: 0.00001')
 parser.add_argument('--step_c', default=10000, type=int,
                     help='synchronise target value network periods，default: 100')
@@ -42,8 +42,8 @@ parser.add_argument('--epsilon_max', default=1., type=float,
                     help='max epsilon of epsilon-greedy，default: 1.')
 parser.add_argument('--epsilon_min', default=0.1, type=float,
                     help='min epsilon of epsilon-greedy，default: 0.1')
-parser.add_argument('--exploration_steps', default=1000000, type=int,
-                    help='min epsilon of epsilon-greedy，default: 1000000')
+parser.add_argument('--exploration_steps', default=2_000_000, type=int,
+                    help='min epsilon of epsilon-greedy，default: 1,000,000')
 parser.add_argument('--epsilon_for_test', default=0.05, type=float,
                     help='epsilon of epsilon-greedy for testing agent，default: 0.05')
 parser.add_argument('--agent_test_period', default=500, type=int,
@@ -105,7 +105,9 @@ def train_dqn(logger):
     epoch_i = 0
     episode_i = 0
     total_step = 0
+
     for training_group_i in range(int(args.training_episodes / args.agent_test_period)):
+        training_reward = 0
         for _ in tqdm(range(0, args.agent_test_period), desc=f'training dqn episode {episode_i} '
                                                              f'to {episode_i + args.agent_test_period}'):
             state, _ = env.reset()
@@ -124,6 +126,7 @@ def train_dqn(logger):
                 state = next_state
                 # for test
                 step_i += 1
+                training_reward += reward_raw
                 total_step += 1
                 if step_i % args.batch_num_per_epoch == 0:
                     epoch_i += 1
@@ -131,7 +134,9 @@ def train_dqn(logger):
         logger(f'agent train: replay buffer current length: {len(dqn_agent.memory)}')
         logger(f'agent train: epsilon in train: {dqn_agent.exploration_method.epsilon}')
         logger(f'agent train: last max value: {dqn_agent.last_max_value}')
-        logger(f'agent train: training step: {total_step}')
+        logger(f'agent train: training step: {int(total_step / args.skip_k_frame)}')
+        logger(f'agent train: training rewards: {float(training_reward / args.agent_test_period)}')
+        dqn_agent.last_max_value = 0
         test(dqn_agent, args.agent_test_episodes, logger)
 
 
