@@ -6,7 +6,7 @@ from tqdm import tqdm
 from multiprocessing import Process, Queue, set_start_method
 
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
-parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
+parser.add_argument('--env_name', default='Pong-v4', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='ccn training batch size，default: 32')
@@ -34,7 +34,7 @@ parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')
 parser.add_argument('--log_path', default='../exps/dqn/', type=str,
                     help='log save path，default: ./log/')
-parser.add_argument('--learning_rate', default=0.000025, type=float,
+parser.add_argument('--learning_rate', default=0.0000025, type=float,
                     help='cnn learning rate，default: 0.00001')
 parser.add_argument('--step_c', default=10000, type=int,
                     help='synchronise target value network periods，default: 100')

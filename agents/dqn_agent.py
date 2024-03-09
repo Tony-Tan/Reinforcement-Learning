@@ -122,25 +122,21 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn.load_state_dict(self.value_nn.state_dict())
 
     def update(self, samples: list):
-        obs_tensor = torch.as_tensor(samples[0], dtype=torch.float32).to(self.device) / 255. - 0.5
+        obs_tensor = torch.as_tensor(samples[0], dtype=torch.float32).to(
+            self.device) / 255. - 0.5
         # np.array(obs_array)
         action_tensor = torch.as_tensor(samples[1], dtype=torch.float32).to(self.device)  #
         reward_tensor = torch.as_tensor(samples[2], dtype=torch.float32).to(
-            self.device)  # np.array(reward_array).astype(np.float32)
+            self.device)
         is_done_tensor = torch.as_tensor(samples[3], dtype=torch.float32).to(
-            self.device)  # np.array(is_done_array).astype(np.float32)
+            self.device)
         truncated_tensor = torch.as_tensor(samples[4], dtype=torch.float32).to(
-            self.device)  # np.array(is_done_array).astype(np.float32)
+            self.device)
         next_obs_tensor = torch.as_tensor(samples[5], dtype=torch.float32).to(
-            self.device) / 255. - 0.5  # np.array(next_obs_array)
-        # next state value predicted by target value networks
-        # max_next_state_value = []
+            self.device) / 255. - 0.5
+
         outputs = self.target_value_nn(next_obs_tensor)
         max_next_state_value, _ = torch.max(outputs, dim=1, keepdim=True)
-        # predictions = predictions.cpu().numpy()
-        # for p_i in range(len(predictions)):
-        #     max_next_state_value.append(outputs[p_i][predictions[p_i]])
-        # max_next_state_value = np.array(max_next_state_value).astype(np.float32)
         is_done_tensor.resize_as_(max_next_state_value)
         truncated_tensor.resize_as_(max_next_state_value)
         max_next_state_value = (1.0 - is_done_tensor) * (1.0 - truncated_tensor) * max_next_state_value
@@ -154,13 +150,11 @@ class DQNValueFunction(ValueFunction):
         # train the model
         q_value = q_value.view(-1, 1)
         actions = action_tensor.long()
-        # zero the parameter gradients
-        # forward + backward + optimize
+
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
-        loss = torch.clip(obs_action_value-q_value, min=-1, max=1)
-        loss = F.mse_loss(loss, torch.zeros_like(loss))
-
+        loss = torch.clip(q_value - obs_action_value , min=-1, max=1)
+        loss = F.mse_loss(loss, torch.zeros_like(loss) )
         # Minimize the loss
         self.optimizer.zero_grad()
         loss.backward()

@@ -16,7 +16,7 @@ class EpsilonGreedy(Exploration):
 
 
 class DecayingEpsilonGreedy(Exploration):
-    def __init__(self, max_epsilon=1, min_epsilon=0.1, total_step=100000):
+    def __init__(self, max_epsilon: float, min_epsilon: float, total_step: int):
         super().__init__()
         self.epsilon = max_epsilon
         self.max_epsilon = max_epsilon
