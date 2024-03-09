@@ -34,7 +34,7 @@ parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')
 parser.add_argument('--log_path', default='../exps/dqn/', type=str,
                     help='log save path，default: ./log/')
-parser.add_argument('--learning_rate', default=0.0000025, type=float,
+parser.add_argument('--learning_rate', default=0.00025, type=float,
                     help='cnn learning rate，default: 0.00001')
 parser.add_argument('--step_c', default=10000, type=int,
                     help='synchronise target value network periods，default: 100')
@@ -130,6 +130,9 @@ def train_dqn(logger):
                 total_step += 1
                 if step_i % args.batch_num_per_epoch == 0:
                     epoch_i += 1
+                if done or truncated:
+                    dqn_agent.memory[-1][3] = True
+
             episode_i += 1
         logger(f'agent train: replay buffer current length: {len(dqn_agent.memory)}')
         logger(f'agent train: epsilon in train: {dqn_agent.exploration_method.epsilon}')
