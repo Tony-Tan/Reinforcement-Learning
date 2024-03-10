@@ -30,6 +30,9 @@ from exploration.epsilon_greedy import *
 #             sampled_transitions[s_i] = np.array(sampled_transitions[s_i], dtype=np.float32)
 #         return sampled_transitions
 
+def image_normalization(image: torch.Tensor) -> torch.Tensor:
+    return image / 255.0
+
 
 class DQNAtariReward(RewardShaping):
     def __init__(self, skip_k_frame: int):
@@ -122,9 +125,8 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn.load_state_dict(self.value_nn.state_dict())
 
     def update(self, samples: list):
-        obs_tensor = torch.as_tensor(samples[0], dtype=torch.float32).to(
-            self.device) / 255. - 0.5
-        # np.array(obs_array)
+        obs_tensor = image_normalization(torch.as_tensor(samples[0], dtype=torch.float32).to(
+            self.device))
         action_tensor = torch.as_tensor(samples[1], dtype=torch.float32).to(self.device)  #
         reward_tensor = torch.as_tensor(samples[2], dtype=torch.float32).to(
             self.device)
@@ -132,10 +134,11 @@ class DQNValueFunction(ValueFunction):
             self.device)
         truncated_tensor = torch.as_tensor(samples[4], dtype=torch.float32).to(
             self.device)
-        next_obs_tensor = torch.as_tensor(samples[5], dtype=torch.float32).to(
-            self.device) / 255. - 0.5
+        next_obs_tensor = image_normalization(torch.as_tensor(samples[5], dtype=torch.float32).to(
+            self.device))
 
-        outputs = self.target_value_nn(next_obs_tensor)
+        with torch.no_grad():
+            outputs = self.target_value_nn(next_obs_tensor)
         max_next_state_value, _ = torch.max(outputs, dim=1, keepdim=True)
         is_done_tensor.resize_as_(max_next_state_value)
         truncated_tensor.resize_as_(max_next_state_value)
@@ -153,8 +156,8 @@ class DQNValueFunction(ValueFunction):
 
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
-        loss = torch.clip(q_value - obs_action_value , min=-1, max=1)
-        loss = F.mse_loss(loss, torch.zeros_like(loss) )
+        loss = torch.clip(q_value - obs_action_value, min=-1, max=1)
+        loss = F.mse_loss(loss, torch.zeros_like(loss))
         # Minimize the loss
         self.optimizer.zero_grad()
         loss.backward()
@@ -163,9 +166,9 @@ class DQNValueFunction(ValueFunction):
         if self.update_step % self.step_c == 0:
             self.__synchronize_value_nn()
 
-    def value(self, phi: np.ndarray) -> np.ndarray:
+    def value(self, phi_tensor: torch.Tensor) -> np.ndarray:
         with torch.no_grad():
-            phi_tensor = torch.as_tensor(phi, dtype=torch.float32).to(self.device)
+            phi_tensor = phi_tensor.to(self.device)
             if phi_tensor.dim() == 3:
                 obs_input = phi_tensor.unsqueeze(0)
             else:
@@ -203,8 +206,9 @@ class DQNAgent(Agent):
 
     def select_action(self, obs: np.ndarray, exploration_method: EpsilonGreedy = None) -> np.ndarray:
         if obs is not None:
-            obs_scaled = np.array(obs).astype(np.float32) / 255. - 0.5
-            value_list = self.value_function.value(obs_scaled)[0]
+            obs_scaled = image_normalization(np.array(obs).astype(np.float32))
+            phi_tensor = torch.from_numpy(obs_scaled)
+            value_list = self.value_function.value(phi_tensor)[0]
             self.last_max_value = max(self.last_max_value, np.mean(value_list))
             if exploration_method is None:
                 self.last_action = self.exploration_method(value_list)

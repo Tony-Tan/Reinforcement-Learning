@@ -2,15 +2,16 @@ import argparse
 from agents.dqn_agent import *
 from environments.env_wrapper import EnvWrapper
 from exploration.epsilon_greedy import *
+import copy
 from tqdm import tqdm
 from multiprocessing import Process, Queue, set_start_method
 
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
-parser.add_argument('--env_name', default='Pong-v4', type=str,
+parser.add_argument('--env_name', default='Breakout-v4', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='ccn training batch size，default: 32')
-parser.add_argument('--batch_num_per_epoch', default=5000, type=int,
+parser.add_argument('--batch_num_per_epoch', default=50000, type=int,
                     help='each epoch contains how many updates，default: 32')
 parser.add_argument('--replay_buffer_size', default=200_000, type=int,
                     help='memory buffer size ，default: 200,000')
@@ -34,7 +35,7 @@ parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')
 parser.add_argument('--log_path', default='../exps/dqn/', type=str,
                     help='log save path，default: ./log/')
-parser.add_argument('--learning_rate', default=0.00025, type=float,
+parser.add_argument('--learning_rate', default=0.000025, type=float,
                     help='cnn learning rate，default: 0.00001')
 parser.add_argument('--step_c', default=10000, type=int,
                     help='synchronise target value network periods，default: 100')
@@ -55,7 +56,7 @@ parser.add_argument('--agent_saving_period', default=80000, type=int,
 args = parser.parse_args()
 
 
-def test(agent: DQNAgent, test_episodes: int, logger):  # , return_queue: Queue):
+def test(agent: DQNAgent, test_episodes: int):  # , return_queue: Queue):
     env = EnvWrapper(args.env_name)
     exploration_method = EpsilonGreedy(args.epsilon_for_test)
     reward_cum = 0
@@ -73,8 +74,7 @@ def test(agent: DQNAgent, test_episodes: int, logger):  # , return_queue: Queue)
             step_i += 1
         step_cum += step_i
     # return_queue.put(reward_cum)
-    logger(f'agent test: average reward of an episode: {reward_cum / args.agent_test_episodes}')
-    logger(f'agent test: average steps of an episode: {step_cum / args.agent_test_episodes}')
+    return reward_cum / args.agent_test_episodes, step_cum / args.agent_test_episodes
 
 
 # def multi_process_test(agent: DQNAgent, num_processes: int = 8):
@@ -104,43 +104,36 @@ def train_dqn(logger):
                          args.exploration_steps, args.device)
     epoch_i = 0
     episode_i = 0
-    total_step = 0
+    episode_in_epoch = 1
+    training_steps = 0
+    for _ in range(args.training_episodes):
+        state, _ = env.reset()
+        done = False
+        reward_raw = 0
+        truncated = False
+        inf = ''
+        step_i = 0
+        while (not done) and (not truncated):
+            obs = dqn_agent.perception_mapping(state, step_i)
+            reward = dqn_agent.reward_shaping(reward_raw, step_i)
+            action = dqn_agent.select_action(obs)
+            dqn_agent.store(obs, action, reward, done, truncated, inf)
+            dqn_agent.train_step(step_i)
+            next_state, reward_raw, done, truncated, inf = env.step(action)
+            state = next_state
+            # for test
+            step_i += 1
+            training_steps += 1
+            if training_steps % args.batch_num_per_epoch == 0:
+                epoch_i += 1
+                avg_reward, avg_steps = test(copy.deepcopy(dqn_agent), args.agent_test_episodes, )
+                logger(f'agent training {epoch_i}: avg rewards: {avg_reward}')
+                logger(f'agent training {epoch_i}: avg steps: {avg_steps}')
 
-    for training_group_i in range(int(args.training_episodes / args.agent_test_period)):
-        training_reward = 0
-        for _ in tqdm(range(0, args.agent_test_period), desc=f'training dqn episode {episode_i} '
-                                                             f'to {episode_i + args.agent_test_period}'):
-            state, _ = env.reset()
-            done = False
-            reward_raw = 0
-            truncated = False
-            inf = ''
-            step_i = 0
-            while (not done) and (not truncated):
-                obs = dqn_agent.perception_mapping(state, step_i)
-                reward = dqn_agent.reward_shaping(reward_raw, step_i)
-                action = dqn_agent.select_action(obs)
-                dqn_agent.store(obs, action, reward, done, truncated, inf)
-                dqn_agent.train_step(step_i)
-                next_state, reward_raw, done, truncated, inf = env.step(action)
-                state = next_state
-                # for test
-                step_i += 1
-                training_reward += reward_raw
-                total_step += 1
-                if step_i % args.batch_num_per_epoch == 0:
-                    epoch_i += 1
-                if done or truncated:
-                    dqn_agent.memory[-1][3] = True
-
-            episode_i += 1
-        logger(f'agent train: replay buffer current length: {len(dqn_agent.memory)}')
-        logger(f'agent train: epsilon in train: {dqn_agent.exploration_method.epsilon}')
-        logger(f'agent train: last max value: {dqn_agent.last_max_value}')
-        logger(f'agent train: training step: {int(total_step / args.skip_k_frame)}')
-        logger(f'agent train: training rewards: {float(training_reward / args.agent_test_period)}')
-        dqn_agent.last_max_value = 0
-        test(dqn_agent, args.agent_test_episodes, logger)
+        dqn_agent.memory[-1][3] = True
+        episode_in_epoch += 1
+        episode_i += 1
+    #
 
 
 if __name__ == '__main__':
