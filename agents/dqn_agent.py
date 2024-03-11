@@ -129,19 +129,12 @@ class DQNValueFunction(ValueFunction):
         action_tensor = torch.as_tensor(samples[1], dtype=torch.float32).to(self.device)  #
         reward_tensor = torch.as_tensor(samples[2], dtype=torch.float32).to(
             self.device)
-        # is_done_tensor = torch.as_tensor(samples[3], dtype=torch.float32).to(
-        #     self.device)
-        # truncated_tensor = torch.as_tensor(samples[4], dtype=torch.float32).to(
-        #     self.device)
-        next_obs_tensor = image_normalization(torch.as_tensor(samples[5], dtype=torch.float32).to(
+        next_obs_tensor = image_normalization(torch.as_tensor(samples[3], dtype=torch.float32).to(
             self.device))
 
         with torch.no_grad():
             outputs = self.target_value_nn(next_obs_tensor)
         max_next_state_value, _ = torch.max(outputs, dim=1, keepdim=True)
-        # is_done_tensor.resize_as_(max_next_state_value)
-        # truncated_tensor.resize_as_(max_next_state_value)
-        # max_next_state_value = (1.0 - is_done_tensor) * (1.0 - truncated_tensor) * max_next_state_value
         # reward array
         reward_tensor.resize_as_(max_next_state_value)
         reward_tensor = torch.clamp(reward_tensor, min=-1., max=1.)
@@ -150,7 +143,7 @@ class DQNValueFunction(ValueFunction):
         # action array
         action_tensor.resize_as_(reward_tensor)
         # train the model
-        q_value = q_value.view(-1, 1)
+        q_value.resize_as_(reward_tensor)
         actions = action_tensor.long()
 
         outputs = self.value_nn(obs_tensor)
@@ -216,7 +209,7 @@ class DQNAgent(Agent):
     def store(self, obs, action, reward, terminated, truncated, step_i):
         if obs is not None:
             # self.memory.store([obs, action, reward, terminated, truncated])
-            self.memory.store([obs, action, reward, terminated, truncated, np.zeros_like(obs)])
+            self.memory.store([obs, action, reward, np.zeros_like(obs)])
             if len(self.memory) > 1 and step_i > 1:
                 self.memory[-1][-1] = obs
 

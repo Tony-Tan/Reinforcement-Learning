@@ -14,7 +14,7 @@ parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='ccn training batch size，default: 32')
 parser.add_argument('--batch_num_per_epoch', default=50000, type=int,
                     help='each epoch contains how many updates，default: 32')
-parser.add_argument('--replay_buffer_size', default=200_000, type=int,
+parser.add_argument('--replay_buffer_size', default=15_000, type=int,
                     help='memory buffer size ，default: 200,000')
 parser.add_argument('--training_episodes', default=100000, type=int,
                     help='max training episodes，default: 100000')
@@ -22,7 +22,7 @@ parser.add_argument('--skip_k_frame', default=4, type=int,
                     help='dqn skip k frames each step，default: 4')
 parser.add_argument('--phi_channel', default=4, type=int,
                     help='phi temp size, default: 4')
-parser.add_argument('--device', default='cuda', type=str,
+parser.add_argument('--device', default='mps', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--input_frame_width', default=84, type=int,
                     help='cnn input image width, default: 84')
@@ -36,7 +36,7 @@ parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')
 parser.add_argument('--log_path', default='../exps/dqn/', type=str,
                     help='log save path，default: ./log/')
-parser.add_argument('--learning_rate', default=0.00025, type=float,
+parser.add_argument('--learning_rate', default=0.00001, type=float,
                     help='cnn learning rate，default: 0.00001')
 parser.add_argument('--step_c', default=10000, type=int,
                     help='synchronise target value network periods，default: 100')
@@ -70,6 +70,9 @@ def test(agent: DQNAgent, test_episodes: int):
             obs = agent.perception_mapping(state, step_i)
             action = agent.select_action(obs, exploration_method)
             next_state, reward, done, truncated, inf = env.step(action)
+            # if obs is not None:
+            #     cv2.imshow('test', np.uint8(obs[-1]))
+            #     cv2.waitKey(1)
             reward_cum += reward
             state = next_state
             step_i += 1
