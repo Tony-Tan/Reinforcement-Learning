@@ -3,11 +3,12 @@ from agents.dqn_agent import *
 from environments.env_wrapper import EnvWrapper
 from exploration.epsilon_greedy import *
 import copy
+import cv2
 from tqdm import tqdm
 from multiprocessing import Process, Queue, set_start_method
 
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
-parser.add_argument('--env_name', default='Breakout-v4', type=str,
+parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='ccn training batch size，default: 32')
@@ -35,7 +36,7 @@ parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')
 parser.add_argument('--log_path', default='../exps/dqn/', type=str,
                     help='log save path，default: ./log/')
-parser.add_argument('--learning_rate', default=0.000025, type=float,
+parser.add_argument('--learning_rate', default=0.00025, type=float,
                     help='cnn learning rate，default: 0.00001')
 parser.add_argument('--step_c', default=10000, type=int,
                     help='synchronise target value network periods，default: 100')
@@ -56,7 +57,7 @@ parser.add_argument('--agent_saving_period', default=80000, type=int,
 args = parser.parse_args()
 
 
-def test(agent: DQNAgent, test_episodes: int):  # , return_queue: Queue):
+def test(agent: DQNAgent, test_episodes: int):
     env = EnvWrapper(args.env_name)
     exploration_method = EpsilonGreedy(args.epsilon_for_test)
     reward_cum = 0
@@ -73,26 +74,7 @@ def test(agent: DQNAgent, test_episodes: int):  # , return_queue: Queue):
             state = next_state
             step_i += 1
         step_cum += step_i
-    # return_queue.put(reward_cum)
     return reward_cum / args.agent_test_episodes, step_cum / args.agent_test_episodes
-
-
-# def multi_process_test(agent: DQNAgent, num_processes: int = 8):
-#     set_start_method('spawn', force=True)  # for cuda
-#     processes = []
-#     return_queue = Queue()
-#
-#     for _ in range(num_processes):
-#         p = Process(target=test, args=(agent, int(args.agent_test_episodes / num_processes), return_queue))
-#         processes.append(p)
-#         p.start()
-#
-#     for p in processes:
-#         p.join()
-#
-#     rewards = [return_queue.get() for _ in processes]
-#     average_reward = np.sum(rewards) / args.agent_test_episodes
-#     logger_(f'agent test: average reward of an episode: {average_reward}')
 
 
 def train_dqn(logger):
@@ -117,20 +99,17 @@ def train_dqn(logger):
             obs = dqn_agent.perception_mapping(state, step_i)
             reward = dqn_agent.reward_shaping(reward_raw, step_i)
             action = dqn_agent.select_action(obs)
-            dqn_agent.store(obs, action, reward, done, truncated, inf)
+            dqn_agent.store(obs, action, reward, done, truncated, step_i)
             dqn_agent.train_step(step_i)
             next_state, reward_raw, done, truncated, inf = env.step(action)
             state = next_state
-            # for test
             step_i += 1
-            training_steps += 1
             if training_steps % args.batch_num_per_epoch == 0:
                 epoch_i += 1
-                avg_reward, avg_steps = test(copy.deepcopy(dqn_agent), args.agent_test_episodes, )
+                avg_reward, avg_steps = test(copy.deepcopy(dqn_agent), args.agent_test_episodes)
                 logger(f'agent training {epoch_i}: avg rewards: {avg_reward}')
                 logger(f'agent training {epoch_i}: avg steps: {avg_steps}')
-
-        dqn_agent.memory[-1][3] = True
+            training_steps += 1
         episode_in_epoch += 1
         episode_i += 1
     #

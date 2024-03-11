@@ -30,8 +30,8 @@ from exploration.epsilon_greedy import *
 #             sampled_transitions[s_i] = np.array(sampled_transitions[s_i], dtype=np.float32)
 #         return sampled_transitions
 
-def image_normalization(image: torch.Tensor) -> torch.Tensor:
-    return image / 255.0
+def image_normalization(image_uint8: torch.Tensor) -> torch.Tensor:
+    return image_uint8 / 255.0 - 0.5
 
 
 class DQNAtariReward(RewardShaping):
@@ -49,17 +49,16 @@ class DQNAtariReward(RewardShaping):
             # preprocess the obs to a certain size and load it to phi
             reward_rs = self.reward_cumulated
             self.reset()
-            return 1 if reward_rs != 0 else 0
+            return reward_rs
         else:
             self.reward_cumulated += reward
-        return None
+            return None
 
 
 class DQNPerceptionMapping(PerceptionMapping):
     def __init__(self, phi_channel: int, skip_k_frame: int, input_frame_width: int,
                  input_frame_height: int):
         super().__init__()
-        self.phi_channel = phi_channel
         self.phi = deque(maxlen=phi_channel)
         self.phi_channel = phi_channel
         self.skip_k_frame = skip_k_frame
@@ -130,19 +129,19 @@ class DQNValueFunction(ValueFunction):
         action_tensor = torch.as_tensor(samples[1], dtype=torch.float32).to(self.device)  #
         reward_tensor = torch.as_tensor(samples[2], dtype=torch.float32).to(
             self.device)
-        is_done_tensor = torch.as_tensor(samples[3], dtype=torch.float32).to(
-            self.device)
-        truncated_tensor = torch.as_tensor(samples[4], dtype=torch.float32).to(
-            self.device)
+        # is_done_tensor = torch.as_tensor(samples[3], dtype=torch.float32).to(
+        #     self.device)
+        # truncated_tensor = torch.as_tensor(samples[4], dtype=torch.float32).to(
+        #     self.device)
         next_obs_tensor = image_normalization(torch.as_tensor(samples[5], dtype=torch.float32).to(
             self.device))
 
         with torch.no_grad():
             outputs = self.target_value_nn(next_obs_tensor)
         max_next_state_value, _ = torch.max(outputs, dim=1, keepdim=True)
-        is_done_tensor.resize_as_(max_next_state_value)
-        truncated_tensor.resize_as_(max_next_state_value)
-        max_next_state_value = (1.0 - is_done_tensor) * (1.0 - truncated_tensor) * max_next_state_value
+        # is_done_tensor.resize_as_(max_next_state_value)
+        # truncated_tensor.resize_as_(max_next_state_value)
+        # max_next_state_value = (1.0 - is_done_tensor) * (1.0 - truncated_tensor) * max_next_state_value
         # reward array
         reward_tensor.resize_as_(max_next_state_value)
         reward_tensor = torch.clamp(reward_tensor, min=-1., max=1.)
@@ -202,25 +201,23 @@ class DQNAgent(Agent):
         # self.learning_rate = learning_rate
         self.training_episodes = training_episodes
         self.last_action = None
-        self.last_max_value = 0
 
     def select_action(self, obs: np.ndarray, exploration_method: EpsilonGreedy = None) -> np.ndarray:
         if obs is not None:
             obs_scaled = image_normalization(np.array(obs).astype(np.float32))
             phi_tensor = torch.from_numpy(obs_scaled)
             value_list = self.value_function.value(phi_tensor)[0]
-            self.last_max_value = max(self.last_max_value, np.mean(value_list))
             if exploration_method is None:
                 self.last_action = self.exploration_method(value_list)
             else:
                 self.last_action = exploration_method(value_list)
         return self.last_action
 
-    def store(self, obs, action, reward, terminated, truncated, inf):
+    def store(self, obs, action, reward, terminated, truncated, step_i):
         if obs is not None:
             # self.memory.store([obs, action, reward, terminated, truncated])
             self.memory.store([obs, action, reward, terminated, truncated, np.zeros_like(obs)])
-            if len(self.memory) > 1:
+            if len(self.memory) > 1 and step_i > 1:
                 self.memory[-1][-1] = obs
 
     def train_step(self, step_i: int):
