@@ -108,7 +108,8 @@ class DQNValueFunction(ValueFunction):
         self.value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.__synchronize_value_nn()
-        self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
+        self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
+                                             alpha=0.95, eps=0.01)
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device
@@ -178,12 +179,10 @@ class DQNAgent(Agent):
                  exploration_steps: int, device: torch.device):
         super(DQNAgent, self).__init__()
         # basic elements initialize
-        self.value_function = DQNValueFunction(phi_channel, action_space.n, learning_rate, gamma, step_c,
+        self.action_dim = action_space.n
+        self.value_function = DQNValueFunction(phi_channel, self.action_dim, learning_rate, gamma, step_c,
                                                model_saving_period, device)
-        # 1,000,000 from the paper
         self.exploration_method = DecayingEpsilonGreedy(epsilon_max, epsilon_min, exploration_steps)
-
-        # self.memory = DQNReplayBuffer(replay_buffer_size)
         self.memory = UniformExperienceReplay(replay_buffer_size)
         self.perception_mapping = DQNPerceptionMapping(phi_channel, skip_k_frame, input_frame_width, input_frame_height)
         self.reward_shaping = DQNAtariReward(skip_k_frame)
@@ -191,20 +190,25 @@ class DQNAgent(Agent):
         self.mini_batch_size = mini_batch_size
         self.skip_k_frame = skip_k_frame
         self.update_sample_size = min_update_sample_size
-        # self.learning_rate = learning_rate
         self.training_episodes = training_episodes
         self.last_action = None
+        self.log_avg_value = 0
 
     def select_action(self, obs: np.ndarray, exploration_method: EpsilonGreedy = None) -> np.ndarray:
         if obs is not None:
             obs_scaled = image_normalization(np.array(obs).astype(np.float32))
             phi_tensor = torch.from_numpy(obs_scaled)
             value_list = self.value_function.value(phi_tensor)[0]
+            self.log_avg_value += np.mean(value_list)
             if exploration_method is None:
                 self.last_action = self.exploration_method(value_list)
             else:
                 self.last_action = exploration_method(value_list)
         return self.last_action
+
+    # def random_action(self):
+    #     self.last_action = random.randint(0, self.action_dim-1)
+    #     return self.last_action
 
     def store(self, obs, action, reward, terminated, truncated, step_i):
         if obs is not None:
