@@ -12,8 +12,8 @@ parser.add_argument('--env_name', default='ALE/SpaceInvaders-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='cnn training batch size，default: 32')
-parser.add_argument('--batch_num_per_epoch', default=50000, type=int,
-                    help='each epoch contains how many updates，default: 32')
+parser.add_argument('--batch_num_per_epoch', default=500_000, type=int,
+                    help='each epoch contains how many updates，default: 500,000')
 parser.add_argument('--replay_buffer_size', default=250_000, type=int,
                     help='memory buffer size ，default: 200,000')
 parser.add_argument('--training_episodes', default=100000, type=int,
@@ -32,8 +32,8 @@ parser.add_argument('--replay_start_size', default=50_000, type=int,
                     help='min data size before training cnn ，default: 6000')
 parser.add_argument('--gamma', default=0.99, type=float,
                     help='value decay, default: 0.99')
-# parser.add_argument('--no_op', default=30, type=int,
-#                     help='random action in the first no_op actions, default: 30')
+parser.add_argument('--no_op', default=30, type=int,
+                    help='random action in the first no_op actions, default: 30')
 parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')
 parser.add_argument('--log_path', default='../exps/dqn/', type=str,
@@ -50,7 +50,7 @@ parser.add_argument('--exploration_steps', default=1_000_000, type=int,
                     help='min epsilon of epsilon-greedy，default: 1,000,000')
 parser.add_argument('--epsilon_for_test', default=0.05, type=float,
                     help='epsilon of epsilon-greedy for testing agent，default: 0.05')
-parser.add_argument('--agent_test_episodes', default=10, type=int,
+parser.add_argument('--agent_test_episodes', default=100, type=int,
                     help='agent test episode，default: 10')
 parser.add_argument('--agent_saving_period', default=80000, type=int,
                     help='agent saving period(episode)，default: 80000')
@@ -88,40 +88,43 @@ def train_dqn(logger):
                          args.phi_channel, args.epsilon_max, args.epsilon_min,
                          args.exploration_steps, args.device)
     epoch_i = 0
-    episode_i = 0
     episode_in_epoch = 1
     training_steps = 0
     log_reward = 0
-    for _ in range(args.training_episodes):
+    for episode_i in range(args.training_episodes):
         state, _ = env.reset()
         done = False
         reward_raw = 0
         truncated = False
         inf = ''
         step_i = 0
+        run_test = False
         while (not done) and (not truncated):
             obs = dqn_agent.perception_mapping(state, step_i)
             reward = dqn_agent.reward_shaping(reward_raw, step_i)
-            action = dqn_agent.select_action(obs)
-            dqn_agent.store(obs, action, reward, done, truncated, step_i)
+            if training_steps > args.replay_start_size and step_i > args.no_op:
+                action = dqn_agent.select_action(obs)
+            else:
+                action = dqn_agent.select_action(obs, RandomAction())
+            dqn_agent.store(obs, action, reward, done, truncated, inf)
             dqn_agent.train_step(step_i)
             next_state, reward_raw, done, truncated, inf = env.step(action)
             log_reward += reward_raw
             state = next_state
             training_steps += 1
             if training_steps % args.batch_num_per_epoch*args.skip_k_frame == 0:
+                run_test = True
                 epoch_i += 1
-                logger(f'agent training {epoch_i}: avg value: {dqn_agent.log_avg_value / args.batch_num_per_epoch}')
-                dqn_agent.log_avg_value = 0
-                logger(f'agent training {epoch_i}: avg reward: {log_reward / episode_in_epoch}')
-                logger(f'agent training {epoch_i}: epsilon: {dqn_agent.exploration_method.epsilon}')
-                logger(f'agent training {epoch_i}: memory state: {len(dqn_agent.memory)}')
-                log_reward = 0
-                episode_in_epoch = 1
             step_i += 1
+        dqn_agent.store_termination()
+        if run_test:
+            avg_reward, avg_steps = test(dqn_agent, args.agent_test_episodes)
+            logger(f'agent test {epoch_i}: avg step: {avg_steps}')
+            logger(f'agent training {epoch_i}: avg reward: {avg_reward}')
+            logger(f'agent training {epoch_i}: epsilon: {dqn_agent.exploration_method.epsilon}')
+            logger(f'agent training {epoch_i}: memory state: {len(dqn_agent.memory)}')
+
         episode_in_epoch += 1
-        episode_i += 1
-    #
 
 
 if __name__ == '__main__':

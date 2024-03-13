@@ -14,6 +14,12 @@ class EpsilonGreedy(Exploration):
         else:
             return optimal_action
 
+class RandomAction(Exploration):
+    def __init__(self):
+        super().__init__()
+
+    def __call__(self, values: np.ndarray):
+        return random.randint(0, len(values) - 1)
 
 class DecayingEpsilonGreedy(Exploration):
     def __init__(self, max_epsilon: float, min_epsilon: float, total_step: int):

@@ -130,7 +130,10 @@ class DQNValueFunction(ValueFunction):
         action_tensor = torch.as_tensor(samples[1], dtype=torch.float32).to(self.device)  #
         reward_tensor = torch.as_tensor(samples[2], dtype=torch.float32).to(
             self.device)
-        next_obs_tensor = image_normalization(torch.as_tensor(samples[3], dtype=torch.float32).to(
+        termination_tensor = torch.as_tensor(samples[3], dtype=torch.float32).to(self.device)  #
+        truncated_tensor = torch.as_tensor(samples[4], dtype=torch.float32).to(
+            self.device)
+        next_obs_tensor = image_normalization(torch.as_tensor(samples[5], dtype=torch.float32).to(
             self.device))
 
         with torch.no_grad():
@@ -140,7 +143,9 @@ class DQNValueFunction(ValueFunction):
         reward_tensor.resize_as_(max_next_state_value)
         reward_tensor = torch.clamp(reward_tensor, min=-1., max=1.)
         # calculate q value
-        q_value = reward_tensor + self.gamma * max_next_state_value
+        truncated_tensor.resize_as_(max_next_state_value)
+        termination_tensor.resize_as_(max_next_state_value)
+        q_value = reward_tensor + self.gamma * max_next_state_value * (1 - truncated_tensor) * (1 - termination_tensor)
         # action array
         action_tensor.resize_as_(reward_tensor)
         # train the model
@@ -194,7 +199,7 @@ class DQNAgent(Agent):
         self.last_action = None
         self.log_avg_value = 0
 
-    def select_action(self, obs: np.ndarray, exploration_method: EpsilonGreedy = None) -> np.ndarray:
+    def select_action(self, obs: np.ndarray, exploration_method: Exploration = None) -> np.ndarray:
         if obs is not None:
             obs_scaled = image_normalization(np.array(obs).astype(np.float32))
             phi_tensor = torch.from_numpy(obs_scaled)
@@ -210,12 +215,17 @@ class DQNAgent(Agent):
     #     self.last_action = random.randint(0, self.action_dim-1)
     #     return self.last_action
 
-    def store(self, obs, action, reward, terminated, truncated, step_i):
+    def store(self, obs, action, reward, terminated, truncated, inf):
         if obs is not None:
-            # self.memory.store([obs, action, reward, terminated, truncated])
-            self.memory.store([obs, action, reward, np.zeros_like(obs)])
-            if len(self.memory) > 1 and step_i > 1:
+            # self.memory.store([obs, action, reward, ])
+            self.memory.store([obs, action, reward, terminated, truncated, np.zeros_like(obs)])
+            if len(self.memory) > 1:
                 self.memory[-1][-1] = obs
+
+    def store_termination(self):
+        if len(self.memory) > 1:
+            self.memory[-1][3] = True
+            self.memory[-1][4] = True
 
     def train_step(self, step_i: int):
         if (len(self.memory) > self.update_sample_size) and (step_i % self.skip_k_frame == 0):

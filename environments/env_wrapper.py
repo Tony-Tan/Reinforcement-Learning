@@ -19,7 +19,7 @@ class EnvWrapper:
         self.env_type = None
         if env_id in gym.envs.registry.keys():
             self.env_id = env_id
-            self.env = gym.make(env_id)
+            self.env = gym.make(env_id, frameskip=1, repeat_action_probability=0)
             self.env_type = 'OpenAI GYM'
             self.action_space = self.env.action_space
             self.state_space = self.env.observation_space
