@@ -7,14 +7,15 @@ import cv2
 from tqdm import tqdm
 from multiprocessing import Process, Queue, set_start_method
 
+
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
-parser.add_argument('--env_name', default='ALE/SpaceInvaders-v5', type=str,
+parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='cnn training batch size，default: 32')
 parser.add_argument('--batch_num_per_epoch', default=500_000, type=int,
                     help='each epoch contains how many updates，default: 500,000')
-parser.add_argument('--replay_buffer_size', default=250_000, type=int,
+parser.add_argument('--replay_buffer_size', default=1_000_000, type=int,
                     help='memory buffer size ，default: 200,000')
 parser.add_argument('--training_episodes', default=100000, type=int,
                     help='max training episodes，default: 100,000')
@@ -28,7 +29,7 @@ parser.add_argument('--input_frame_width', default=84, type=int,
                     help='cnn input image width, default: 84')
 parser.add_argument('--input_frame_height', default=84, type=int,
                     help='cnn input image height，default: 84')
-parser.add_argument('--replay_start_size', default=50_000, type=int,
+parser.add_argument('--replay_start_size', default=100_000, type=int,
                     help='min data size before training cnn ，default: 6000')
 parser.add_argument('--gamma', default=0.99, type=float,
                     help='value decay, default: 0.99')
@@ -38,7 +39,7 @@ parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')
 parser.add_argument('--log_path', default='../exps/dqn/', type=str,
                     help='log save path，default: ./log/')
-parser.add_argument('--learning_rate', default=0.00025, type=float,
+parser.add_argument('--learning_rate', default=0.00001, type=float,
                     help='cnn learning rate，default: 0.00001')
 parser.add_argument('--step_c', default=10000, type=int,
                     help='synchronise target value network periods，default: 100')
@@ -46,7 +47,7 @@ parser.add_argument('--epsilon_max', default=1., type=float,
                     help='max epsilon of epsilon-greedy，default: 1.')
 parser.add_argument('--epsilon_min', default=0.1, type=float,
                     help='min epsilon of epsilon-greedy，default: 0.1')
-parser.add_argument('--exploration_steps', default=1_000_000, type=int,
+parser.add_argument('--exploration_steps', default=10_000_000, type=int,
                     help='min epsilon of epsilon-greedy，default: 1,000,000')
 parser.add_argument('--epsilon_for_test', default=0.05, type=float,
                     help='epsilon of epsilon-greedy for testing agent，default: 0.05')
@@ -64,15 +65,13 @@ def test(agent: DQNAgent, test_episodes: int):
     step_cum = 0
     for i in range(test_episodes):
         state, _ = env.reset()
-        done = False
+        done = truncated = False
         step_i = 0
-        while not done:
+        while (not done) and (not truncated):
             obs = agent.perception_mapping(state, step_i)
             action = agent.select_action(obs, exploration_method)
             next_state, reward, done, truncated, inf = env.step(action)
-            # if obs is not None:
-            #     cv2.imshow('test', np.uint8(obs[-1]))
-            #     cv2.waitKey(1)
+
             reward_cum += reward
             state = next_state
             step_i += 1
@@ -120,9 +119,9 @@ def train_dqn(logger):
         if run_test:
             avg_reward, avg_steps = test(dqn_agent, args.agent_test_episodes)
             logger(f'agent test {epoch_i}: avg step: {avg_steps}')
-            logger(f'agent training {epoch_i}: avg reward: {avg_reward}')
-            logger(f'agent training {epoch_i}: epsilon: {dqn_agent.exploration_method.epsilon}')
-            logger(f'agent training {epoch_i}: memory state: {len(dqn_agent.memory)}')
+            logger(f'agent test {epoch_i}: avg reward: {avg_reward}')
+            logger(f'agent test {epoch_i}: epsilon: {dqn_agent.exploration_method.epsilon}')
+            logger(f'agent test {epoch_i}: memory state: {len(dqn_agent.memory)}')
 
         episode_in_epoch += 1
 

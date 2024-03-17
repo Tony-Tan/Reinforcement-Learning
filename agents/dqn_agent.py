@@ -64,6 +64,7 @@ class DQNPerceptionMapping(PerceptionMapping):
         self.skip_k_frame = skip_k_frame
         self.input_frame_width = input_frame_width
         self.input_frame_height = input_frame_height
+        self.last_frame = None
 
     def __pre_process(self, obs: np.ndarray):
         """
@@ -85,6 +86,7 @@ class DQNPerceptionMapping(PerceptionMapping):
         self.phi.append(obs)
 
     def reset(self):
+        self.last_frame = None
         self.phi.clear()
         for i in range(self.phi_channel):
             self.phi.append(np.zeros([self.input_frame_width, self.input_frame_width]))
@@ -92,10 +94,13 @@ class DQNPerceptionMapping(PerceptionMapping):
     def __call__(self, state: np.ndarray, step_i: int = 0) -> np.ndarray:
         if step_i == 0:
             self.reset()
+            self.last_frame = state
+        max_state = np.maximum(self.last_frame, state)
+        self.last_frame = state
         obs = None
         if step_i % self.skip_k_frame == 0:
             # preprocess the obs to a certain size and load it to phi
-            self.__phi_append(self.__pre_process(state))
+            self.__phi_append(self.__pre_process(max_state))
             obs = np.array(self.phi)
             self.skip_k_frame_reward_sum = 0
         return obs
@@ -161,6 +166,8 @@ class DQNValueFunction(ValueFunction):
         loss.backward()
         self.optimizer.step()
         self.update_step += 1
+        if self.update_step % 1000 == 0:
+            print(loss.item())
         if self.update_step % self.step_c == 0:
             self.__synchronize_value_nn()
 
@@ -201,14 +208,22 @@ class DQNAgent(Agent):
 
     def select_action(self, obs: np.ndarray, exploration_method: Exploration = None) -> np.ndarray:
         if obs is not None:
-            obs_scaled = image_normalization(np.array(obs).astype(np.float32))
-            phi_tensor = torch.from_numpy(obs_scaled)
-            value_list = self.value_function.value(phi_tensor)[0]
-            self.log_avg_value += np.mean(value_list)
-            if exploration_method is None:
-                self.last_action = self.exploration_method(value_list)
+            if isinstance(exploration_method, RandomAction):
+                self.last_action = exploration_method(self.action_dim)
             else:
-                self.last_action = exploration_method(value_list)
+                obs_scaled = image_normalization(np.array(obs).astype(np.float32))
+                phi_tensor = torch.from_numpy(obs_scaled)
+                value_list = self.value_function.value(phi_tensor)[0]
+                self.log_avg_value += np.mean(value_list)
+                if exploration_method is None:
+                    self.last_action = self.exploration_method(value_list)
+                    # print(value_list)
+                    # print(self.last_action)
+                else:
+                    self.last_action = exploration_method(value_list)
+                    print('testing')
+                    print(value_list)
+                    print(self.last_action)
         return self.last_action
 
     # def random_action(self):
