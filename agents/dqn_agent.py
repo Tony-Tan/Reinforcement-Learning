@@ -31,7 +31,7 @@ from exploration.epsilon_greedy import *
 #         return sampled_transitions
 
 def image_normalization(image_uint8: torch.Tensor) -> torch.Tensor:
-    return image_uint8 / 255.0 - 0.5
+    return image_uint8 / 255.0
 
 
 class DQNAtariReward(RewardShaping):
@@ -76,10 +76,12 @@ class DQNPerceptionMapping(PerceptionMapping):
         :param obs: 2-d int matrix, original state of environment
         :return: 2-d float matrix, 1-channel image with size of self.down_sample_size and the value is
         converted to [-0.5,0.5]
+        100 - 84: 100, 0: 84
         """
         image = np.array(obs)
-        img_y_channel = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)[:, :, 0]
-        img_y_channel = cv2.resize(img_y_channel, (self.input_frame_width, self.input_frame_height))
+        image = cv2.resize(image, (84, 100))
+        img_y_channel = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)[100 - 84: 100, 0: 84, 0]
+        # img_y_channel = cv2.resize(img_y_channel, (self.input_frame_width, self.input_frame_height))
         return img_y_channel
 
     def __phi_append(self, obs: np.ndarray):
@@ -102,7 +104,6 @@ class DQNPerceptionMapping(PerceptionMapping):
             # preprocess the obs to a certain size and load it to phi
             self.__phi_append(self.__pre_process(max_state))
             obs = np.array(self.phi)
-            self.skip_k_frame_reward_sum = 0
         return obs
 
 
@@ -127,6 +128,7 @@ class DQNValueFunction(ValueFunction):
     #     self.target_value_nn.to(self.device)
 
     def __synchronize_value_nn(self):
+        print('__synchronize_value_nn')
         self.target_value_nn.load_state_dict(self.value_nn.state_dict())
 
     def update(self, samples: list):
@@ -166,8 +168,6 @@ class DQNValueFunction(ValueFunction):
         loss.backward()
         self.optimizer.step()
         self.update_step += 1
-        if self.update_step % 1000 == 0:
-            print(loss.item())
         if self.update_step % self.step_c == 0:
             self.__synchronize_value_nn()
 
@@ -221,9 +221,9 @@ class DQNAgent(Agent):
                     # print(self.last_action)
                 else:
                     self.last_action = exploration_method(value_list)
-                    print('testing')
-                    print(value_list)
-                    print(self.last_action)
+                    # print('testing')
+                    # print(value_list)
+                    # print(self.last_action)
         return self.last_action
 
     # def random_action(self):

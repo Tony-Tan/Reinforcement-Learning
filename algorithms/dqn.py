@@ -9,27 +9,27 @@ from multiprocessing import Process, Queue, set_start_method
 
 
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
-parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
+parser.add_argument('--env_name', default='Pong-v0', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='cnn training batch size，default: 32')
 parser.add_argument('--batch_num_per_epoch', default=500_000, type=int,
                     help='each epoch contains how many updates，default: 500,000')
-parser.add_argument('--replay_buffer_size', default=1_000_000, type=int,
+parser.add_argument('--replay_buffer_size', default=10_000, type=int,
                     help='memory buffer size ，default: 200,000')
-parser.add_argument('--training_episodes', default=100000, type=int,
+parser.add_argument('--training_episodes', default=100_000, type=int,
                     help='max training episodes，default: 100,000')
 parser.add_argument('--skip_k_frame', default=4, type=int,
                     help='dqn skip k frames each step，default: 4')
 parser.add_argument('--phi_channel', default=4, type=int,
                     help='phi temp size, default: 4')
-parser.add_argument('--device', default='cuda', type=str,
+parser.add_argument('--device', default='cuda:1', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--input_frame_width', default=84, type=int,
                     help='cnn input image width, default: 84')
 parser.add_argument('--input_frame_height', default=84, type=int,
                     help='cnn input image height，default: 84')
-parser.add_argument('--replay_start_size', default=100_000, type=int,
+parser.add_argument('--replay_start_size', default=100, type=int,
                     help='min data size before training cnn ，default: 6000')
 parser.add_argument('--gamma', default=0.99, type=float,
                     help='value decay, default: 0.99')
@@ -41,13 +41,13 @@ parser.add_argument('--log_path', default='../exps/dqn/', type=str,
                     help='log save path，default: ./log/')
 parser.add_argument('--learning_rate', default=0.00001, type=float,
                     help='cnn learning rate，default: 0.00001')
-parser.add_argument('--step_c', default=10000, type=int,
+parser.add_argument('--step_c', default=100_000, type=int,
                     help='synchronise target value network periods，default: 100')
 parser.add_argument('--epsilon_max', default=1., type=float,
                     help='max epsilon of epsilon-greedy，default: 1.')
 parser.add_argument('--epsilon_min', default=0.1, type=float,
                     help='min epsilon of epsilon-greedy，default: 0.1')
-parser.add_argument('--exploration_steps', default=10_000_000, type=int,
+parser.add_argument('--exploration_steps', default=8_000_000, type=int,
                     help='min epsilon of epsilon-greedy，default: 1,000,000')
 parser.add_argument('--epsilon_for_test', default=0.05, type=float,
                     help='epsilon of epsilon-greedy for testing agent，default: 0.05')
@@ -97,7 +97,8 @@ def train_dqn(logger):
         truncated = False
         inf = ''
         step_i = 0
-        run_test = False
+        frame_num = 0
+        reward_episode = 0
         while (not done) and (not truncated):
             obs = dqn_agent.perception_mapping(state, step_i)
             reward = dqn_agent.reward_shaping(reward_raw, step_i)
@@ -108,21 +109,20 @@ def train_dqn(logger):
             dqn_agent.store(obs, action, reward, done, truncated, inf)
             dqn_agent.train_step(step_i)
             next_state, reward_raw, done, truncated, inf = env.step(action)
-            log_reward += reward_raw
+            reward_episode += reward_raw
             state = next_state
             training_steps += 1
+            frame_num += 1
             if training_steps % args.batch_num_per_epoch*args.skip_k_frame == 0:
-                run_test = True
+                # run_test = True
                 epoch_i += 1
             step_i += 1
         dqn_agent.store_termination()
-        if run_test:
-            avg_reward, avg_steps = test(dqn_agent, args.agent_test_episodes)
-            logger(f'agent test {epoch_i}: avg step: {avg_steps}')
-            logger(f'agent test {epoch_i}: avg reward: {avg_reward}')
-            logger(f'agent test {epoch_i}: epsilon: {dqn_agent.exploration_method.epsilon}')
-            logger(f'agent test {epoch_i}: memory state: {len(dqn_agent.memory)}')
-
+        # if run_test:
+            # avg_reward, avg_steps = test(dqn_agent, args.agent_test_episodes)
+        logger(f'agent {epoch_i}: reward episode : {reward_episode}')
+        logger(f'agent {epoch_i}: epsilon: {dqn_agent.exploration_method.epsilon}')
+        logger(f'agent {epoch_i}: frames episode : {frame_num}')
         episode_in_epoch += 1
 
 
