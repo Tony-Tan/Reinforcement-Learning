@@ -77,7 +77,7 @@ class DQNPerceptionMapping(PerceptionMapping):
         :return: 2-d float matrix, 1-channel image with size of self.down_sample_size and the value is
         converted to [-0.5,0.5]
         """
-        img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[::,1]
+        img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[::, 1]
         img_y_channel = cv2.resize(img_y_channel, (self.input_frame_width, self.input_frame_height))
         return img_y_channel
 
@@ -232,8 +232,8 @@ class DQNAgent(Agent):
         if obs is not None:
             # self.memory.store([obs, action, reward, ])
             self.memory.store([obs, action, reward, terminated, truncated, np.zeros_like(obs)])
-            if len(self.memory) > 1:
-                self.memory[-1][-1] = obs
+            if len(self.memory) > 2:
+                self.memory[-2][-1] = obs
 
     def store_termination(self):
         if len(self.memory) > 1:
