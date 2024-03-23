@@ -15,7 +15,7 @@ parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='cnn training batch size，default: 32')
 parser.add_argument('--batch_num_per_epoch', default=500_000, type=int,
                     help='each epoch contains how many updates，default: 500,000')
-parser.add_argument('--replay_buffer_size', default=10_000, type=int,
+parser.add_argument('--replay_buffer_size', default=20_000, type=int,
                     help='memory buffer size ，default: 200,000')
 parser.add_argument('--training_episodes', default=100_000, type=int,
                     help='max training episodes，default: 100,000')
@@ -47,7 +47,7 @@ parser.add_argument('--epsilon_max', default=1., type=float,
                     help='max epsilon of epsilon-greedy，default: 1.')
 parser.add_argument('--epsilon_min', default=0.1, type=float,
                     help='min epsilon of epsilon-greedy，default: 0.1')
-parser.add_argument('--exploration_steps', default=8_000_000, type=int,
+parser.add_argument('--exploration_steps', default=2_500_000, type=int,
                     help='min epsilon of epsilon-greedy，default: 1,000,000')
 parser.add_argument('--epsilon_for_test', default=0.05, type=float,
                     help='epsilon of epsilon-greedy for testing agent，default: 0.05')

@@ -76,12 +76,9 @@ class DQNPerceptionMapping(PerceptionMapping):
         :param obs: 2-d int matrix, original state of environment
         :return: 2-d float matrix, 1-channel image with size of self.down_sample_size and the value is
         converted to [-0.5,0.5]
-        100 - 84: 100, 0: 84
         """
-        image = np.array(obs)
-        image = cv2.resize(image, (84, 100))
-        img_y_channel = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)[100 - 84: 100, 0: 84, 0]
-        # img_y_channel = cv2.resize(img_y_channel, (self.input_frame_width, self.input_frame_height))
+        img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[::,1]
+        img_y_channel = cv2.resize(img_y_channel, (self.input_frame_width, self.input_frame_height))
         return img_y_channel
 
     def __phi_append(self, obs: np.ndarray):
@@ -114,8 +111,9 @@ class DQNValueFunction(ValueFunction):
         self.value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.__synchronize_value_nn()
-        self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
-                                             alpha=0.95, eps=0.01)
+        # self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
+        #                                      alpha=0.95, eps=0.01)
+        self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device
