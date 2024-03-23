@@ -15,7 +15,7 @@ parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='cnn training batch size，default: 32')
 parser.add_argument('--batch_num_per_epoch', default=500_000, type=int,
                     help='each epoch contains how many updates，default: 500,000')
-parser.add_argument('--replay_buffer_size', default=10_000, type=int,
+parser.add_argument('--replay_buffer_size', default=1_000_000, type=int,
                     help='memory buffer size ，default: 200,000')
 parser.add_argument('--training_episodes', default=100_000, type=int,
                     help='max training episodes，default: 100,000')
@@ -23,7 +23,7 @@ parser.add_argument('--skip_k_frame', default=4, type=int,
                     help='dqn skip k frames each step，default: 4')
 parser.add_argument('--phi_channel', default=4, type=int,
                     help='phi temp size, default: 4')
-parser.add_argument('--device', default='mps', type=str,
+parser.add_argument('--device', default='cuda', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--input_frame_width', default=84, type=int,
                     help='cnn input image width, default: 84')
