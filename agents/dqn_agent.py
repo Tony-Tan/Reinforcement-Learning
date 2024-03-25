@@ -31,7 +31,7 @@ from exploration.epsilon_greedy import *
 #         return sampled_transitions
 
 def image_normalization(image_uint8: torch.Tensor) -> torch.Tensor:
-    return image_uint8 / 255.0
+    return image_uint8 / 255.0 - 0.5
 
 
 class DQNAtariReward(RewardShaping):
@@ -64,7 +64,7 @@ class DQNPerceptionMapping(PerceptionMapping):
         self.skip_k_frame = skip_k_frame
         self.input_frame_width = input_frame_width
         self.input_frame_height = input_frame_height
-        self.last_frame = None
+        # self.last_frame = None
 
     def __pre_process(self, obs: np.ndarray):
         """
@@ -77,15 +77,19 @@ class DQNPerceptionMapping(PerceptionMapping):
         :return: 2-d float matrix, 1-channel image with size of self.down_sample_size and the value is
         converted to [-0.5,0.5]
         """
-        img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[::, 1]
+        img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:,:, 0]
         img_y_channel = cv2.resize(img_y_channel, (self.input_frame_width, self.input_frame_height))
+        # return img_y_channel
+        # gray_img = cv2.cvtColor(obs, cv2.COLOR_BGR2GRAY)
+        # gray_img = cv2.resize(gray_img, (84, 100))
+        # gray_img = gray_img[100 - 84:100, 0:84]
         return img_y_channel
 
     def __phi_append(self, obs: np.ndarray):
         self.phi.append(obs)
 
     def reset(self):
-        self.last_frame = None
+        # self.last_frame = None
         self.phi.clear()
         for i in range(self.phi_channel):
             self.phi.append(np.zeros([self.input_frame_width, self.input_frame_width]))
@@ -93,13 +97,13 @@ class DQNPerceptionMapping(PerceptionMapping):
     def __call__(self, state: np.ndarray, step_i: int = 0) -> np.ndarray:
         if step_i == 0:
             self.reset()
-            self.last_frame = state
-        max_state = np.maximum(self.last_frame, state)
-        self.last_frame = state
+            # self.last_frame = state
+        # max_state = np.maximum(self.last_frame, state)
+        # self.last_frame = state
         obs = None
         if step_i % self.skip_k_frame == 0:
             # preprocess the obs to a certain size and load it to phi
-            self.__phi_append(self.__pre_process(max_state))
+            self.__phi_append(self.__pre_process(state))
             obs = np.array(self.phi)
         return obs
 
@@ -156,7 +160,7 @@ class DQNValueFunction(ValueFunction):
         # train the model
         q_value.resize_as_(reward_tensor)
         actions = action_tensor.long()
-
+        self.optimizer.zero_grad()
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
         loss = torch.clip(q_value - obs_action_value, min=-1, max=1)
@@ -231,9 +235,9 @@ class DQNAgent(Agent):
     def store(self, obs, action, reward, terminated, truncated, inf):
         if obs is not None:
             # self.memory.store([obs, action, reward, ])
+            if len(self.memory) >= 1:
+                self.memory[-1][-1] = obs
             self.memory.store([obs, action, reward, terminated, truncated, np.zeros_like(obs)])
-            if len(self.memory) > 2:
-                self.memory[-2][-1] = obs
 
     def store_termination(self):
         if len(self.memory) > 1:

@@ -37,7 +37,7 @@ class DecayingEpsilonGreedy(Exploration):
         self.epsilon = max(self.max_epsilon - self.decaying_counter * self.decay_rate, self.min_epsilon)
         optimal_action = np.random.choice(
             np.flatnonzero(values == np.max(values)))
-        if random.randint(0, 10_000_000) < self.epsilon * 10_000_000:
+        if random.randint(0, 100_000) < self.epsilon * 100_000:
             return random.randint(0, len(values) - 1)
         else:
             return optimal_action
