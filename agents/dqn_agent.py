@@ -77,8 +77,9 @@ class DQNPerceptionMapping(PerceptionMapping):
         :return: 2-d float matrix, 1-channel image with size of self.down_sample_size and the value is
         converted to [-0.5,0.5]
         """
-        img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:,:, 0]
+        img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:, :, 0]
         img_y_channel = cv2.resize(img_y_channel, (self.input_frame_width, self.input_frame_height))
+
         # return img_y_channel
         # gray_img = cv2.cvtColor(obs, cv2.COLOR_BGR2GRAY)
         # gray_img = cv2.resize(gray_img, (84, 100))
@@ -160,7 +161,6 @@ class DQNValueFunction(ValueFunction):
         # train the model
         q_value.resize_as_(reward_tensor)
         actions = action_tensor.long()
-        self.optimizer.zero_grad()
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
         loss = torch.clip(q_value - obs_action_value, min=-1, max=1)

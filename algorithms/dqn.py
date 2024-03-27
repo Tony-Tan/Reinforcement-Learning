@@ -9,13 +9,13 @@ from multiprocessing import Process, Queue, set_start_method
 
 
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
-parser.add_argument('--env_name', default='Pong-v0', type=str,
+parser.add_argument('--env_name', default='ALE/Seaquest-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='cnn training batch size，default: 32')
 parser.add_argument('--batch_num_per_epoch', default=500_000, type=int,
                     help='each epoch contains how many updates，default: 500,000')
-parser.add_argument('--replay_buffer_size', default=20_000, type=int,
+parser.add_argument('--replay_buffer_size', default=1_000_000, type=int,
                     help='memory buffer size ，default: 200,000')
 parser.add_argument('--training_episodes', default=100_000, type=int,
                     help='max training episodes，default: 100,000')
@@ -87,7 +87,7 @@ def train_dqn(logger):
                          args.phi_channel, args.epsilon_max, args.epsilon_min,
                          args.exploration_steps, args.device)
     epoch_i = 0
-    episode_in_epoch = 1
+    # episode_in_epoch = 1
     training_steps = 0
     log_reward = 0
     for episode_i in range(args.training_episodes):
@@ -99,6 +99,7 @@ def train_dqn(logger):
         step_i = 0
         frame_num = 0
         reward_episode = 0
+        run_test = False
         while (not done) and (not truncated):
             obs = dqn_agent.perception_mapping(state, step_i)
             reward = dqn_agent.reward_shaping(reward_raw, step_i)
@@ -111,19 +112,20 @@ def train_dqn(logger):
             next_state, reward_raw, done, truncated, inf = env.step(action)
             reward_episode += reward_raw
             state = next_state
+
             training_steps += 1
             frame_num += 1
             if training_steps % args.batch_num_per_epoch*args.skip_k_frame == 0:
-                # run_test = True
+                run_test = True
                 epoch_i += 1
             step_i += 1
         dqn_agent.store_termination()
-        # if run_test:
-            # avg_reward, avg_steps = test(dqn_agent, args.agent_test_episodes)
-        logger(f'agent {epoch_i}: reward episode : {reward_episode}')
-        logger(f'agent {epoch_i}: epsilon: {dqn_agent.exploration_method.epsilon}')
-        logger(f'agent {epoch_i}: frames episode : {frame_num}')
-        episode_in_epoch += 1
+        if run_test:
+            avg_reward, avg_steps = test(dqn_agent, args.agent_test_episodes)
+            logger(f'agent test {epoch_i}: avg reward : {avg_reward}')
+            logger(f'agent test {epoch_i}: epsilon: {dqn_agent.exploration_method.epsilon}')
+            logger(f'agent test {epoch_i}: avg steps : {avg_steps}')
+        # episode_in_epoch += 1
 
 
 if __name__ == '__main__':
