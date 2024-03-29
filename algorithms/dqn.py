@@ -9,13 +9,13 @@ from multiprocessing import Process, Queue, set_start_method
 
 
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
-parser.add_argument('--env_name', default='ALE/Seaquest-v5', type=str,
+parser.add_argument('--env_name', default='ALE/SpaceInvaders-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='cnn training batch size，default: 32')
 parser.add_argument('--batch_num_per_epoch', default=500_000, type=int,
                     help='each epoch contains how many updates，default: 500,000')
-parser.add_argument('--replay_buffer_size', default=1_000_000, type=int,
+parser.add_argument('--replay_buffer_size', default=250_000, type=int,
                     help='memory buffer size ，default: 200,000')
 parser.add_argument('--training_episodes', default=100_000, type=int,
                     help='max training episodes，default: 100,000')
@@ -29,7 +29,7 @@ parser.add_argument('--input_frame_width', default=84, type=int,
                     help='cnn input image width, default: 84')
 parser.add_argument('--input_frame_height', default=84, type=int,
                     help='cnn input image height，default: 84')
-parser.add_argument('--replay_start_size', default=5_000, type=int,
+parser.add_argument('--replay_start_size', default=50_000, type=int,
                     help='min data size before training cnn ，default: 6000')
 parser.add_argument('--gamma', default=0.99, type=float,
                     help='value decay, default: 0.99')
@@ -41,7 +41,7 @@ parser.add_argument('--log_path', default='../exps/dqn/', type=str,
                     help='log save path，default: ./log/')
 parser.add_argument('--learning_rate', default=0.00025, type=float,
                     help='cnn learning rate，default: 0.00001')
-parser.add_argument('--step_c', default=100_000, type=int,
+parser.add_argument('--step_c', default=10_000, type=int,
                     help='synchronise target value network periods，default: 100')
 parser.add_argument('--epsilon_max', default=1., type=float,
                     help='max epsilon of epsilon-greedy，default: 1.')
@@ -97,8 +97,6 @@ def train_dqn(logger):
         truncated = False
         inf = ''
         step_i = 0
-        frame_num = 0
-        reward_episode = 0
         run_test = False
         while (not done) and (not truncated):
             obs = dqn_agent.perception_mapping(state, step_i)
@@ -110,11 +108,8 @@ def train_dqn(logger):
             dqn_agent.store(obs, action, reward, done, truncated, inf)
             dqn_agent.train_step(step_i)
             next_state, reward_raw, done, truncated, inf = env.step(action)
-            reward_episode += reward_raw
             state = next_state
-
             training_steps += 1
-            frame_num += 1
             if training_steps % args.batch_num_per_epoch*args.skip_k_frame == 0:
                 run_test = True
                 epoch_i += 1
