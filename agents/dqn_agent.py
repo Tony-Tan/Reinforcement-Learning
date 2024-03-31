@@ -161,6 +161,7 @@ class DQNValueFunction(ValueFunction):
         # train the model
         q_value.resize_as_(reward_tensor)
         actions = action_tensor.long()
+
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
         loss = torch.clip(q_value - obs_action_value, min=-1, max=1)

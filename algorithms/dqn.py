@@ -9,13 +9,13 @@ from multiprocessing import Process, Queue, set_start_method
 
 
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
-parser.add_argument('--env_name', default='ALE/SpaceInvaders-v5', type=str,
+parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--mini_batch_size', default=32, type=int,
                     help='cnn training batch size，default: 32')
 parser.add_argument('--batch_num_per_epoch', default=500_000, type=int,
                     help='each epoch contains how many updates，default: 500,000')
-parser.add_argument('--replay_buffer_size', default=250_000, type=int,
+parser.add_argument('--replay_buffer_size', default=1_000_000, type=int,
                     help='memory buffer size ，default: 200,000')
 parser.add_argument('--training_episodes', default=100_000, type=int,
                     help='max training episodes，default: 100,000')
@@ -47,7 +47,7 @@ parser.add_argument('--epsilon_max', default=1., type=float,
                     help='max epsilon of epsilon-greedy，default: 1.')
 parser.add_argument('--epsilon_min', default=0.1, type=float,
                     help='min epsilon of epsilon-greedy，default: 0.1')
-parser.add_argument('--exploration_steps', default=1_000_000, type=int,
+parser.add_argument('--exploration_steps', default=10_000_000, type=int,
                     help='min epsilon of epsilon-greedy，default: 1,000,000')
 parser.add_argument('--epsilon_for_test', default=0.05, type=float,
                     help='epsilon of epsilon-greedy for testing agent，default: 0.05')
@@ -109,10 +109,10 @@ def train_dqn(logger):
             dqn_agent.train_step(step_i)
             next_state, reward_raw, done, truncated, inf = env.step(action)
             state = next_state
-            training_steps += 1
             if training_steps % args.batch_num_per_epoch*args.skip_k_frame == 0:
                 run_test = True
                 epoch_i += 1
+            training_steps += 1
             step_i += 1
         dqn_agent.store_termination()
         if run_test:
