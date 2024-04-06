@@ -3,7 +3,8 @@ from environments.env_wrapper import *
 
 
 class Agent(ABC):
-    def __init__(self):
+    def __init__(self, logger:Logger):
+        self.logger = logger
         pass
 
     # def __save_folder_create(self):

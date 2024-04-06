@@ -116,8 +116,9 @@ class DQNPerceptionMapping(PerceptionMapping):
 
 class DQNValueFunction(ValueFunction):
     def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
-                 gamma: float, step_c: int, model_saving_period: int, device: torch.device):
+                 gamma: float, step_c: int, model_saving_period: int, device: torch.device, logger:Logger):
         super(DQNValueFunction, self).__init__()
+        self.logger = logger
         self.value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.__synchronize_value_nn()
@@ -183,7 +184,8 @@ class DQNValueFunction(ValueFunction):
         if (self.update_step > 1_000_000 and self.update_step % 500_000 == 0 and
                 self.lr_scheduler.get_last_lr()[0] > 0.00001):
             self.lr_scheduler.step()
-            print('update lr: ', self.lr_scheduler.get_last_lr()[0])
+            self.logger.msg('update lr')
+            self.logger.tb_scalar('lr', self.lr_scheduler.get_last_lr()[0], self.update_step)
 
     def value(self, phi_tensor: torch.Tensor) -> np.ndarray:
         with torch.no_grad():
@@ -202,12 +204,12 @@ class DQNAgent(Agent):
                  mini_batch_size: int, replay_buffer_size: int, min_update_sample_size: int, skip_k_frame: int,
                  learning_rate: float, step_c: int, model_saving_period: int,
                  gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,
-                 exploration_steps: int, device: torch.device):
-        super(DQNAgent, self).__init__()
+                 exploration_steps: int, device: torch.device, logger: Logger):
+        super(DQNAgent, self).__init__(logger)
         # basic elements initialize
         self.action_dim = action_space.n
         self.value_function = DQNValueFunction(phi_channel, self.action_dim, learning_rate, gamma, step_c,
-                                               model_saving_period, device)
+                                               model_saving_period, device, logger)
         self.exploration_method = DecayingEpsilonGreedy(epsilon_max, epsilon_min, exploration_steps)
         self.memory = UniformExperienceReplay(replay_buffer_size)
         self.perception_mapping = DQNPerceptionMapping(phi_channel, skip_k_frame, input_frame_width, input_frame_height)

@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from datetime import datetime
+from torch.utils.tensorboard import SummaryWriter
 import sys
 import time
 
@@ -10,18 +11,25 @@ class Logger:
     def __init__(self, log_name: str, log_path: str = './', print_in_terminal: bool = True):
         if not os.path.exists(log_path):
             os.makedirs(log_path)
+        # remove illegal characters in log_name that cannot in a path and add time stamp
         log_name_ = log_name.replace('/','-')+'_'+datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-        self.log_file = open(os.path.join(log_path, log_name_+'.log'), 'a+')
+        self.log_file = open(os.path.join(log_path, log_name_+'.log'), 'w+')
+        self.tb_writer = SummaryWriter(log_dir=os.path.join(log_path, log_name_))
         self.print_in_terminal = print_in_terminal
-        pass
 
-    def tensor_board(self, *args):
-        pass
+
+    def tb_scalar(self, *args):
+        """
+        :param args:
+        :return:
+        """
+        self.tb_writer.add_scalar(*args)
+        self.__msg(str(args))
 
     def __del__(self):
         self.log_file.close()
 
-    def __call__(self, info: str):
+    def __msg(self, info: str):
         """
         :param info:
         :return:

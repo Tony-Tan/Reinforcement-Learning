@@ -11,7 +11,7 @@ from utils.hyperparameters import Hyperparameters
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
 parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
-parser.add_argument('--device', default='cuda:0', type=str,
+parser.add_argument('--device', default='cuda:1', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')
@@ -46,18 +46,21 @@ def test(agent: DQNAgent, test_episodes: int):
 
 
 def train_dqn(logger):
+    """
+    train dqn agent
+    :param logger:  logger
+    :return:
+    """
     env = EnvWrapper(cfg['env_name'])
 
     dqn_agent = DQNAgent(cfg['input_frame_width'], cfg['input_frame_height'], env.action_space, cfg['mini_batch_size'],
                          cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['skip_k_frame'],
                          cfg['learning_rate'], cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
                          cfg['training_steps'], cfg['phi_channel'], cfg['epsilon_max'], cfg['epsilon_min'],
-                         cfg['exploration_steps'], cfg['device'])
+                         cfg['exploration_steps'], cfg['device'], logger)
 
     epoch_i = 0
-    # episode_in_epoch = 1
     training_steps = 0
-    log_reward = 0
     while training_steps < cfg['training_steps']:
         state, _ = env.reset()
         done = False
@@ -85,10 +88,9 @@ def train_dqn(logger):
         dqn_agent.store_termination()
         if run_test:
             avg_reward, avg_steps = test(dqn_agent, cfg['agent_test_episodes'])
-            logger(f'agent test {epoch_i}/{training_steps}: avg reward : {avg_reward}')
-            logger(f'agent test {epoch_i}/{training_steps}: epsilon: {dqn_agent.exploration_method.epsilon}')
-            logger(f'agent test {epoch_i}/{training_steps}: avg steps : {avg_steps}')
-        # episode_in_epoch += 1
+            logger.tb_scalar('avg_reward', avg_reward, epoch_i)
+            logger.tb_scalar('avg_steps', avg_steps, epoch_i)
+            logger.tb_scalar('epsilon', dqn_agent.exploration_method.epsilon, epoch_i)
 
 
 if __name__ == '__main__':

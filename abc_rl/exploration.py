@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 
 class Exploration(ABC):
     def __init__(self):
-        # logger('Exploration method: \'{}\' is initialized'.format(self.__class__.__name__))
         pass
 
     @abstractmethod
