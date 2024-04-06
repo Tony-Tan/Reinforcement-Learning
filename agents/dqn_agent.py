@@ -181,11 +181,13 @@ class DQNValueFunction(ValueFunction):
         self.update_step += 1
         if self.update_step % self.step_c == 0:
             self.__synchronize_value_nn()
+            self.logger.msg('synchronize target value network')
+            self.logger.tb_scalar('lr', self.lr_scheduler.get_last_lr()[0], self.update_step)
+            self.logger.tb_scalar('loss', loss.item(), self.update_step)
         if (self.update_step > 1_000_000 and self.update_step % 500_000 == 0 and
                 self.lr_scheduler.get_last_lr()[0] > 0.00001):
             self.lr_scheduler.step()
-            self.logger.msg('update lr')
-            self.logger.tb_scalar('lr', self.lr_scheduler.get_last_lr()[0], self.update_step)
+
 
     def value(self, phi_tensor: torch.Tensor) -> np.ndarray:
         with torch.no_grad():

@@ -24,12 +24,12 @@ class Logger:
         :return:
         """
         self.tb_writer.add_scalar(*args)
-        self.__msg(str(args))
+        self.msg(str(args))
 
     def __del__(self):
         self.log_file.close()
 
-    def __msg(self, info: str):
+    def msg(self, info: str):
         """
         :param info:
         :return:
