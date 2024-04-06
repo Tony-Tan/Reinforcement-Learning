@@ -2,6 +2,7 @@ import numpy as np
 import os
 from datetime import datetime
 import sys
+import time
 
 
 # log class
@@ -9,7 +10,7 @@ class Logger:
     def __init__(self, log_name: str, log_path: str = './', print_in_terminal: bool = True):
         if not os.path.exists(log_path):
             os.makedirs(log_path)
-        log_name_ = log_name.replace('/','-')+'_'+datetime.utcnow().strftime('%Y-%m-%d-%H-%M-%S')
+        log_name_ = log_name.replace('/','-')+'_'+datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
         self.log_file = open(os.path.join(log_path, log_name_+'.log'), 'a+')
         self.print_in_terminal = print_in_terminal
         pass
@@ -25,7 +26,7 @@ class Logger:
         :param info:
         :return:
         """
-        time_strip = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        time_strip = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         complete_info = '{time_strip:<10}: {info:<10}'.format(time_strip=time_strip, info=info)
         self.log_file.write(complete_info+'\n')
         if self.print_in_terminal:

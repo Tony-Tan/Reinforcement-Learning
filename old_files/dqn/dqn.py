@@ -15,8 +15,8 @@ import torch.nn.functional as F
 
 class AgentDQN:
     def __init__(self, environment, mini_batch_size=32, episodes_num=100000,
-                 k_frames=4, input_frame_size=84, memory_length=1.5e4, phi_temp_size=4,
-                 model_path='./model/', log_path='./log/', learning_rate=1e-5,
+                 k_frames=4, input_frame_size=84, memory_length=150_000, phi_temp_size=4,
+                 model_path='./model/', log_path='./log/', learning_rate=0.00025,
                  steps_c=100, algorithm_version='2013'):
         # basic configuration
         self._algorithm_version = algorithm_version
@@ -35,7 +35,10 @@ class AgentDQN:
         self.target_state_action_value_function = Network.Net(4, self._action_n)
         self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self._criterion = nn.SmoothL1Loss()
-        self._optimizer = optim.Adam(self.state_action_value_function.parameters(), lr=learning_rate)
+        # self._optimizer = optim.Adam(self.state_action_value_function.parameters(), lr=learning_rate)
+        # use rmsprop optimizer
+        self._optimizer = torch.optim.RMSprop(self.state_action_value_function.parameters(), lr=learning_rate, momentum=0.95,
+                            alpha=0.95, eps=0.01)
         self.state_action_value_function.to(self._device)
         self.target_state_action_value_function.to(self._device)
         self._writer = SummaryWriter(log_path)
@@ -148,7 +151,7 @@ class AgentDQN:
         labels = torch.from_numpy(reward_array).to(self._device).view(-1, 1)
         actions = action_array.to(self._device)
         # zero the parameter gradients
-        self._optimizer.zero_grad()
+        # self._optimizer.zero_grad()
         # forward + backward + optimize
         outputs = self.state_action_value_function(inputs).gather(1, actions)
         loss = F.mse_loss(outputs, labels)
@@ -159,6 +162,29 @@ class AgentDQN:
         total_loss += loss.item()
         # record
         self._writer.add_scalar('train/loss', total_loss)
+
+    def test(self, episodes=10):
+        frame_num = 0
+        total_reward = 0
+        for episode_i in range(episodes):
+            state, _ = self._env.reset()
+            self.pre_process_and_add_state_into_phi_temp(state)
+            is_done = False
+            for i in range(1, self._phi_temp_size):
+                action = np.random.choice(self._action_n, 1)[0]
+                new_state, reward, is_done, _ = self.skip_k_frame(action)
+                self.pre_process_and_add_state_into_phi_temp(new_state)
+                if is_done:
+                    return is_done
+            while not is_done:
+                state_phi = self.phi()
+                action = self.select_action(state_phi, 0.05)
+                new_state, reward, is_done, _ = self.skip_k_frame(action)
+                frame_num += 1
+                total_reward += reward
+                new_state_x = self.pre_process_and_add_state_into_phi_temp(new_state)
+
+        return frame_num/episodes, total_reward/episodes
 
     def learning_an_episode(self, epsilon):
         frame_num = 0
@@ -212,18 +238,22 @@ class AgentDQN:
         """
         frame_num = self._phi_temp_size
         epsilon = epsilon_max
-        for episode_i in range(1, self._episodes_num):
+        for episode_i in range(0, self._episodes_num):
             # set a dynamic epsilon
             epsilon = max(epsilon_min, epsilon * epsilon_decay)
             # random choice an action at the beginning of the process
             frame_num_i, reward_i = self.learning_an_episode(epsilon)
             frame_num += frame_num_i
-            self.record_reward(frame_num, reward_i, epsilon, episode_i)
+
             if self._algorithm_version == '2015' and episode_i % self._steps_c == 0:
-                print('------------------------ updating target state action value function -----------------------')
+                print('updating target state action value function')
                 self.target_state_action_value_function.load_state_dict(self.state_action_value_function.state_dict())
             if episode_i % 500 == 0:
-                self.save_model()
+                avg_frame_num, avg_reward = self.test()
+                print(str(episode_i)+' test frame_num:'+str(avg_frame_num))
+                print(str(episode_i)+' test reward:' + str(avg_reward))
+                print(str(episode_i) + ' test epsilon:' + str(epsilon))
+                print('----------------------------------------------------------')
 
 
 if __name__ == '__main__':

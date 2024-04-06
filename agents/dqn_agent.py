@@ -31,7 +31,7 @@ from exploration.epsilon_greedy import *
 #         return sampled_transitions
 
 def image_normalization(image_uint8: torch.Tensor) -> torch.Tensor:
-    return image_uint8 / 255.0 - 0.5
+    return image_uint8 / 255.0
 
 
 class DQNAtariReward(RewardShaping):
@@ -64,7 +64,7 @@ class DQNPerceptionMapping(PerceptionMapping):
         self.skip_k_frame = skip_k_frame
         self.input_frame_width = input_frame_width
         self.input_frame_height = input_frame_height
-        # self.last_frame = None
+        self.last_frame_pre_process = None
 
     def __pre_process(self, obs: np.ndarray):
         """
@@ -78,19 +78,24 @@ class DQNPerceptionMapping(PerceptionMapping):
         converted to [-0.5,0.5]
         """
         img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:, :, 0]
-        img_y_channel = cv2.resize(img_y_channel, (self.input_frame_width, self.input_frame_height))
+        if self.last_frame_pre_process is not None:
+            obs_y = np.maximum(self.last_frame, img_y_channel)
+        else:
+            obs_y = self.last_frame = img_y_channel
+        self.last_frame_pre_process = img_y_channel
+        obs_processed = cv2.resize(obs_y, (self.input_frame_width, self.input_frame_height))
 
         # return img_y_channel
         # gray_img = cv2.cvtColor(obs, cv2.COLOR_BGR2GRAY)
         # gray_img = cv2.resize(gray_img, (84, 100))
         # gray_img = gray_img[100 - 84:100, 0:84]
-        return img_y_channel
+        return obs_processed
 
     def __phi_append(self, obs: np.ndarray):
         self.phi.append(obs)
 
     def reset(self):
-        # self.last_frame = None
+        self.last_frame_pre_process = None
         self.phi.clear()
         for i in range(self.phi_channel):
             self.phi.append(np.zeros([self.input_frame_width, self.input_frame_width]))
@@ -98,7 +103,7 @@ class DQNPerceptionMapping(PerceptionMapping):
     def __call__(self, state: np.ndarray, step_i: int = 0) -> np.ndarray:
         if step_i == 0:
             self.reset()
-            # self.last_frame = state
+        #     self.last_frame = state
         # max_state = np.maximum(self.last_frame, state)
         # self.last_frame = state
         obs = None
@@ -116,9 +121,12 @@ class DQNValueFunction(ValueFunction):
         self.value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.__synchronize_value_nn()
-        self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
-                                             alpha=0.95, eps=0.01)
-        # self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
+        # gpt suggest that the learning rate should be schedualed
+        # self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
+        #                                      alpha=0.95, eps=0.01)
+        self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
+        self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99)
+
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device
@@ -131,7 +139,7 @@ class DQNValueFunction(ValueFunction):
     #     self.target_value_nn.to(self.device)
 
     def __synchronize_value_nn(self):
-        print('__synchronize_value_nn')
+        # print('__synchronize_value_nn')
         self.target_value_nn.load_state_dict(self.value_nn.state_dict())
 
     def update(self, samples: list):
@@ -161,18 +169,21 @@ class DQNValueFunction(ValueFunction):
         # train the model
         q_value.resize_as_(reward_tensor)
         actions = action_tensor.long()
-
+        self.optimizer.zero_grad()
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
-        loss = torch.clip(q_value - obs_action_value, min=-1, max=1)
-        loss = F.mse_loss(loss, torch.zeros_like(loss))
+        # loss = torch.clip(q_value - obs_action_value, min=-1, max=1)
+        loss = F.mse_loss(q_value, obs_action_value)
         # Minimize the loss
-        self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
         self.update_step += 1
         if self.update_step % self.step_c == 0:
             self.__synchronize_value_nn()
+        if (self.update_step > 1_000_000 and self.update_step % 500_000 == 0 and
+                self.lr_scheduler.get_last_lr()[0] > 0.00001):
+            self.lr_scheduler.step()
+            print('update lr: ', self.lr_scheduler.get_last_lr()[0])
 
     def value(self, phi_tensor: torch.Tensor) -> np.ndarray:
         with torch.no_grad():
