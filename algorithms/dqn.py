@@ -80,7 +80,8 @@ def train_dqn(logger):
             dqn_agent.train_step(step_i)
             next_state, reward_raw, done, truncated, inf = env.step(action)
             state = next_state
-            if training_steps % cfg['batch_num_per_epoch']*cfg['skip_k_frame'] == 0:
+            if (len(dqn_agent.memory) > cfg['replay_start_size'] and
+                    training_steps % cfg['batch_num_per_epoch']*cfg['skip_k_frame'] == 0):
                 run_test = True
                 epoch_i += 1
             training_steps += 1
