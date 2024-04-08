@@ -79,9 +79,9 @@ class DQNPerceptionMapping(PerceptionMapping):
         """
         img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:, :, 0]
         if self.last_frame_pre_process is not None:
-            obs_y = np.maximum(self.last_frame, img_y_channel)
+            obs_y = np.maximum(self.last_frame_pre_process, img_y_channel)
         else:
-            obs_y = self.last_frame = img_y_channel
+            obs_y = self.last_frame_pre_process = img_y_channel
         self.last_frame_pre_process = img_y_channel
         obs_processed = cv2.resize(obs_y, (self.input_frame_width, self.input_frame_height))
 
@@ -126,7 +126,7 @@ class DQNValueFunction(ValueFunction):
         # self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
         #                                      alpha=0.95, eps=0.01)
         self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
-        self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99)
+        # self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99)
 
         self.learning_rate = learning_rate
         self.gamma = gamma
@@ -181,13 +181,12 @@ class DQNValueFunction(ValueFunction):
         self.update_step += 1
         if self.update_step % self.step_c == 0:
             self.__synchronize_value_nn()
-            self.logger.msg('synchronize target value network')
-            self.logger.tb_scalar('lr', self.lr_scheduler.get_last_lr()[0], self.update_step)
+            # self.logger.msg('synchronize target value network')
+            # self.logger.tb_scalar('lr', self.lr_scheduler.get_last_lr()[0], self.update_step)
             self.logger.tb_scalar('loss', loss.item(), self.update_step)
-        if (self.update_step > 1_000_000 and self.update_step % 500_000 == 0 and
-                self.lr_scheduler.get_last_lr()[0] > 0.00001):
-            self.lr_scheduler.step()
-
+        # if (self.update_step > 1_000_000 and self.update_step % 500_000 == 0 and
+        #         self.lr_scheduler.get_last_lr()[0] > 0.00001):
+        #     self.lr_scheduler.step()
 
     def value(self, phi_tensor: torch.Tensor) -> np.ndarray:
         with torch.no_grad():

@@ -11,7 +11,7 @@ from utils.hyperparameters import Hyperparameters
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
 parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
-parser.add_argument('--device', default='cuda:1', type=str,
+parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')
@@ -91,6 +91,9 @@ def train_dqn(logger):
             logger.tb_scalar('avg_reward', avg_reward, epoch_i)
             logger.tb_scalar('avg_steps', avg_steps, epoch_i)
             logger.tb_scalar('epsilon', dqn_agent.exploration_method.epsilon, epoch_i)
+            logger.msg(f'{epoch_i} avg_reward: ' + str(avg_reward))
+            logger.msg(f'{epoch_i} avg_steps: ' + str(avg_steps))
+            logger.msg(f'{epoch_i} epsilon: ' + str(dqn_agent.exploration_method.epsilon))
 
 
 if __name__ == '__main__':

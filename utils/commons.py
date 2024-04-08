@@ -12,11 +12,10 @@ class Logger:
         if not os.path.exists(log_path):
             os.makedirs(log_path)
         # remove illegal characters in log_name that cannot in a path and add time stamp
-        log_name_ = log_name.replace('/','-')+'_'+datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-        self.log_file = open(os.path.join(log_path, log_name_+'.log'), 'w+')
+        log_name_ = log_name.replace('/', '-') + '_' + datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+        self.log_file = open(os.path.join(log_path, log_name_ + '.log'), 'w+')
         self.tb_writer = SummaryWriter(log_dir=os.path.join(log_path, log_name_))
         self.print_in_terminal = print_in_terminal
-
 
     def tb_scalar(self, *args):
         """
@@ -24,7 +23,6 @@ class Logger:
         :return:
         """
         self.tb_writer.add_scalar(*args)
-        self.msg(str(args))
 
     def __del__(self):
         self.log_file.close()
@@ -36,7 +34,7 @@ class Logger:
         """
         time_strip = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         complete_info = '{time_strip:<10}: {info:<10}'.format(time_strip=time_strip, info=info)
-        self.log_file.write(complete_info+'\n')
+        self.log_file.write(complete_info + '\n')
         if self.print_in_terminal:
             print(complete_info)
 

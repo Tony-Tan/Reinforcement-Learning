@@ -18,11 +18,11 @@ class DQNAtari(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x)
-        x = F.relu(self.bn1(x))
+        x = F.relu(x)#(self.bn1(x))
         x = self.conv2(x)
-        x = F.relu(self.bn2(x))
+        x = F.relu(x)#self.bn2(x))
         x = self.conv3(x)
-        x = F.relu(self.bn3(x))
+        x = F.relu(x)#self.bn3(x))
         x = x.view(-1, 3136)
         x = self.fc(x)
         x = F.relu(x)
