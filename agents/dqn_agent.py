@@ -49,7 +49,7 @@ class DQNAtariReward(RewardShaping):
             # preprocess the obs to a certain size and load it to phi
             reward_rs = self.reward_cumulated
             self.reset()
-            return np.clip(reward_rs, a_min=-1,a_max=1)
+            return np.clip(reward_rs, a_min=-1, a_max=1)
         else:
             self.reward_cumulated += reward
             return None
@@ -116,9 +116,9 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.__synchronize_value_nn()
         # gpt suggest that the learning rate should be schedualed
-        # self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
-        #                                      alpha=0.95, eps=0.01)
-        self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
+        self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
+                                             alpha=0.95, eps=0.01)
+        # self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
 
         self.learning_rate = learning_rate
         self.gamma = gamma
@@ -165,10 +165,10 @@ class DQNValueFunction(ValueFunction):
         self.optimizer.zero_grad()
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
-        loss = torch.clip(q_value - obs_action_value, min=-1, max=1)
+        delta_q = torch.clip(q_value - obs_action_value, min=-1, max=1)
         # loss = F.mse_loss(q_value, obs_action_value)
         # loss = F.mse_loss(loss, torch.zeros_like(loss))
-        loss = torch.mean(loss ** 2)
+        loss = torch.mean(delta_q ** 2)
         # Minimize the loss
         loss.backward()
         self.optimizer.step()
