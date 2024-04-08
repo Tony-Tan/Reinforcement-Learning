@@ -49,7 +49,7 @@ class DQNAtariReward(RewardShaping):
             # preprocess the obs to a certain size and load it to phi
             reward_rs = self.reward_cumulated
             self.reset()
-            return reward_rs
+            return np.clip(reward_rs, a_min=-1,a_max=1)
         else:
             self.reward_cumulated += reward
             return None
@@ -109,16 +109,16 @@ class DQNPerceptionMapping(PerceptionMapping):
 
 class DQNValueFunction(ValueFunction):
     def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
-                 gamma: float, step_c: int, model_saving_period: int, device: torch.device, logger:Logger):
+                 gamma: float, step_c: int, model_saving_period: int, device: torch.device, logger: Logger):
         super(DQNValueFunction, self).__init__()
         self.logger = logger
         self.value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.__synchronize_value_nn()
         # gpt suggest that the learning rate should be schedualed
-        self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
-                                             alpha=0.95, eps=0.01)
-        # self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
+        # self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
+        #                                      alpha=0.95, eps=0.01)
+        self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
 
         self.learning_rate = learning_rate
         self.gamma = gamma
@@ -167,7 +167,8 @@ class DQNValueFunction(ValueFunction):
         obs_action_value = outputs.gather(1, actions)
         loss = torch.clip(q_value - obs_action_value, min=-1, max=1)
         # loss = F.mse_loss(q_value, obs_action_value)
-        loss = F.mse_loss(loss,torch.zeros_like(loss))
+        # loss = F.mse_loss(loss, torch.zeros_like(loss))
+        loss = torch.mean(loss ** 2)
         # Minimize the loss
         loss.backward()
         self.optimizer.step()
@@ -224,7 +225,7 @@ class DQNAgent(Agent):
                 obs_scaled = image_normalization(np.array(obs).astype(np.float32))
                 phi_tensor = torch.from_numpy(obs_scaled)
                 value_list = self.value_function.value(phi_tensor)[0]
-                self.log_avg_value += np.mean(value_list)
+                # self.log_avg_value += np.mean(value_list)
                 if exploration_method is None:
                     self.last_action = self.exploration_method(value_list)
                     # print(value_list)
