@@ -32,4 +32,6 @@ class Hyperparameters:
     def print(self):
         pprint.PrettyPrinter(indent=2).pprint(self.config)
 
+    def __str__(self):
+        return yaml.dump(self.config)
 

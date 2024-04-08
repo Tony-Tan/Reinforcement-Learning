@@ -9,9 +9,9 @@ from multiprocessing import Process, Queue, set_start_method
 from utils.hyperparameters import Hyperparameters
 
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
-parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
-                    help='openai gym environment (default: ALE/Pong-v5)')
-parser.add_argument('--device', default='cuda:0', type=str,
+parser.add_argument('--env_name', default='ALE/SpaceInvaders-v5', type=str,
+                    help='openai gym environment (default: ALE/Spaceinvaders-v5)')
+parser.add_argument('--device', default='cuda:1', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')
@@ -98,4 +98,5 @@ def train_dqn(logger):
 
 if __name__ == '__main__':
     logger_ = Logger(cfg['env_name'], cfg['log_path'])
+    logger_.msg('\nparameters:' + str(cfg))
     train_dqn(logger_)

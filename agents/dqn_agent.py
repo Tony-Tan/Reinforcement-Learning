@@ -77,25 +77,21 @@ class DQNPerceptionMapping(PerceptionMapping):
         :return: 2-d float matrix, 1-channel image with size of self.down_sample_size and the value is
         converted to [-0.5,0.5]
         """
-        img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:, :, 0]
-        if self.last_frame_pre_process is not None:
-            obs_y = np.maximum(self.last_frame_pre_process, img_y_channel)
-        else:
-            obs_y = self.last_frame_pre_process = img_y_channel
-        self.last_frame_pre_process = img_y_channel
+        obs_y = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:, :, 0]
+        # if self.last_frame_pre_process is not None:
+        #     obs_y = np.maximum(self.last_frame_pre_process, img_y_channel)
+        # else:
+        #     obs_y = self.last_frame_pre_process = img_y_channel
+        # self.last_frame_pre_process = img_y_channel
         obs_processed = cv2.resize(obs_y, (self.input_frame_width, self.input_frame_height))
 
-        # return img_y_channel
-        # gray_img = cv2.cvtColor(obs, cv2.COLOR_BGR2GRAY)
-        # gray_img = cv2.resize(gray_img, (84, 100))
-        # gray_img = gray_img[100 - 84:100, 0:84]
         return obs_processed
 
     def __phi_append(self, obs: np.ndarray):
         self.phi.append(obs)
 
     def reset(self):
-        self.last_frame_pre_process = None
+        # self.last_frame_pre_process = None
         self.phi.clear()
         for i in range(self.phi_channel):
             self.phi.append(np.zeros([self.input_frame_width, self.input_frame_width]))
@@ -103,9 +99,6 @@ class DQNPerceptionMapping(PerceptionMapping):
     def __call__(self, state: np.ndarray, step_i: int = 0) -> np.ndarray:
         if step_i == 0:
             self.reset()
-        #     self.last_frame = state
-        # max_state = np.maximum(self.last_frame, state)
-        # self.last_frame = state
         obs = None
         if step_i % self.skip_k_frame == 0:
             # preprocess the obs to a certain size and load it to phi
@@ -123,10 +116,9 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.__synchronize_value_nn()
         # gpt suggest that the learning rate should be schedualed
-        # self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
-        #                                      alpha=0.95, eps=0.01)
-        self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
-        # self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99)
+        self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
+                                             alpha=0.95, eps=0.01)
+        # self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
 
         self.learning_rate = learning_rate
         self.gamma = gamma
@@ -173,8 +165,9 @@ class DQNValueFunction(ValueFunction):
         self.optimizer.zero_grad()
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
-        # loss = torch.clip(q_value - obs_action_value, min=-1, max=1)
-        loss = F.mse_loss(q_value, obs_action_value)
+        loss = torch.clip(q_value - obs_action_value, min=-1, max=1)
+        # loss = F.mse_loss(q_value, obs_action_value)
+        loss = F.mse_loss(loss,torch.zeros_like(loss))
         # Minimize the loss
         loss.backward()
         self.optimizer.step()
