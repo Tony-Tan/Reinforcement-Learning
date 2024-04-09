@@ -249,7 +249,10 @@ class AgentDQN:
                 print('updating target state action value function')
                 self.target_state_action_value_function.load_state_dict(self.state_action_value_function.state_dict())
             if episode_i % 500 == 0:
+
                 avg_frame_num, avg_reward = self.test()
+                self._writer.add_scalar('test reward', avg_reward,episode_i)
+                self._writer.add_scalar('test step', avg_frame_num, episode_i)
                 print(str(episode_i)+' test frame_num:'+str(avg_frame_num))
                 print(str(episode_i)+' test reward:' + str(avg_reward))
                 print(str(episode_i) + ' test epsilon:' + str(epsilon))
@@ -257,6 +260,6 @@ class AgentDQN:
 
 
 if __name__ == '__main__':
-    env = gym.make('Pong-v0')
+    env = gym.make('Pong-v4')
     agent = AgentDQN(env, algorithm_version='2015')
     agent.learning(epsilon_max=1.0, epsilon_min=0.01)
