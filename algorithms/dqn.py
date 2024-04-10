@@ -9,7 +9,7 @@ from multiprocessing import Process, Queue, set_start_method
 from utils.hyperparameters import Hyperparameters
 
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
-parser.add_argument('--env_name', default='Pong-v4', type=str,
+parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
                     help='openai gym environment (default: ALE/Spaceinvaders-v5)')
 parser.add_argument('--device', default='cuda:1', type=str,
                     help='calculation device default: cuda')
@@ -21,11 +21,11 @@ parser.add_argument('--agent_saving_period', default=80000, type=int,
                     help='agent saving period(episode)，default: 80000')
 
 cfg = Hyperparameters(parser, '../configs/dqn.yaml')
-cfg.print()
+# cfg.print()
 
 
 def test(agent: DQNAgent, test_episodes: int):
-    env = EnvWrapper(cfg['env_name'])
+    env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
     exploration_method = EpsilonGreedy(cfg['epsilon_for_test'])
     reward_cum = 0
     step_cum = 0
@@ -51,13 +51,12 @@ def train_dqn(logger):
     :param logger:  logger
     :return:
     """
-    env = EnvWrapper(cfg['env_name'])
+    env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
 
     dqn_agent = DQNAgent(cfg['input_frame_width'], cfg['input_frame_height'], env.action_space, cfg['mini_batch_size'],
-                         cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['skip_k_frame'],
-                         cfg['learning_rate'], cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
-                         cfg['training_steps'], cfg['phi_channel'], cfg['epsilon_max'], cfg['epsilon_min'],
-                         cfg['exploration_steps'], cfg['device'], logger)
+                         cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['learning_rate'], cfg['step_c'],
+                         cfg['agent_saving_period'], cfg['gamma'], cfg['training_steps'], cfg['phi_channel'],
+                         cfg['epsilon_max'], cfg['epsilon_min'], cfg['exploration_steps'], cfg['device'], logger)
 
     epoch_i = 0
     training_steps = 0
@@ -70,18 +69,18 @@ def train_dqn(logger):
         step_i = 0
         run_test = False
         while (not done) and (not truncated):
-            obs = dqn_agent.perception_mapping(state, step_i)
-            reward = dqn_agent.reward_shaping(reward_raw, step_i)
+            obs = dqn_agent.perception_mapping(state)
+            reward = dqn_agent.reward_shaping(reward_raw)
             if len(dqn_agent.memory) > cfg['replay_start_size'] and step_i > cfg['no_op']:
                 action = dqn_agent.select_action(obs)
             else:
                 action = dqn_agent.select_action(obs, RandomAction())
             dqn_agent.store(obs, action, reward, done, truncated, inf)
-            dqn_agent.train_step(step_i)
+            dqn_agent.train_step()
             next_state, reward_raw, done, truncated, inf = env.step(action)
             state = next_state
             if (len(dqn_agent.memory) > cfg['replay_start_size'] and
-                    training_steps % cfg['batch_num_per_epoch']*cfg['skip_k_frame'] == 0):
+                    training_steps % cfg['batch_num_per_epoch'] == 0):
                 run_test = True
                 epoch_i += 1
             training_steps += 1
