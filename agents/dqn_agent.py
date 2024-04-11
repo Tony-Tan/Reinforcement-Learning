@@ -31,24 +31,16 @@ from exploration.epsilon_greedy import *
 #         return sampled_transitions
 
 def image_normalization(image_uint8: torch.Tensor) -> torch.Tensor:
-    return image_uint8 / 128.0 - 1.
+    return image_uint8 / 255.0 - .5
 
 
 class DQNAtariReward(RewardShaping):
     def __init__(self):
-        super().__init__()
-        self.reward_cumulated = 0
         pass
-
-    def reset(self):
-        self.reward_cumulated = 0
 
     def __call__(self, reward):
         # preprocess the obs to a certain size and load it to phi
-        reward_rs = self.reward_cumulated
-        self.reset()
-        return np.clip(reward_rs, a_min=-1, a_max=1)
-
+        return np.clip(reward, a_min=-1, a_max=1)
 
 
 class DQNPerceptionMapping(PerceptionMapping):
@@ -72,13 +64,13 @@ class DQNPerceptionMapping(PerceptionMapping):
         :return: 2-d float matrix, 1-channel image with size of self.down_sample_size and the value is
         converted to [-0.5,0.5]
         """
-        obs_y = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:, :, 0]
+        img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:, :, 0]
         # obs_y = cv2.cvtColor(obs, cv2.COLOR_RGB2GRAY)
-        # if self.last_frame_pre_process is not None:
-        #     obs_y = np.maximum(self.last_frame_pre_process, img_y_channel)
-        # else:
-        #     obs_y = self.last_frame_pre_process = img_y_channel
-        # self.last_frame_pre_process = img_y_channel
+        if self.last_frame_pre_process is not None:
+            obs_y = np.maximum(self.last_frame_pre_process, img_y_channel)
+        else:
+            obs_y = self.last_frame_pre_process = img_y_channel
+        self.last_frame_pre_process = img_y_channel
         obs_processed = cv2.resize(obs_y, (self.input_frame_width, self.input_frame_height))
         return obs_processed
 
@@ -86,12 +78,12 @@ class DQNPerceptionMapping(PerceptionMapping):
         self.phi.append(obs)
 
     def reset(self):
-        # self.last_frame_pre_process = None
+        self.last_frame_pre_process = None
         self.phi.clear()
         for i in range(self.phi_channel):
             self.phi.append(np.zeros([self.input_frame_width, self.input_frame_width]))
 
-    def __call__(self, state: np.ndarray, step_i: int = 0) -> np.ndarray:
+    def __call__(self, state: np.ndarray, step_i: int) -> np.ndarray:
         if step_i == 0:
             self.reset()
         # preprocess the obs to a certain size and load it to phi
@@ -162,10 +154,10 @@ class DQNValueFunction(ValueFunction):
         self.value_nn.train()
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
-        delta_q = torch.clip(q_value - obs_action_value, min=-1, max=1)
-        # loss = F.mse_loss(q_value, obs_action_value)
+        # delta_q = torch.clip(q_value - obs_action_value, min=-1, max=1)
+        loss = F.mse_loss(q_value, obs_action_value)
         # loss = F.mse_loss(loss, torch.zeros_like(loss))
-        loss = torch.mean(delta_q ** 2)
+        # loss = torch.mean(delta_q ** 2)
         # Minimize the loss
         loss.backward()
         self.optimizer.step()
@@ -175,7 +167,7 @@ class DQNValueFunction(ValueFunction):
             # self.logger.msg('synchronize target value network')
             # self.logger.tb_scalar('lr', self.lr_scheduler.get_last_lr()[0], self.update_step)
             self.logger.tb_scalar('loss', loss.item(), self.update_step)
-            self.logger.tb_scalar('q', torch.mean(q_value),self.update_step)
+            self.logger.tb_scalar('q', torch.mean(q_value), self.update_step)
             # self.logger.tb_scalar('lr', self.lr_scheduler.get_last_lr()[0],
             #                       self.update_step)
         # if self.lr_scheduler.get_last_lr()[0] > 0.000001:
@@ -244,11 +236,6 @@ class DQNAgent(Agent):
         if len(self.memory) >= 1:
             self.memory[-1][-1] = obs
         self.memory.store([obs, action, reward, terminated, truncated, np.zeros_like(obs)])
-
-    def store_termination(self):
-        if len(self.memory) > 1:
-            self.memory[-1][3] = True
-            self.memory[-1][4] = True
 
     def train_step(self):
         if len(self.memory) > self.update_sample_size:

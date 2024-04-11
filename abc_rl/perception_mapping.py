@@ -8,5 +8,5 @@ class PerceptionMapping(ABC):
         ...
 
     @abstractmethod
-    def __call__(self, state: np.ndarray):
+    def __call__(self, state: np.ndarray,*args,**kwargs) -> np.ndarray:
         ...

@@ -68,10 +68,11 @@ def train_dqn(logger):
         inf = ''
         step_i = 0
         run_test = False
+        reward_cumulated = 0
         while (not done) and (not truncated):
-            obs = dqn_agent.perception_mapping(state)
+            obs = dqn_agent.perception_mapping(state, step_i)
             reward = dqn_agent.reward_shaping(reward_raw)
-            if len(dqn_agent.memory) > cfg['replay_start_size'] and step_i > cfg['no_op']:
+            if len(dqn_agent.memory) > cfg['replay_start_size'] and step_i >= cfg['no_op']:
                 action = dqn_agent.select_action(obs)
             else:
                 action = dqn_agent.select_action(obs, RandomAction())
@@ -79,13 +80,14 @@ def train_dqn(logger):
             dqn_agent.train_step()
             next_state, reward_raw, done, truncated, inf = env.step(action)
             state = next_state
+            reward_cumulated += reward
             if (len(dqn_agent.memory) > cfg['replay_start_size'] and
                     training_steps % cfg['batch_num_per_epoch'] == 0):
                 run_test = True
                 epoch_i += 1
             training_steps += 1
             step_i += 1
-        dqn_agent.store_termination()
+        logger.tb_scalar('training reward', reward_cumulated, training_steps)
         if run_test:
             avg_reward, avg_steps = test(dqn_agent, cfg['agent_test_episodes'])
             logger.tb_scalar('avg_reward', avg_reward, epoch_i)
@@ -98,5 +100,5 @@ def train_dqn(logger):
 
 if __name__ == '__main__':
     logger_ = Logger(cfg['env_name'], cfg['log_path'])
-    logger_.msg('\nparameters:' + str(cfg))
+    logger_.msg(' parameters:' + str(cfg))
     train_dqn(logger_)

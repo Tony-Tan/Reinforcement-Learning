@@ -15,11 +15,11 @@ class EnvError(Exception):
 
 
 class EnvWrapper:
-    def __init__(self, env_id: str, repeat_action_probability: float = 0.0,frameskip: int =1 ):
+    def __init__(self, env_id: str, repeat_action_probability: float = 0.0, frameskip: int =1):
         self.env_type = None
         if env_id in gym.envs.registry.keys():
             self.env_id = env_id
-            self.env = gym.make(env_id, repeat_action_probability=repeat_action_probability,frameskip=frameskip)
+            self.env = gym.make(env_id, repeat_action_probability=repeat_action_probability, frameskip=frameskip)
             self.env_type = 'OpenAI GYM'
             self.action_space = self.env.action_space
             self.state_space = self.env.observation_space
