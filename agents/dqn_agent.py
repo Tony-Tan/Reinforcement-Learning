@@ -13,24 +13,8 @@ from abc_rl.reward_shaping import *
 from exploration.epsilon_greedy import *
 
 
-# class DQNReplayBuffer(UniformExperienceReplay):
-#     def __init__(self, memory_size: int):
-#         super().__init__(memory_size)
-#
-#     def sample(self, batch_size: int):
-#         idx = np.arange(self.__len__()-1)
-#         selected_idx = np.random.choice(idx, batch_size, replace=True)
-#         sampled_transitions = [[] for _ in range(self.dim()+1)]
-#         for idx_i in selected_idx:
-#             i = 0
-#             for i, data_i in enumerate(self.buffer[idx_i]):
-#                 sampled_transitions[i].append(data_i)
-#             sampled_transitions[i+1].append(self.buffer[idx_i + 1][0])
-#         for s_i in range(len(sampled_transitions)):
-#             sampled_transitions[s_i] = np.array(sampled_transitions[s_i], dtype=np.float32)
-#         return sampled_transitions
-
 def image_normalization(image_uint8: torch.Tensor) -> torch.Tensor:
+    # normalize the image to [-0.5,0.5]
     return image_uint8 / 255.0 - .5
 
 
@@ -66,8 +50,9 @@ class DQNPerceptionMapping(PerceptionMapping):
         converted to [-0.5,0.5]
         """
         img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:, :, 0]
-        # obs_y = cv2.cvtColor(obs, cv2.COLOR_RGB2GRAY)
         if self.last_frame_pre_process is not None:
+            # take the maximum value for each pixel colour value over the
+            # frame being encoded and the previous frame to remove flickering
             obs_y = np.maximum(self.last_frame_pre_process, img_y_channel)
         else:
             obs_y = self.last_frame_pre_process = img_y_channel
@@ -79,6 +64,7 @@ class DQNPerceptionMapping(PerceptionMapping):
         self.phi.append(obs)
 
     def reset(self):
+        # reset the phi to zero and reset the last_frame_pre_process
         self.last_frame_pre_process = None
         self.phi.clear()
         for i in range(self.phi_channel):
@@ -102,33 +88,24 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn.eval()
         self.__synchronize_value_nn()
-        # gpt suggest that the learning rate should be schedualed
-        # self.lr_scheduler = torch.optim.lr_scheduler()
         # self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
         #                                      alpha=0.95, eps=0.01)
         self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
         self.learning_rate = learning_rate
-        # self.lr_scheduler = torch.optim.lr_scheduler.LinearLR(self.optimizer, 1,
-        #                                                       0.01,1_000_000)
         self.gamma = gamma
         self.device = device
         self.update_step = 0
         self.step_c = step_c
         self.model_saving_period = model_saving_period
 
-    # def __networks_init(self):
-    #     self.value_nn.to(self.device)
-    #     self.target_value_nn.to(self.device)
-
     def __synchronize_value_nn(self):
-        # print('__synchronize_value_nn')
         self.target_value_nn.load_state_dict(self.value_nn.state_dict())
 
     def update(self, samples: list):
         obs_tensor = image_normalization(samples[0])
         action_tensor = samples[1]
         reward_tensor = samples[2]
-        termination_tensor = samples[4]#
+        termination_tensor = samples[4]
         truncated_tensor = samples[5]
         next_obs_tensor = image_normalization(samples[3])
 
@@ -150,7 +127,6 @@ class DQNValueFunction(ValueFunction):
         self.value_nn.train()
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
-        # delta_q = torch.clip(q_value - obs_action_value, min=-1, max=1)
         loss = F.mse_loss(q_value, obs_action_value)
         loss.backward()
         self.optimizer.step()
@@ -169,7 +145,6 @@ class DQNValueFunction(ValueFunction):
                 obs_input = phi_tensor
             self.value_nn.eval()
             state_action_values = self.value_nn(obs_input).cpu().detach().numpy()
-            # value_of_action_list = state_action_values[0]
             return state_action_values
 
 
@@ -193,25 +168,22 @@ class DQNAgent(Agent):
         self.mini_batch_size = mini_batch_size
         self.update_sample_size = min_update_sample_size
         self.training_episodes = training_episodes
-        self.last_action = None
-        self.log_avg_value = 0
 
     def select_action(self, obs: np.ndarray, exploration_method: Exploration = None) -> np.ndarray:
 
         if isinstance(exploration_method, RandomAction):
-            self.last_action = exploration_method(self.action_dim)
+            return exploration_method(self.action_dim)
         else:
             obs_scaled = image_normalization(np.array(obs).astype(np.float32))
             phi_tensor = torch.from_numpy(obs_scaled)
             value_list = self.value_function.value(phi_tensor)[0]
             if exploration_method is None:
-                self.last_action = self.exploration_method(value_list)
+                return self.exploration_method(value_list)
             else:
-                self.last_action = exploration_method(value_list)
-        return self.last_action
+                return exploration_method(value_list)
 
-    def store(self, obs, action, reward, next_obs, terminated, truncated):
-        self.memory.store(obs, action, reward, next_obs, terminated, truncated)
+    def store(self, obs, action, reward, next_obs, done, truncated):
+        self.memory.store(obs, action, reward, next_obs, done, truncated)
 
     def train_step(self):
         if len(self.memory) > self.update_sample_size:
