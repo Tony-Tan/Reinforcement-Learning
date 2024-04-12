@@ -36,6 +36,7 @@ def image_normalization(image_uint8: torch.Tensor) -> torch.Tensor:
 
 class DQNAtariReward(RewardShaping):
     def __init__(self):
+        super().__init__()
         pass
 
     def __call__(self, reward):
@@ -124,23 +125,18 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn.load_state_dict(self.value_nn.state_dict())
 
     def update(self, samples: list):
-        obs_tensor = image_normalization(torch.as_tensor(samples[0], dtype=torch.float32).to(
-            self.device))
-        action_tensor = torch.as_tensor(samples[1], dtype=torch.float32).to(self.device)  #
-        reward_tensor = torch.as_tensor(samples[2], dtype=torch.float32).to(
-            self.device)
-        termination_tensor = torch.as_tensor(samples[3], dtype=torch.float32).to(self.device)  #
-        truncated_tensor = torch.as_tensor(samples[4], dtype=torch.float32).to(
-            self.device)
-        next_obs_tensor = image_normalization(torch.as_tensor(samples[5], dtype=torch.float32).to(
-            self.device))
+        obs_tensor = image_normalization(samples[0])
+        action_tensor = samples[1]
+        reward_tensor = samples[2]
+        termination_tensor = samples[4]#
+        truncated_tensor = samples[5]
+        next_obs_tensor = image_normalization(samples[3])
 
         with torch.no_grad():
             outputs = self.target_value_nn(next_obs_tensor)
         max_next_state_value, _ = torch.max(outputs, dim=1, keepdim=True)
         # reward array
         reward_tensor.resize_as_(max_next_state_value)
-        reward_tensor = torch.clamp(reward_tensor, min=-1., max=1.)
         # calculate q value
         truncated_tensor.resize_as_(max_next_state_value)
         termination_tensor.resize_as_(max_next_state_value)
@@ -156,22 +152,13 @@ class DQNValueFunction(ValueFunction):
         obs_action_value = outputs.gather(1, actions)
         # delta_q = torch.clip(q_value - obs_action_value, min=-1, max=1)
         loss = F.mse_loss(q_value, obs_action_value)
-        # loss = F.mse_loss(loss, torch.zeros_like(loss))
-        # loss = torch.mean(delta_q ** 2)
-        # Minimize the loss
         loss.backward()
         self.optimizer.step()
         self.update_step += 1
         if self.update_step % self.step_c == 0:
             self.__synchronize_value_nn()
-            # self.logger.msg('synchronize target value network')
-            # self.logger.tb_scalar('lr', self.lr_scheduler.get_last_lr()[0], self.update_step)
             self.logger.tb_scalar('loss', loss.item(), self.update_step)
             self.logger.tb_scalar('q', torch.mean(q_value), self.update_step)
-            # self.logger.tb_scalar('lr', self.lr_scheduler.get_last_lr()[0],
-            #                       self.update_step)
-        # if self.lr_scheduler.get_last_lr()[0] > 0.000001:
-        #     self.lr_scheduler.step()
 
     def value(self, phi_tensor: torch.Tensor) -> np.ndarray:
         with torch.no_grad():
@@ -201,6 +188,7 @@ class DQNAgent(Agent):
         self.memory = UniformExperienceReplay(replay_buffer_size)
         self.perception_mapping = DQNPerceptionMapping(phi_channel, input_frame_width, input_frame_height)
         self.reward_shaping = DQNAtariReward()
+        self.device = device
         # hyperparameters
         self.mini_batch_size = mini_batch_size
         self.update_sample_size = min_update_sample_size
@@ -209,36 +197,24 @@ class DQNAgent(Agent):
         self.log_avg_value = 0
 
     def select_action(self, obs: np.ndarray, exploration_method: Exploration = None) -> np.ndarray:
-        if obs is not None:
-            if isinstance(exploration_method, RandomAction):
-                self.last_action = exploration_method(self.action_dim)
+
+        if isinstance(exploration_method, RandomAction):
+            self.last_action = exploration_method(self.action_dim)
+        else:
+            obs_scaled = image_normalization(np.array(obs).astype(np.float32))
+            phi_tensor = torch.from_numpy(obs_scaled)
+            value_list = self.value_function.value(phi_tensor)[0]
+            if exploration_method is None:
+                self.last_action = self.exploration_method(value_list)
             else:
-                obs_scaled = image_normalization(np.array(obs).astype(np.float32))
-                phi_tensor = torch.from_numpy(obs_scaled)
-                value_list = self.value_function.value(phi_tensor)[0]
-                # self.log_avg_value += np.mean(value_list)
-                if exploration_method is None:
-                    self.last_action = self.exploration_method(value_list)
-                    # print(value_list)
-                    # print(self.last_action)
-                else:
-                    self.last_action = exploration_method(value_list)
-                    # print('testing')
-                    # print(value_list)
-                    # print(self.last_action)
+                self.last_action = exploration_method(value_list)
         return self.last_action
 
-    # def random_action(self):
-    #     self.last_action = random.randint(0, self.action_dim-1)
-    #     return self.last_action
-
-    def store(self, obs, action, reward, terminated, truncated, inf):
-        if len(self.memory) >= 1:
-            self.memory[-1][-1] = obs
-        self.memory.store([obs, action, reward, terminated, truncated, np.zeros_like(obs)])
+    def store(self, obs, action, reward, next_obs, terminated, truncated):
+        self.memory.store(obs, action, reward, next_obs, terminated, truncated)
 
     def train_step(self):
         if len(self.memory) > self.update_sample_size:
-            samples = self.memory.sample(self.mini_batch_size)
+            samples = self.memory.sample(self.mini_batch_size, np.float32, self.device)
             self.value_function.update(samples)
 

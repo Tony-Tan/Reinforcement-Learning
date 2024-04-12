@@ -9,7 +9,7 @@ class Exploration(ABC):
         pass
 
     @abstractmethod
-    def __call__(self, **kwargs):
+    def __call__(self, *args, **kwargs):
         pass
 
 

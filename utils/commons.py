@@ -84,7 +84,15 @@ class PolicyNotImplement(Exception):
     def __str__(self):
         return 'Policy Has Not Been Implemented'
 
+def debugger_time_cost(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f'{func.__name__} time cost: {end_time - start_time}')
+        return result
+    return wrapper
 
 if __name__ == '__main__':
     logger_ = Logger(log_name='test_log.txt', log_path='./')
-    logger_('test logger...')
+    # logger_('test logger...')

@@ -63,24 +63,24 @@ def train_dqn(logger):
     while training_steps < cfg['training_steps']:
         state, _ = env.reset()
         done = False
-        reward_raw = 0
         truncated = False
-        inf = ''
         step_i = 0
         run_test = False
         reward_cumulated = 0
+        obs = dqn_agent.perception_mapping(state, step_i)
         while (not done) and (not truncated):
-            obs = dqn_agent.perception_mapping(state, step_i)
-            reward = dqn_agent.reward_shaping(reward_raw)
             if len(dqn_agent.memory) > cfg['replay_start_size'] and step_i >= cfg['no_op']:
                 action = dqn_agent.select_action(obs)
             else:
                 action = dqn_agent.select_action(obs, RandomAction())
-            dqn_agent.store(obs, action, reward, done, truncated, inf)
-            dqn_agent.train_step()
             next_state, reward_raw, done, truncated, inf = env.step(action)
-            state = next_state
+            reward = dqn_agent.reward_shaping(reward_raw)
+            next_obs = dqn_agent.perception_mapping(next_state, step_i)
+            dqn_agent.store(obs, action, reward,next_obs, done, truncated)
+            dqn_agent.train_step()
+            obs = next_obs
             reward_cumulated += reward
+
             if (len(dqn_agent.memory) > cfg['replay_start_size'] and
                     training_steps % cfg['batch_num_per_epoch'] == 0):
                 run_test = True
