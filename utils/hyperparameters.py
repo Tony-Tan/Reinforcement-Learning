@@ -24,6 +24,9 @@ class Hyperparameters:
     def __getitem__(self, item):
         return self.config[item]
 
+    def __setitem__(self, key, value):
+        self.config[key] = value
+
     def save(self, config_save_path: str) -> None:
         fp = open(config_save_path, 'w+')
         fp.write(yaml.dump(self.config))

@@ -4,16 +4,18 @@ from abc import ABC, abstractmethod
 import numpy as np
 import torch
 
+
 class ExperienceReplay(ABC):
     def __init__(self, capacity: int):
         self.buffer = deque(maxlen=capacity)
-    def store(self, observation, action, reward, next_observation, done, truncated ):
+
+    def store(self, observation, action, reward, next_observation, done, truncated):
         self.buffer.append([observation, action, reward, next_observation, done, truncated])
 
     def __len__(self):
         return len(self.buffer)
 
-    def get_items(self, idx, dtyp:np.dtype, device:torch.device):
+    def get_items(self, idx, dtyp: np.dtype, device: torch.device):
         obs = []
         action = []
         reward = []
@@ -21,7 +23,7 @@ class ExperienceReplay(ABC):
         done = []
         truncated = []
         for idx_i in idx:
-            o,a,r,n,d,t = self.buffer[idx_i]
+            o, a, r, n, d, t = self.buffer[idx_i]
             obs.append(o)
             action.append(a)
             reward.append(r)
@@ -40,9 +42,7 @@ class ExperienceReplay(ABC):
                 torch.as_tensor(next_obs).to(device),
                 torch.as_tensor(done).to(device),
                 torch.as_tensor(truncated).to(device))
+
     @abstractmethod
     def sample(self, *args, **kwargs):
         pass
-
-
-
