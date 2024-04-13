@@ -163,7 +163,13 @@ class DQNValueFunction(ValueFunction):
         self.value_nn.train()
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
-        loss = F.mse_loss(q_value, obs_action_value)
+        # loss = F.mse_loss(q_value, obs_action_value)
+        # Clip the difference between obs_action_value and q_value to the range of -1 to 1
+        diff = obs_action_value - q_value
+        diff_clipped = torch.clip(diff, -1, 1)
+
+        # Use the clipped difference for the loss calculation
+        loss = F.mse_loss(diff_clipped, torch.zeros_like(diff_clipped))
         loss.backward()
         self.optimizer.step()
         self.update_step += 1
