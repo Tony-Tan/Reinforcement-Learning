@@ -11,7 +11,7 @@ from utils.hyperparameters import Hyperparameters
 # Argument parser for command line arguments
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
 parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
-                    help='openai gym environment (default: ALE/Spaceinvaders-v5)')
+                    help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--save_path', default='./data_log/', type=str,
@@ -48,7 +48,6 @@ def test_dqn(agent: DQNAgent, test_episodes: int):
             obs = agent.perception_mapping(state, step_i)
             action = agent.select_action(obs, exploration_method)
             next_state, reward, done, truncated, inf = env.step(action)
-
             reward_cum += reward
             state = next_state
             step_i += 1
