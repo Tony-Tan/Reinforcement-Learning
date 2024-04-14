@@ -120,7 +120,7 @@ class DQNValueFunction(ValueFunction):
         self.value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn.eval()
-        self.__synchronize_value_nn()
+        self.synchronize_value_nn()
         self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
         self.learning_rate = learning_rate
         self.gamma = gamma
@@ -129,7 +129,7 @@ class DQNValueFunction(ValueFunction):
         self.step_c = step_c
         self.model_saving_period = model_saving_period
 
-    def __synchronize_value_nn(self):
+    def synchronize_value_nn(self):
         """
         Synchronize the value neural network with the target value neural network.
         """
@@ -174,7 +174,7 @@ class DQNValueFunction(ValueFunction):
         self.optimizer.step()
         self.update_step += 1
         if self.update_step % self.step_c == 0:
-            self.__synchronize_value_nn()
+            self.synchronize_value_nn()
             self.logger.tb_scalar('loss', loss.item(), self.update_step)
             self.logger.tb_scalar('q', torch.mean(q_value), self.update_step)
 
