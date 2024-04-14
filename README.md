@@ -92,3 +92,18 @@ We would like to acknowledge the following resources and references that have be
 - [PyTorch](https://pytorch.org/) - A deep learning framework used for implementing neural networks in this project
 
 We are grateful for the valuable insights and contributions from the open-source community and the authors of the above resources.
+
+## Donations
+Running this project involves significant computational resources. If you find this project helpful and would like to support its continued development, consider making a donation. Your support is greatly appreciated!
+
+You can donate through the following platforms:
+
+- WeChat: Please scan the QR code below to donate via WeChat.
+  ![WeChat QR Code](path_to_wechat_qr_code)
+
+- Alipay: Please scan the QR code below to donate via Alipay.
+  ![Alipay QR Code](path_to_alipay_qr_code)
+
+- PayPal: Please click [here](paypal_donation_link) to donate via PayPal.
+
+Thank you for your support!
