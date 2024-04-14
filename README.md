@@ -66,10 +66,8 @@ Now you have successfully installed the project and its dependencies. You can pr
 |:----:|:-----------------------------------------:|:---------------:|:-------------------------------------------------------:|
 | DQN  | [./algorithms/dqn.py](./algorithm/dqn.py) | 🧪Experimenting | Human-level control through deep reinforcement learning |
 
-🧪 Experimenting
-🚧 Developing
+🧪 Experimenting , 🚧 Developing
 
-## Usage
 ## Code Structure and Explanation
 
 The main components of the project are:
@@ -86,9 +84,6 @@ The main components of the project are:
 - `test`:
 - `utils`: This directory contains utility functions and classes that are used by the algorithms. This could include functions for data preprocessing, model evaluation, etc.
 
-
-## Contributing
-## License
 ## Acknowledgments and References
 We would like to acknowledge the following resources and references that have been instrumental in the development of this project:
 
