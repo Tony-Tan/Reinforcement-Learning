@@ -60,13 +60,22 @@ Now you have successfully installed the project and its dependencies. You can pr
 
 ## Papers to Code
 
+| No | Year |      Status      | Name                                                                                                  |                                                                                                      Citations                                                                                                       |
+|:--:|:----:|:----------------:|:------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| 1  | 1951 |  🚧 Developing   | [A Stochastic Approximation Method]()                                                                 | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F34ddd8865569c2c32dec9bf7ffc817ff42faaa01%3Ffields%3DcitationCount) | 
+| 2  | 1986 |  🚧 Developing   | [Stochastic approximation for Monte Carlo optimization]()                                             | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F08bcd967e6ca896eb85d6e03561aabf138df65d1%3Ffields%3DcitationCount) |  
+| 3  | 2001 |  🚧 Developing   | [A natural policy gradient]()                                                                         | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2Fb18833db0de9393d614d511e60821a1504fc6cd1%3Ffields%3DcitationCount) |
+| 4  | 2013 | 🧪 Experimenting | [Playing Atari with Deep Reinforcement Learning](./algorithms/dqn)                                    | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F2319a491378867c7049b3da055c5df60e1671158%3Ffields%3DcitationCount) | 
+| 5  | 2015 | 🧪 Experimenting | [Human-level control through deep reinforcement learning](./algorithms/dqn)                           | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2Fe0e9a94c4a6ba219e768b4e59f72c18f0a22e23d%3Ffields%3DcitationCount) |
+| 6  | 2015 |  🚧 Developing   | [Trust Region Policy Optimization]()                                                                  | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F66cdc28dc084af6507e979767755e99fe0b46b39%3Ffields%3DcitationCount) |
+| 7  | 2015 |  🚧 Developing   | [Continuous control with deep reinforcement learning]()                                               | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F024006d4c2a89f7acacc6e4438d156525b60a98f%3Ffields%3DcitationCount) |
+| 8  | 2015 |  🚧 Developing   | [Deep Reinforcement Learning with Double Q-Learning]()                                                | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F3b9732bb07dc99bde5e1f9f75251c6ea5039373e%3Ffields%3DcitationCount) |
+| 8  | 2016 |  🚧 Developing   | [Dueling Network Architectures for Deep Reinforcement Learning]()                                     | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F4c05d7caa357148f0bbd61720bdd35f0bc05eb81%3Ffields%3DcitationCount) |
+| 9  | 2016 |  🚧 Developing   | [Prioritized Experience Replay]()                                                                     | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2Fc6170fa90d3b2efede5a2e1660cb23e1c824f2ca%3Ffields%3DcitationCount) |
+| 10 | 2017 |  🚧 Developing   | [Proximal Policy Optimization Algorithms]()                                                           | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2Fdce6f9d4017b1785979e7520fd0834ef8cf02f4b%3Ffields%3DcitationCount) |
+| 11 | 2018 |  🚧 Developing   | [Addressing Function Approximation Error in Actor-Critic Methods]()                                   | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F4debb99c0c63bfaa97dd433bc2828e4dac81c48b%3Ffields%3DcitationCount) |
+| 12 | 2018 |  🚧 Developing   | [Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor]() | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F811df72e210e20de99719539505da54762a11c6d%3Ffields%3DcitationCount) |
 
-
-| Name |                   Path                    |     Status      |                          Paper                          |
-|:----:|:-----------------------------------------:|:---------------:|:-------------------------------------------------------:|
-| DQN  | [./algorithms/dqn.py](./algorithm/dqn.py) | 🧪Experimenting | Human-level control through deep reinforcement learning |
-
-🧪 Experimenting , 🚧 Developing
 
 ## Code Structure and Explanation
 
@@ -99,11 +108,11 @@ Running this project involves significant computational resources. If you find t
 You can donate through the following platforms:
 
 - WeChat: Please scan the QR code below to donate via WeChat.
-  ![WeChat QR Code](path_to_wechat_qr_code)
+  ![WeChat QR Code](./attachments/wechat.png)
 
 - Alipay: Please scan the QR code below to donate via Alipay.
-  ![Alipay QR Code](path_to_alipay_qr_code)
+  ![Alipay QR Code](./attachments/alipay.png)
 
-- PayPal: Please click [here](paypal_donation_link) to donate via PayPal.
+- PayPal: Please click [here](https://paypal.me/TonySTan?country.x=C2&locale.x=zh_XC) to donate via PayPal.
 
 Thank you for your support!
