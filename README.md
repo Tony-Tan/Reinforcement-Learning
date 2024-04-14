@@ -15,10 +15,8 @@ Now, let's get started with the installation and exploration of this Reinforceme
 - [Papers to Code](#papers-to-code)
 - [Usage](#usage)
 - [Code Structure and Explanation](#code-structure-and-explanation)
-- [Contributing](#contributing)
-- [Performance and Benchmarks](#performance-and-benchmarks)
-- [License](#license)
 - [Acknowledgments and References](#acknowledgments-and-references)
+- [Donations](#donations)
 
 ## Background and Theoretical Framework
 Reinforcement learning is a subfield of machine learning that focuses on training agents to make sequential decisions in an environment to maximize a reward signal. It has gained significant attention in recent years due to its potential applications in various domains, including robotics, game playing, and autonomous systems.
@@ -65,8 +63,8 @@ Now you have successfully installed the project and its dependencies. You can pr
 | 1  | 1951 |  🚧 Developing   | [A Stochastic Approximation Method]()                                                                 | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F34ddd8865569c2c32dec9bf7ffc817ff42faaa01%3Ffields%3DcitationCount) | 
 | 2  | 1986 |  🚧 Developing   | [Stochastic approximation for Monte Carlo optimization]()                                             | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F08bcd967e6ca896eb85d6e03561aabf138df65d1%3Ffields%3DcitationCount) |  
 | 3  | 2001 |  🚧 Developing   | [A natural policy gradient]()                                                                         | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2Fb18833db0de9393d614d511e60821a1504fc6cd1%3Ffields%3DcitationCount) |
-| 4  | 2013 | 🧪 Experimenting | [Playing Atari with Deep Reinforcement Learning](./algorithms/dqn)                                    | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F2319a491378867c7049b3da055c5df60e1671158%3Ffields%3DcitationCount) | 
-| 5  | 2015 | 🧪 Experimenting | [Human-level control through deep reinforcement learning](./algorithms/dqn)                           | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2Fe0e9a94c4a6ba219e768b4e59f72c18f0a22e23d%3Ffields%3DcitationCount) |
+| 4  | 2013 | 🧪 Experimenting | [Playing Atari with Deep Reinforcement Learning](./algorithms/dqn.py)                                 | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F2319a491378867c7049b3da055c5df60e1671158%3Ffields%3DcitationCount) | 
+| 5  | 2015 | 🧪 Experimenting | [Human-level control through deep reinforcement learning](./algorithms/dqn.py)                        | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2Fe0e9a94c4a6ba219e768b4e59f72c18f0a22e23d%3Ffields%3DcitationCount) |
 | 6  | 2015 |  🚧 Developing   | [Trust Region Policy Optimization]()                                                                  | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F66cdc28dc084af6507e979767755e99fe0b46b39%3Ffields%3DcitationCount) |
 | 7  | 2015 |  🚧 Developing   | [Continuous control with deep reinforcement learning]()                                               | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F024006d4c2a89f7acacc6e4438d156525b60a98f%3Ffields%3DcitationCount) |
 | 8  | 2015 |  🚧 Developing   | [Deep Reinforcement Learning with Double Q-Learning]()                                                | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F3b9732bb07dc99bde5e1f9f75251c6ea5039373e%3Ffields%3DcitationCount) |
