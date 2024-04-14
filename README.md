@@ -1,6 +1,13 @@
-# Project Title
+# Reinforcement Learning ![](https://img.shields.io/github/stars/Tony-Tan/Reinforcement-Learning?style=social)
 
-Brief description of your project and its significance in reinforcement learning.
+## Introduction
+Welcome to the Reinforcement Learning project! This project focuses on exploring and implementing different reinforcement learning algorithms to solve complex tasks. By studying and implementing state-of-the-art algorithms, we aim to gain insights into the theoretical foundations of reinforcement learning and apply them to real-world problems.
+
+In this project, we provide step-by-step installation instructions to help you set up the project and its dependencies. Once installed, you can explore the code structure, which includes different algorithms implemented in separate Python files under the `algorithms/` directory.
+
+Feel free to contribute to this project by adding new algorithms, improving existing code, or providing bug fixes. Check out the "Contributing" section for more information on how to contribute.
+
+Now, let's get started with the installation and exploration of this Reinforcement Learning project!
 
 ## Table of Contents
 - [Background and Theoretical Framework](#background-and-theoretical-framework)
@@ -55,9 +62,9 @@ Now you have successfully installed the project and its dependencies. You can pr
 
 
 
-| Name |                   Path                   |     Status      |                          Paper                          |
-|:----:|:----------------------------------------:|:---------------:|:-------------------------------------------------------:|
-| DQN  | [./algorithm/dqn.py](./algorithm/dqn.py) | 🧪Experimenting | Human-level control through deep reinforcement learning |
+| Name |                   Path                    |     Status      |                          Paper                          |
+|:----:|:-----------------------------------------:|:---------------:|:-------------------------------------------------------:|
+| DQN  | [./algorithms/dqn.py](./algorithm/dqn.py) | 🧪Experimenting | Human-level control through deep reinforcement learning |
 
 🧪 Experimenting
 🚧 Developing
