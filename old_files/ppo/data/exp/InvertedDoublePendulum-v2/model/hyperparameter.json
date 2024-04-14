@@ -1,1 +1,0 @@
-{"actor_lr": 9.727061241485385e-06, "actor_batch_size": 64, "actor_mini_epoch_num": 10, "critic_lr": 9.72706124148539e-05, "actor_std": 0.3310334086418152, "critic_batch_size": 64, "critic_mini_epoch_num": 15, "discounted_rate": 0.99, "epsilon": 0.2}
