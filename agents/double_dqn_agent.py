@@ -43,11 +43,9 @@ class DoubleDQNValueFunction(DQNValueFunction):
         actions = action_tensor.long()
         if target_is_target:
             self.optimizer_nn.zero_grad()
-        else:
-            self.optimizer_tnn.zero_grad()
-        if target_is_target:
             outputs = self.value_nn(obs_tensor)
         else:
+            self.optimizer_tnn.zero_grad()
             outputs = self.target_value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
         # loss = F.mse_loss(q_value, obs_action_value)
@@ -68,18 +66,18 @@ class DoubleDQNValueFunction(DQNValueFunction):
             self.logger.tb_scalar('loss', loss.item(), self.update_step)
             self.logger.tb_scalar('q', torch.mean(q_value), self.update_step)
 
-    def value(self, phi_tensor: torch.Tensor) -> np.ndarray:
-        with torch.no_grad():
-            phi_tensor = phi_tensor.to(self.device)
-            if phi_tensor.dim() == 3:
-                obs_input = phi_tensor.unsqueeze(0)
-            else:
-                obs_input = phi_tensor
-            if random.random() < 0.5:
-                state_action_values = self.target_value_nn(obs_input).cpu().detach().numpy()
-            else:
-                state_action_values = self.value_nn(obs_input).cpu().detach().numpy()
-            return state_action_values
+    # def value(self, phi_tensor: torch.Tensor) -> np.ndarray:
+    #     with torch.no_grad():
+    #         phi_tensor = phi_tensor.to(self.device)
+    #         if phi_tensor.dim() == 3:
+    #             obs_input = phi_tensor.unsqueeze(0)
+    #         else:
+    #             obs_input = phi_tensor
+    #         if random.random() < 0.5:
+    #             state_action_values = self.target_value_nn(obs_input).cpu().detach().numpy()
+    #         else:
+    #             state_action_values = self.value_nn(obs_input).cpu().detach().numpy()
+    #         return state_action_values
 
 
 class DoubleDQNAgent(DQNAgent):

@@ -10,7 +10,7 @@ from utils.hyperparameters import Hyperparameters
 
 # Argument parser for command line arguments
 parser = argparse.ArgumentParser(description='PyTorch Double DQN training arguments')
-parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
+parser.add_argument('--env_name', default='ALE/WizardOfWor-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
@@ -64,7 +64,7 @@ def train_dqn(logger):
     # init env and agent
     env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
 
-    dqn_agent = DoubleDQNAgent(cfg['input_frame_width'], cfg['input_frame_height'], env.action_space,
+    doubledqn_agent = DoubleDQNAgent(cfg['input_frame_width'], cfg['input_frame_height'], env.action_space,
                                cfg['mini_batch_size'],
                                cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['learning_rate'], cfg['step_c'],
                                cfg['agent_saving_period'], cfg['gamma'], cfg['training_steps'], cfg['phi_channel'],
@@ -79,22 +79,22 @@ def train_dqn(logger):
         step_i = 0
         run_test = False
         reward_cumulated = 0
-        obs = dqn_agent.perception_mapping(state, step_i)
+        obs = doubledqn_agent.perception_mapping(state, step_i)
         while (not done) and (not truncated):
             #
-            if len(dqn_agent.memory) > cfg['replay_start_size'] and step_i >= cfg['no_op']:
-                action = dqn_agent.select_action(obs)
+            if len(doubledqn_agent.memory) > cfg['replay_start_size'] and step_i >= cfg['no_op']:
+                action = doubledqn_agent.select_action(obs)
             else:
-                action = dqn_agent.select_action(obs, RandomAction())
+                action = doubledqn_agent.select_action(obs, RandomAction())
             next_state, reward_raw, done, truncated, inf = env.step(action)
-            reward = dqn_agent.reward_shaping(reward_raw)
-            next_obs = dqn_agent.perception_mapping(next_state, step_i)
-            dqn_agent.store(obs, action, reward, next_obs, done, truncated)
-            dqn_agent.train_step()
+            reward = doubledqn_agent.reward_shaping(reward_raw)
+            next_obs = doubledqn_agent.perception_mapping(next_state, step_i)
+            doubledqn_agent.store(obs, action, reward, next_obs, done, truncated)
+            doubledqn_agent.train_step()
             obs = next_obs
             reward_cumulated += reward
 
-            if (len(dqn_agent.memory) > cfg['replay_start_size'] and
+            if (len(doubledqn_agent.memory) > cfg['replay_start_size'] and
                     training_steps % cfg['batch_num_per_epoch'] == 0):
                 run_test = True
                 epoch_i += 1
@@ -102,13 +102,13 @@ def train_dqn(logger):
             step_i += 1
         logger.tb_scalar('training reward', reward_cumulated, training_steps)
         if run_test:
-            avg_reward, avg_steps = test_double_dqn(dqn_agent, cfg['agent_test_episodes'])
+            avg_reward, avg_steps = test_double_dqn(doubledqn_agent, cfg['agent_test_episodes'])
             logger.tb_scalar('avg_reward', avg_reward, epoch_i)
             logger.tb_scalar('avg_steps', avg_steps, epoch_i)
-            logger.tb_scalar('epsilon', dqn_agent.exploration_method.epsilon, epoch_i)
+            logger.tb_scalar('epsilon', doubledqn_agent.exploration_method.epsilon, epoch_i)
             logger.msg(f'{epoch_i} avg_reward: ' + str(avg_reward))
             logger.msg(f'{epoch_i} avg_steps: ' + str(avg_steps))
-            logger.msg(f'{epoch_i} epsilon: ' + str(dqn_agent.exploration_method.epsilon))
+            logger.msg(f'{epoch_i} epsilon: ' + str(doubledqn_agent.exploration_method.epsilon))
 
 
 if __name__ == '__main__':
