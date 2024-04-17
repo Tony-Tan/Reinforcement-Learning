@@ -1,5 +1,5 @@
 import argparse
-from agents.dqn_agent import *
+from agents.dueling_dqn_agent import *
 from environments.env_wrapper import EnvWrapper
 from exploration.epsilon_greedy import *
 import copy
@@ -9,14 +9,14 @@ from multiprocessing import Process, Queue, set_start_method
 from utils.hyperparameters import Hyperparameters
 
 # Argument parser for command line arguments
-parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
+parser = argparse.ArgumentParser(description='PyTorch Dueling DQN training arguments')
 parser.add_argument('--env_name', default='ALE/Asterix-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')
-parser.add_argument('--log_path', default='../exps/dqn/', type=str,
+parser.add_argument('--log_path', default='../exps/dueling_dqn/', type=str,
                     help='log save path，default: ./log/')
 parser.add_argument('--agent_saving_period', default=80000, type=int,
                     help='agent saving period(episode)，default: 80000')
@@ -28,7 +28,7 @@ cfg['seed'] = np.random.randint(1, 1000000)
 np.random.seed(cfg['seed'])
 
 
-def test_dqn(agent: DQNAgent, test_episodes: int):
+def test_dueling_dqn(agent: DuelingDQNAgent, test_episodes: int):
     """
     Test the DQN agent for a given number of episodes.
 
@@ -55,7 +55,7 @@ def test_dqn(agent: DQNAgent, test_episodes: int):
     return reward_cum / cfg['agent_test_episodes'], step_cum / cfg['agent_test_episodes']
 
 
-def train_dqn(logger):
+def train_dueling_dqn(logger):
     """
     Train the DQN agent.
 
@@ -64,10 +64,11 @@ def train_dqn(logger):
     # init env and agent
     env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
 
-    dqn_agent = DQNAgent(cfg['input_frame_width'], cfg['input_frame_height'], env.action_space, cfg['mini_batch_size'],
-                         cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['learning_rate'], cfg['step_c'],
-                         cfg['agent_saving_period'], cfg['gamma'], cfg['training_steps'], cfg['phi_channel'],
-                         cfg['epsilon_max'], cfg['epsilon_min'], cfg['exploration_steps'], cfg['device'], logger)
+    dueling_dqn_agent = DuelingDQNAgent(cfg['input_frame_width'], cfg['input_frame_height'], env.action_space,
+                               cfg['mini_batch_size'],
+                               cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['learning_rate'], cfg['step_c'],
+                               cfg['agent_saving_period'], cfg['gamma'], cfg['training_steps'], cfg['phi_channel'],
+                               cfg['epsilon_max'], cfg['epsilon_min'], cfg['exploration_steps'], cfg['device'], logger)
     # training
     epoch_i = 0
     training_steps = 0
@@ -78,22 +79,22 @@ def train_dqn(logger):
         step_i = 0
         run_test = False
         reward_cumulated = 0
-        obs = dqn_agent.perception_mapping(state, step_i)
+        obs = dueling_dqn_agent.perception_mapping(state, step_i)
         while (not done) and (not truncated):
             #
-            if len(dqn_agent.memory) > cfg['replay_start_size'] and step_i >= cfg['no_op']:
-                action = dqn_agent.select_action(obs)
+            if len(dueling_dqn_agent.memory) > cfg['replay_start_size'] and step_i >= cfg['no_op']:
+                action = dueling_dqn_agent.select_action(obs)
             else:
-                action = dqn_agent.select_action(obs, RandomAction())
+                action = dueling_dqn_agent.select_action(obs, RandomAction())
             next_state, reward_raw, done, truncated, inf = env.step(action)
-            reward = dqn_agent.reward_shaping(reward_raw)
-            next_obs = dqn_agent.perception_mapping(next_state, step_i)
-            dqn_agent.store(obs, action, reward, next_obs, done, truncated)
-            dqn_agent.train_step()
+            reward = dueling_dqn_agent.reward_shaping(reward_raw)
+            next_obs = dueling_dqn_agent.perception_mapping(next_state, step_i)
+            dueling_dqn_agent.store(obs, action, reward, next_obs, done, truncated)
+            dueling_dqn_agent.train_step()
             obs = next_obs
             reward_cumulated += reward
 
-            if (len(dqn_agent.memory) > cfg['replay_start_size'] and
+            if (len(dueling_dqn_agent.memory) > cfg['replay_start_size'] and
                     training_steps % cfg['batch_num_per_epoch'] == 0):
                 run_test = True
                 epoch_i += 1
@@ -101,16 +102,16 @@ def train_dqn(logger):
             step_i += 1
         logger.tb_scalar('training reward', reward_cumulated, training_steps)
         if run_test:
-            avg_reward, avg_steps = test_dqn(dqn_agent, cfg['agent_test_episodes'])
+            avg_reward, avg_steps = test_dueling_dqn(dueling_dqn_agent, cfg['agent_test_episodes'])
             logger.tb_scalar('avg_reward', avg_reward, epoch_i)
             logger.tb_scalar('avg_steps', avg_steps, epoch_i)
-            logger.tb_scalar('epsilon', dqn_agent.exploration_method.epsilon, epoch_i)
+            logger.tb_scalar('epsilon', dueling_dqn_agent.exploration_method.epsilon, epoch_i)
             logger.msg(f'{epoch_i} avg_reward: ' + str(avg_reward))
             logger.msg(f'{epoch_i} avg_steps: ' + str(avg_steps))
-            logger.msg(f'{epoch_i} epsilon: ' + str(dqn_agent.exploration_method.epsilon))
+            logger.msg(f'{epoch_i} epsilon: ' + str(dueling_dqn_agent.exploration_method.epsilon))
 
 
 if __name__ == '__main__':
     logger_ = Logger(cfg['env_name'], cfg['log_path'])
-    logger_.msg(' parameters:' + str(cfg))
-    train_dqn(logger_)
+    logger_.msg('parameters:' + str(cfg))
+    train_dueling_dqn(logger_)

@@ -240,3 +240,56 @@
 |       | Zhu, Zhengbang, Hanye Zhao, Haoran He, Yichao Zhong, Shenyu Zhang, Haoquan Guo, Tingting Chen, and Weinan Zhang. 2024. “Diffusion Models for Reinforcement Learning: A Survey.” arXiv. http://arxiv.org/abs/2311.01223.                                                                                                  |      |
 |       | Zhu, Zheqing, Rodrigo de Salvo Braz, Jalaj Bhandari, Daniel Jiang, Yi Wan, Yonathan Efroni, Liyuan Wang, et al. 2023. “Pearl: A Production-Ready Reinforcement Learning Agent.” arXiv. http://arxiv.org/abs/2312.03814.                                                                                                  |      |
 |       | Ziegler, Daniel M., Nisan Stiennon, Jeffrey Wu, Tom B. Brown, Alec Radford, Dario Amodei, Paul Christiano, and Geoffrey Irving. 2020. “Fine-Tuning Language Models from Human Preferences.” arXiv. http://arxiv.org/abs/1909.08593.                                                                                      |      |
+
+
+
+1. **Deep Q-Network (DQN)**
+2. **Double DQN**
+3. **Dueling DQN**
+4. **Prioritized Experience Replay DQN**
+5. **Multi-step DQN**
+6. **Rainbow DQN** (combines several DQN enhancements)
+7. **Quantile Regression DQN**
+8. **Implicit Quantile Networks (IQN)**
+9. **Deep Deterministic Policy Gradient (DDPG)**
+10. **Twin Delayed DDPG (TD3)**
+11. **Distributed DDPG**
+12. **Asynchronous Advantage Actor-Critic (A3C)**
+13. **Synchronous Advantage Actor-Critic (A2C)**
+14. **Soft Actor-Critic (SAC)**
+15. **Hindsight Experience Replay (HER)**
+16. **Trust Region Policy Optimization (TRPO)**
+17. **Proximal Policy Optimization (PPO)**
+18. **Generalized Advantage Estimation (GAE)**
+19. **Actor-Critic with Experience Replay (ACER)**
+20. **Sample Efficient Actor-Critic with Experience Replay (SEAC)**
+21. **Recurrent Replay Distributed DQN (R2D2)**
+22. **Monte Carlo Tree Search (MCTS) with DRL**
+23. **Neural Episodic Control (NEC)**
+24. **Model-based Policy Optimization (MBPO)**
+25. **World Models**
+26. **Dreamer Algorithm** (model-based RL)
+27. **MuZero**
+28. **Guided Policy Search (GPS)**
+29. **Path Integral Guided Policy Search (PIGPS)**
+30. **Curiosity-Driven Learning**
+31. **Asynchronous Methods for Deep Learning (ADAM)**
+32. **Natural Policy Gradient (NPG)**
+33. **Distributed Proximal Policy Optimization (DPPO)**
+34. **Importance Weighted Actor-Learner Architectures (IMPALA)**
+35. **Self-Imitation Learning**
+36. **Evolution Strategies as a Scalable Alternative to Reinforcement Learning**
+37. **Soft Q-Learning**
+38. **Option-Critic Architecture**
+39. **Learning to Learn by Gradient Descent by Gradient Descent**
+40. **UNREAL (Unsupervised Reinforcement and Auxiliary Learning)**
+41. **The Predictron**
+42. **Action Branching Architectures**
+43. **Efficient Zero-shot Coordination (EZC)**
+44. **Meta Learning Shared Hierarchies (MLSH)**
+45. **Reward Constrained Policy Optimization (RCPO)**
+46. **Episodic Curiosity through Reachability**
+47. **Differentiable Algorithm Networks**
+48. **Hierarchical Reinforcement Learning (HRL)**
+49. **Successor Features for Transfer in Reinforcement Learning**
+50. **Maximum a Posteriori Policy Optimization (MPO)**

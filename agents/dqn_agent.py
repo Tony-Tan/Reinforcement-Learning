@@ -122,6 +122,8 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn.eval()
         self.synchronize_value_nn()
         self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
+        # self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
+        #                                      alpha=0.95, eps=0.01)
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device
@@ -134,6 +136,12 @@ class DQNValueFunction(ValueFunction):
         Synchronize the value neural network with the target value neural network.
         """
         self.target_value_nn.load_state_dict(self.value_nn.state_dict())
+
+    def max_state_value(self, obs_tensor):
+        with torch.no_grad():
+            outputs = self.target_value_nn(obs_tensor)
+        msv, _ = torch.max(outputs, dim=1, keepdim=True)
+        return msv
 
     def update(self, samples: list):
         """
@@ -148,9 +156,7 @@ class DQNValueFunction(ValueFunction):
         truncated_tensor = samples[5]
         next_obs_tensor = image_normalization(samples[3])
 
-        with torch.no_grad():
-            outputs = self.target_value_nn(next_obs_tensor)
-        max_next_state_value, _ = torch.max(outputs, dim=1, keepdim=True)
+        max_next_state_value = self.max_state_value(next_obs_tensor)
         reward_tensor.resize_as_(max_next_state_value)
         # calculate q value
         truncated_tensor.resize_as_(max_next_state_value)

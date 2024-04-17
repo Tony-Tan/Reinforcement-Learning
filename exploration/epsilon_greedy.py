@@ -9,7 +9,7 @@ class EpsilonGreedy(Exploration):
     def __call__(self, values: np.ndarray):
         optimal_action = np.random.choice(
             np.flatnonzero(values == np.max(values)))
-        if random.randint(0, 10000000) < self.epsilon * 10000000:
+        if random.random() < self.epsilon:
             return random.randint(0, len(values) - 1)
         else:
             return optimal_action
