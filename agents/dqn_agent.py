@@ -74,6 +74,7 @@ class DQNPerceptionMapping(PerceptionMapping):
             obs_y = self.last_frame_pre_process = img_y_channel
         self.last_frame_pre_process = img_y_channel
         obs_processed = cv2.resize(obs_y, (self.input_frame_width, self.input_frame_height))
+
         return obs_processed
 
     def __phi_append(self, obs: np.ndarray):
