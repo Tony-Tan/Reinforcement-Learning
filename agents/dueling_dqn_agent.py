@@ -1,6 +1,7 @@
 from agents.dqn_agent import *
 from models.dqn_networks import DuelingDQNAtari
 
+
 class DuelingDQNValueFunction(DQNValueFunction):
     def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
                  gamma: float, step_c: int, model_saving_period: int, device: torch.device, logger: Logger):
@@ -9,6 +10,8 @@ class DuelingDQNValueFunction(DQNValueFunction):
         self.value_nn = DuelingDQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn = DuelingDQNAtari(input_channel, action_dim).to(device)
         self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
+
+
 class DuelingDQNAgent(DQNAgent):
     def __init__(self, input_frame_width: int, input_frame_height: int, action_space,
                  mini_batch_size: int, replay_buffer_size: int, min_update_sample_size: int,
