@@ -122,9 +122,9 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn.eval()
         self.synchronize_value_nn()
-        self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
-        # self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
-        #                                      alpha=0.95, eps=0.01)
+        # self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
+        self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
+                                             alpha=0.95, eps=0.01)
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device
@@ -193,7 +193,6 @@ class DQNValueFunction(ValueFunction):
         :return: Value of the phi tensor
         """
         with torch.no_grad():
-            phi_tensor = phi_tensor.to(self.device)
             if phi_tensor.dim() == 3:
                 obs_input = phi_tensor.unsqueeze(0)
             else:
@@ -238,7 +237,7 @@ class DQNAgent(Agent):
             return exploration_method(self.action_dim)
         else:
             obs_scaled = image_normalization(np.array(obs).astype(np.float32))
-            phi_tensor = torch.from_numpy(obs_scaled)
+            phi_tensor = torch.as_tensor(obs_scaled,device=self.device,dtype=torch.float32)
             value_list = self.value_function.value(phi_tensor)[0]
             if exploration_method is None:
                 return self.exploration_method(value_list)
@@ -256,7 +255,7 @@ class DQNAgent(Agent):
         :param done: Done flag
         :param truncated: Truncated flag
         """
-        self.memory.store(obs, action, reward, next_obs, done, truncated)
+        self.memory.store(obs, np.array(action), np.array(reward), next_obs, np.array(done), np.array(truncated))
 
     def train_step(self):
         """
