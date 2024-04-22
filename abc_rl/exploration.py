@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from utils.commons import Logger
+from core.commons import Logger
 from abc import ABC, abstractmethod
 
 

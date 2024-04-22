@@ -150,7 +150,7 @@ class PPO_Agent(Agent):
             log_writer.add_scalar('value loss', average_residual, epoch_num)
 
         value_data_array = None
-        # dataset_loader = torch.utils.data.DataLoader(dataset, batch_size=40000,
+        # dataset_loader = torch.core.data.DataLoader(dataset, batch_size=40000,
         #                                              shuffle=False, num_workers=0, drop_last=False)
         with torch.no_grad():
             # for batch_i, data_i in enumerate(dataset_loader):

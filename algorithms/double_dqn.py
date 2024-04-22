@@ -6,7 +6,7 @@ import copy
 import cv2
 from tqdm import tqdm
 from multiprocessing import Process, Queue, set_start_method
-from utils.hyperparameters import Hyperparameters
+from core.hyperparameters import Hyperparameters
 
 # Argument parser for command line arguments
 parser = argparse.ArgumentParser(description='PyTorch Double DQN training arguments')
