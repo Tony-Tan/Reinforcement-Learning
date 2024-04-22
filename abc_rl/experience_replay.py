@@ -1,8 +1,10 @@
 from collections import deque
-import random
 from abc import ABC, abstractmethod
 import numpy as np
 import torch
+from multiprocessing import Pool
+
+
 
 
 class ExperienceReplay(ABC):
@@ -16,6 +18,7 @@ class ExperienceReplay(ABC):
         return len(self.buffer)
 
     def get_items(self, idx, dtyp: np.dtype, device: torch.device):
+
         obs = np.empty([len(idx), *self.buffer[0][0].shape], dtype=dtyp)
         # obs = []
         action = np.empty([len(idx), *self.buffer[0][1].shape], dtype=dtyp)
@@ -48,7 +51,7 @@ class ExperienceReplay(ABC):
             done = torch.from_numpy(done).to(device)
             truncated = torch.from_numpy(truncated).to(device)
         stream.synchronize()
-        return obs,action,reward,next_obs,done,truncated
+        return obs, action, reward, next_obs, done, truncated
 
     @abstractmethod
     def sample(self, *args, **kwargs):
