@@ -101,6 +101,7 @@ def train_dqn(logger):
             step_i += 1
         logger.tb_scalar('training reward', reward_cumulated, training_steps)
         if run_test:
+            logger.msg(f'{epoch_i} test start:')
             avg_reward, avg_steps = test_dqn(dqn_agent, cfg['agent_test_episodes'])
             logger.tb_scalar('avg_reward', avg_reward, epoch_i)
             logger.tb_scalar('avg_steps', avg_steps, epoch_i)

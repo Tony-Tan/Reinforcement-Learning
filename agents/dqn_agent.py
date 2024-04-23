@@ -13,7 +13,7 @@ from abc_rl.reward_shaping import *
 from exploration.epsilon_greedy import *
 
 
-def image_normalization(image_uint8: torch.Tensor) -> torch.Tensor:
+def image_normalization(image_uint8) :
     """
     Normalize the image to [-0.5,0.5]
 
@@ -75,7 +75,7 @@ class DQNPerceptionMapping(PerceptionMapping):
         self.last_frame_pre_process = img_y_channel
         obs_processed = cv2.resize(obs_y, (self.input_frame_width, self.input_frame_height))
 
-        return obs_processed
+        return image_normalization(obs_processed)
 
     def __phi_append(self, obs: np.ndarray):
         """
@@ -150,12 +150,15 @@ class DQNValueFunction(ValueFunction):
 
         :param samples: Input samples
         """
-        obs_tensor = image_normalization(samples[0])
-        action_tensor = samples[1]
-        reward_tensor = samples[2]
-        termination_tensor = samples[4]
-        truncated_tensor = samples[5]
-        next_obs_tensor = image_normalization(samples[3])
+        stream = torch.cuda.Stream()
+        with torch.cuda.stream(stream):
+            obs_tensor = samples[0].to(self.device, non_blocking=True)
+            action_tensor = samples[1].to(self.device, non_blocking=True)
+            reward_tensor = samples[2].to(self.device, non_blocking=True)
+            next_obs_tensor = samples[3].to(self.device, non_blocking=True)
+            termination_tensor = samples[4].to(self.device, non_blocking=True)
+            truncated_tensor = samples[5].to(self.device, non_blocking=True)
+        stream.synchronize()
 
         max_next_state_value = self.max_state_value(next_obs_tensor)
         reward_tensor.resize_as_(max_next_state_value)
@@ -236,8 +239,8 @@ class DQNAgent(Agent):
         if isinstance(exploration_method, RandomAction):
             return exploration_method(self.action_dim)
         else:
-            obs_scaled = image_normalization(np.array(obs).astype(np.float32))
-            phi_tensor = torch.as_tensor(obs_scaled,device=self.device,dtype=torch.float32)
+            # obs_scaled = image_normalization(np.array(obs).astype(np.float32))
+            phi_tensor = torch.as_tensor(obs,device=self.device,dtype=torch.float32)
             value_list = self.value_function.value(phi_tensor)[0]
             if exploration_method is None:
                 return self.exploration_method(value_list)
@@ -255,12 +258,13 @@ class DQNAgent(Agent):
         :param done: Done flag
         :param truncated: Truncated flag
         """
-        self.memory.store(obs, np.array(action), np.array(reward), next_obs, np.array(done), np.array(truncated))
+        self.memory.store(obs, np.array(action, dtype=np.float32), np.array(reward, dtype=np.float32), next_obs,
+                          np.array(done, dtype=np.float32), np.array(truncated, dtype=np.float32))
 
     def train_step(self):
         """
         Perform a training step if the memory size is larger than the update sample size.
         """
         if len(self.memory) > self.update_sample_size:
-            samples = self.memory.sample(self.mini_batch_size, np.float32, self.device)
+            samples = self.memory.sample(self.mini_batch_size)
             self.value_function.update(samples)
