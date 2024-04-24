@@ -258,8 +258,8 @@ class DQNAgent(Agent):
         :param done: Done flag
         :param truncated: Truncated flag
         """
-        self.memory.store(obs, np.array(action, dtype=np.float32), np.array(reward, dtype=np.float32), next_obs,
-                          np.array(done, dtype=np.float32), np.array(truncated, dtype=np.float32))
+        self.memory.store(obs.astype(np.float32), np.array(action, dtype=np.float32), np.array(reward, dtype=np.float32),
+                          next_obs.astype(np.float32), np.array(done, dtype=np.float32), np.array(truncated, dtype=np.float32))
 
     def train_step(self):
         """
