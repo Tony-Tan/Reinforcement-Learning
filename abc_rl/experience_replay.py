@@ -1,14 +1,13 @@
-from collections import deque
 from abc import ABC, abstractmethod
 import numpy as np
 import torch
-
 
 class ExperienceReplay(ABC):
     def __init__(self, capacity: int):
         self.capacity = capacity
         self.buffer = []
         self.position = 0  # This will keep track of the next position to insert into, for overwriting old records
+
 
     def store(self, observation:np.ndarray, action:np.ndarray, reward:np.ndarray,
               next_observation:np.ndarray, done:np.ndarray, truncated:np.ndarray):
@@ -27,7 +26,7 @@ class ExperienceReplay(ABC):
 
     def get_items(self, idx):
         idx_size = len(idx)
-        obs= np.empty([idx_size, *self.buffer[0][0].shape], dtype=np.float32)
+        obs = np.empty([idx_size, *self.buffer[0][0].shape], dtype=np.float32)
         action = np.empty([idx_size, *self.buffer[0][1].shape], dtype=np.float32)
         reward = np.empty([idx_size, *self.buffer[0][2].shape], dtype=np.float32)
         next_obs = np.empty([idx_size , *self.buffer[0][0].shape], dtype=np.float32)
@@ -54,7 +53,6 @@ class ExperienceReplay(ABC):
         done = torch.from_numpy(done)
         truncated = torch.from_numpy(truncated)
         return obs, action, reward, next_obs, done, truncated
-
 
     @abstractmethod
     def sample(self, *args, **kwargs):
