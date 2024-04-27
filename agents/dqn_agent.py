@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import torch.optim
 import torch.nn.functional as F
-
+from collections import deque
 from abc_rl.agent import Agent
 from models.dqn_networks import DQNAtari
 from abc_rl.policy import *
@@ -13,7 +13,7 @@ from abc_rl.reward_shaping import *
 from exploration.epsilon_greedy import *
 
 
-def image_normalization(image_uint8) :
+def image_normalization(image_uint8):
     """
     Normalize the image to [-0.5,0.5]
 
@@ -75,7 +75,7 @@ class DQNPerceptionMapping(PerceptionMapping):
         self.last_frame_pre_process = img_y_channel
         obs_processed = cv2.resize(obs_y, (self.input_frame_width, self.input_frame_height))
 
-        return image_normalization(obs_processed)
+        return obs_processed
 
     def __phi_append(self, obs: np.ndarray):
         """
@@ -105,7 +105,7 @@ class DQNPerceptionMapping(PerceptionMapping):
         if step_i == 0:
             self.reset()
         self.__phi_append(self.__pre_process(state))
-        obs = np.array(self.phi)
+        obs = np.array(self.phi, dtype=np.uint8)
         return obs
 
 
@@ -140,6 +140,7 @@ class DQNValueFunction(ValueFunction):
 
     def max_state_value(self, obs_tensor):
         with torch.no_grad():
+            obs_tensor = image_normalization(obs_tensor)
             outputs = self.target_value_nn(obs_tensor)
         msv, _ = torch.max(outputs, dim=1, keepdim=True)
         return msv
@@ -171,6 +172,8 @@ class DQNValueFunction(ValueFunction):
         actions = action_tensor.long()
         self.optimizer.zero_grad()
         self.value_nn.train()
+        # normalize the input image
+        obs_tensor = image_normalization(obs_tensor)
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
         # loss = F.mse_loss(q_value, obs_action_value)
@@ -201,6 +204,7 @@ class DQNValueFunction(ValueFunction):
             else:
                 obs_input = phi_tensor
             self.value_nn.eval()
+            obs_input = image_normalization(obs_input)
             state_action_values = self.value_nn(obs_input).cpu().detach().numpy()
             return state_action_values
 
@@ -240,7 +244,7 @@ class DQNAgent(Agent):
             return exploration_method(self.action_dim)
         else:
             # obs_scaled = image_normalization(np.array(obs).astype(np.float32))
-            phi_tensor = torch.as_tensor(obs,device=self.device,dtype=torch.float32)
+            phi_tensor = torch.as_tensor(obs, device=self.device,dtype=torch.float32)
             value_list = self.value_function.value(phi_tensor)[0]
             if exploration_method is None:
                 return self.exploration_method(value_list)
@@ -258,8 +262,7 @@ class DQNAgent(Agent):
         :param done: Done flag
         :param truncated: Truncated flag
         """
-        self.memory.store(obs.astype(np.float32), np.array(action, dtype=np.float32), np.array(reward, dtype=np.float32),
-                          next_obs.astype(np.float32), np.array(done, dtype=np.float32), np.array(truncated, dtype=np.float32))
+        self.memory.store(obs, action, reward, next_obs, done, truncated)
 
     def train_step(self):
         """

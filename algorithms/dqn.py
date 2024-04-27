@@ -3,7 +3,7 @@ from agents.dqn_agent import *
 from environments.env_wrapper import EnvWrapper
 from exploration.epsilon_greedy import *
 import copy
-import cv2
+
 from tqdm import tqdm
 from multiprocessing import Process, Queue, set_start_method
 from core.hyperparameters import Hyperparameters

@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import torch
+from multiprocessing import Pool
+
 
 class ExperienceReplay(ABC):
     def __init__(self, capacity: int):
@@ -8,9 +10,8 @@ class ExperienceReplay(ABC):
         self.buffer = []
         self.position = 0  # This will keep track of the next position to insert into, for overwriting old records
 
-
-    def store(self, observation:np.ndarray, action:np.ndarray, reward:np.ndarray,
-              next_observation:np.ndarray, done:np.ndarray, truncated:np.ndarray):
+    def store(self, observation: np.ndarray, action: np.ndarray, reward: np.ndarray,
+              next_observation: np.ndarray, done: np.ndarray, truncated: np.ndarray):
         if len(self.buffer) < self.capacity:
             # If there is still space in the buffer, append the data
             self.buffer.append([observation, action, reward, next_observation, done, truncated])
@@ -29,7 +30,7 @@ class ExperienceReplay(ABC):
         obs = np.empty([idx_size, *self.buffer[0][0].shape], dtype=np.float32)
         action = np.empty([idx_size, *self.buffer[0][1].shape], dtype=np.float32)
         reward = np.empty([idx_size, *self.buffer[0][2].shape], dtype=np.float32)
-        next_obs = np.empty([idx_size , *self.buffer[0][0].shape], dtype=np.float32)
+        next_obs = np.empty([idx_size, *self.buffer[0][0].shape], dtype=np.float32)
         done = np.empty([idx_size, 1], dtype=np.float32)
         truncated = np.empty([idx_size, 1], dtype=np.float32)
         for i, idx_i in enumerate(idx):
@@ -54,9 +55,27 @@ class ExperienceReplay(ABC):
         truncated = torch.from_numpy(truncated)
         return obs, action, reward, next_obs, done, truncated
 
+    # from multiprocessing import Pool
+    #
+    # def get_item(self, idx_i):
+    #     o, a, r, n, d, t = self.buffer[idx_i]
+    #     return o, a, r, n, d, t
+    #
+    # def get_items(self, idx):
+    #     idx_size = len(idx)
+    #     with Pool() as p:
+    #         results = p.map(self.get_item, idx)
+    #
+    #     obs, action, reward, next_obs, done, truncated = zip(*results)
+    #
+    #     # from numpy to tensor
+    #     obs = torch.from_numpy(np.array(obs, dtype=np.float32))
+    #     next_obs = torch.from_numpy(np.array(next_obs, dtype=np.float32))
+    #     action = torch.from_numpy(np.array(action, dtype=np.float32))
+    #     reward = torch.from_numpy(np.array(reward, dtype=np.float32))
+    #     done = torch.from_numpy(np.array(done, dtype=np.float32))
+    #     truncated = torch.from_numpy(np.array(truncated, dtype=np.float32))
+    #     return obs, action, reward, next_obs, done, truncated
     @abstractmethod
     def sample(self, *args, **kwargs):
         pass
-
-
-
