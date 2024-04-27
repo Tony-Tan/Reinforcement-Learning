@@ -34,7 +34,7 @@ class ValueFunction(ABC):
         ...
 
     @abstractmethod
-    def update(self,  **kwargs):
+    def update(self,  *args, **kwargs):
         ...
 
 

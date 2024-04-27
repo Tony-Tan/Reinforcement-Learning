@@ -122,9 +122,9 @@ class DQNValueFunction(ValueFunction):
         self.target_value_nn = DQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn.eval()
         self.synchronize_value_nn()
-        # self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
-        self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
-                                             alpha=0.95, eps=0.01)
+        self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
+        # self.optimizer = torch.optim.RMSprop(self.value_nn.parameters(), lr=learning_rate, momentum=0.95,
+        #                                      alpha=0.95, eps=0.01)
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = device
@@ -145,11 +145,12 @@ class DQNValueFunction(ValueFunction):
         msv, _ = torch.max(outputs, dim=1, keepdim=True)
         return msv
 
-    def update(self, samples: list):
+    def update(self, samples: list, weight=None):
         """
         Update the value function with the given samples.
 
         :param samples: Input samples
+        :param weight: Importance weight for prioritized experience replay
         """
         stream = torch.cuda.Stream()
         with torch.cuda.stream(stream):
@@ -179,7 +180,11 @@ class DQNValueFunction(ValueFunction):
         # loss = F.mse_loss(q_value, obs_action_value)
         # Clip the difference between obs_action_value and q_value to the range of -1 to 1
         diff = obs_action_value - q_value
-        diff_clipped = torch.clip(diff, -1, 1)
+        if weight is not None:
+            weight = torch.as_tensor(weight, device=self.device, dtype=torch.float32).resize_as_(diff)
+            diff_clipped = torch.clip(diff, -1, 1) * weight
+        else:
+            diff_clipped = torch.clip(diff, -1, 1)
 
         # Use the clipped difference for the loss calculation
         loss = F.mse_loss(diff_clipped, torch.zeros_like(diff_clipped))
@@ -190,6 +195,7 @@ class DQNValueFunction(ValueFunction):
             self.synchronize_value_nn()
             self.logger.tb_scalar('loss', loss.item(), self.update_step)
             self.logger.tb_scalar('q', torch.mean(q_value), self.update_step)
+        return np.abs(diff_clipped.detach().cpu().numpy())
 
     def value(self, phi_tensor: torch.Tensor) -> np.ndarray:
         """
@@ -215,7 +221,7 @@ class DQNAgent(Agent):
     """
 
     def __init__(self, input_frame_width: int, input_frame_height: int, action_space,
-                 mini_batch_size: int, replay_buffer_size: int, min_update_sample_size: int,
+                 mini_batch_size: int, replay_buffer_size: int, replay_start_size: int,
                  learning_rate: float, step_c: int, model_saving_period: int,
                  gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,
                  exploration_steps: int, device: torch.device, logger: Logger):
@@ -229,7 +235,7 @@ class DQNAgent(Agent):
         self.reward_shaping = DQNAtariReward()
         self.device = device
         self.mini_batch_size = mini_batch_size
-        self.update_sample_size = min_update_sample_size
+        self.replay_start_size = replay_start_size
         self.training_episodes = training_episodes
 
     def select_action(self, obs: np.ndarray, exploration_method: Exploration = None) -> np.ndarray:
@@ -262,12 +268,12 @@ class DQNAgent(Agent):
         :param done: Done flag
         :param truncated: Truncated flag
         """
-        self.memory.store(obs, action, reward, next_obs, done, truncated)
+        self.memory.store(obs, np.array(action), np.array(reward), next_obs, np.array(done), np.array(truncated))
 
     def train_step(self):
         """
         Perform a training step if the memory size is larger than the update sample size.
         """
-        if len(self.memory) > self.update_sample_size:
+        if len(self.memory) > self.replay_start_size:
             samples = self.memory.sample(self.mini_batch_size)
             self.value_function.update(samples)
