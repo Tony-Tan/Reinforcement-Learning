@@ -6,9 +6,9 @@ from core.hyperparameters import Hyperparameters
 
 # Argument parser for command line arguments
 parser = argparse.ArgumentParser(description='PyTorch dqn_pp training arguments')
-parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
+parser.add_argument('--env_name', default='ALE/Atlantis-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
-parser.add_argument('--device', default='cuda:0', type=str,
+parser.add_argument('--device', default='cuda:1', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--save_path', default='./data_log/', type=str,
                     help='model save path ，default: ./model/')

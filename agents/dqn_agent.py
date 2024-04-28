@@ -152,15 +152,16 @@ class DQNValueFunction(ValueFunction):
         :param samples: Input samples
         :param weight: Importance weight for prioritized experience replay
         """
-        stream = torch.cuda.Stream()
-        with torch.cuda.stream(stream):
-            obs_tensor = samples[0].to(self.device, non_blocking=True)
-            action_tensor = samples[1].to(self.device, non_blocking=True)
-            reward_tensor = samples[2].to(self.device, non_blocking=True)
-            next_obs_tensor = samples[3].to(self.device, non_blocking=True)
-            termination_tensor = samples[4].to(self.device, non_blocking=True)
-            truncated_tensor = samples[5].to(self.device, non_blocking=True)
-        stream.synchronize()
+        # stream = torch.cuda.Stream(device=self.device)
+        # with torch.cuda.stream(stream):
+        obs_tensor = samples[0].to(self.device, non_blocking=True)
+        action_tensor = samples[1].to(self.device, non_blocking=True)
+        reward_tensor = samples[2].to(self.device, non_blocking=True)
+        next_obs_tensor = samples[3].to(self.device, non_blocking=True)
+        termination_tensor = samples[4].to(self.device, non_blocking=True)
+        truncated_tensor = samples[5].to(self.device, non_blocking=True)
+
+        # stream.synchronize()
 
         max_next_state_value = self.max_state_value(next_obs_tensor)
         reward_tensor.resize_as_(max_next_state_value)
