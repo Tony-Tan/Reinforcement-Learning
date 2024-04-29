@@ -10,7 +10,7 @@ input_frame_height: 84
 replay_start_size: 10_000
 gamma: 0.99
 no_op: 30
-save_path: './data_log/'
+save_path: './exps/'
 log_path: '../exps/dqn/'
 learning_rate: 0.00001
 step_c: 10_000
@@ -20,3 +20,4 @@ exploration_steps: 1_000_000
 epsilon_for_test: 0.05
 agent_test_episodes: 20
 agent_saving_period: 80000
+seed: 1

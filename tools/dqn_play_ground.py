@@ -46,7 +46,7 @@ class DQNPlayGround:
             self.logger.tb_scalar('training reward', reward_cumulated, training_steps)
             if run_test:
                 self.logger.msg(f'{epoch_i} test start:')
-                avg_reward, avg_steps = self.test(self.agent, self.cfg['agent_test_episodes'])
+                avg_reward, avg_steps = self.test(self.cfg['agent_test_episodes'])
                 self.logger.tb_scalar('avg_reward', avg_reward, epoch_i)
                 self.logger.tb_scalar('avg_steps', avg_steps, epoch_i)
                 self.logger.tb_scalar('epsilon', self.agent.exploration_method.epsilon, epoch_i)
@@ -54,19 +54,17 @@ class DQNPlayGround:
                 self.logger.msg(f'{epoch_i} avg_steps: ' + str(avg_steps))
                 self.logger.msg(f'{epoch_i} epsilon: ' + str(self.agent.exploration_method.epsilon))
 
-    def test (self, test_episodes: int):
+    def test (self, test_episode_num: int):
         """
         Test the DQN agent for a given number of episodes.
-
-        :param agent: The DQN agent to be tested
-        :param test_episodes: The number of episodes for testing
+        :param test_episode_num: The number of episodes for testing
         :return: The average reward and average steps per episode
         """
-        env = EnvWrapper(self.cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
+        env = EnvWrapper(self.cfg['env_name'], repeat_action_probability=0, frameskip=self.cfg['skip_k_frame'])
         exploration_method = EpsilonGreedy(self.cfg['epsilon_for_test'])
         reward_cum = 0
         step_cum = 0
-        for i in range(test_episodes):
+        for i in range(test_episode_num):
             state, _ = env.reset()
             done = truncated = False
             step_i = 0

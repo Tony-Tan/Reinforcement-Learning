@@ -1,3 +1,4 @@
+import gc
 from agents.dqn_agent import *
 from experience_replay.proportional_prioritization import *
 
@@ -35,7 +36,10 @@ class DQNPPAgent(DQNAgent):
                                          replay_buffer_size, replay_start_size, learning_rate, step_c,
                                          agent_saving_period, gamma, training_steps, phi_channel, epsilon_max,
                                          epsilon_min, exploration_steps, device, logger)
+        del self.memory
+        gc.collect()
         self.memory = ProportionalPrioritization(replay_buffer_size, alpha, beta)
+
 
     def train_step(self):
         """
