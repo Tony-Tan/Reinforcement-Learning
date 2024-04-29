@@ -47,5 +47,5 @@ class DQNPPAgent(DQNAgent):
         """
         if len(self.memory) > self.replay_start_size:
             samples, w, idx = self.memory.sample(self.mini_batch_size)
-            td_err = self.value_function.update(samples, w)
-            self.memory.p[idx] = td_err.reshape(1, -1) + 1e-10
+            td_err = self.value_function.update(samples, w).reshape(1, -1) + np.float32(1e-5)
+            self.memory.p[idx] = td_err

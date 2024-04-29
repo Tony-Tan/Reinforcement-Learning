@@ -18,7 +18,13 @@ parser.add_argument('--log_path', default='../exps/dqn/', type=str,
 cfg = Hyperparameters(parser, '../configs/dqn.yaml')
 # set random seed randomly
 cfg['seed'] = np.random.randint(1, 1000000)
+# set random seed randomly
 np.random.seed(cfg['seed'])
+torch.manual_seed(cfg['seed'])
+
+# If using CUDA (GPU computation) with PyTorch, set this as well
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(cfg['seed'])
 
 def main():
     logger = Logger(cfg['env_name'], cfg['log_path'])

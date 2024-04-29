@@ -20,7 +20,7 @@ class ProportionalPrioritization(ExperienceReplay):
         # normalize the p as a probability distribution
         p = self.p[:n] / self.p[:n].sum()
         # select the index of the samples
-        idx = np.random.choice(np.arange(n), batch_size, p=p)
+        idx = np.random.choice(np.arange(n), batch_size, p=p, replace=False)
         if beta is None:
             w = (n * p) ** -self.beta
         else:

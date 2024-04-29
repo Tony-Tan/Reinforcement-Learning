@@ -196,7 +196,7 @@ class DQNValueFunction(ValueFunction):
             self.synchronize_value_nn()
             self.logger.tb_scalar('loss', loss.item(), self.update_step)
             self.logger.tb_scalar('q', torch.mean(q_value), self.update_step)
-        return np.abs(diff_clipped.detach().cpu().numpy())
+        return np.abs(diff_clipped.detach().cpu().numpy().astype(np.float32))
 
     def value(self, phi_tensor: torch.Tensor) -> np.ndarray:
         """

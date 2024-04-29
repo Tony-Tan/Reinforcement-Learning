@@ -8,7 +8,6 @@ class UniformExperienceReplay(ExperienceReplay):
         super(UniformExperienceReplay,self).__init__(capacity)
 
     def sample(self, batch_size: int):
-        idx = np.arange(self.__len__())
-        selected_idx = random.choices(idx, k = batch_size)
-        return self.get_items(selected_idx)
+        idx = np.random.choice(np.arange(self.__len__()), batch_size,  replace=False)
+        return self.get_items(idx)
 
