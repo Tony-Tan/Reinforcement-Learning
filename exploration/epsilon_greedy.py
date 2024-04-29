@@ -1,5 +1,5 @@
 from abc_rl.exploration import *
-
+import numpy as np
 
 class EpsilonGreedy(Exploration):
     def __init__(self, epsilon: float):
@@ -9,8 +9,8 @@ class EpsilonGreedy(Exploration):
     def __call__(self, values: np.ndarray):
         optimal_action = np.random.choice(
             np.flatnonzero(values == np.max(values)))
-        if random.random() < self.epsilon:
-            return random.randint(0, len(values) - 1)
+        if np.random.random() < self.epsilon:
+            return np.random.randint(0, len(values) - 1)
         else:
             return optimal_action
 
@@ -20,7 +20,7 @@ class RandomAction(Exploration):
         super().__init__()
 
     def __call__(self, action_dim:int):
-        return random.randint(0, action_dim - 1)
+        return np.random.randint(0, action_dim - 1)
 
 
 class DecayingEpsilonGreedy(Exploration):
@@ -38,8 +38,8 @@ class DecayingEpsilonGreedy(Exploration):
         optimal_action = np.random.choice(
             np.flatnonzero(values == np.max(values)))
         # if a float random number less than epsilon, then explore
-        if random.random() < self.epsilon:
-            return random.randint(0, len(values) - 1)
+        if np.random.random() < self.epsilon:
+            return np.random.randint(0, len(values) - 1)
         else:
             return optimal_action
 

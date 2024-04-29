@@ -1,5 +1,3 @@
-import random
-
 from agents.dqn_agent import *
 import gc
 
@@ -11,6 +9,7 @@ class DoubleDQNValueFunction(DQNValueFunction):
 
     def max_state_value(self, obs_tensor):
         with torch.no_grad():
+            obs_tensor = image_normalization(obs_tensor)
             outputs_tnn = self.target_value_nn(obs_tensor)
             outputs_nn = self.value_nn(obs_tensor)
         _, greedy_actions = torch.max(outputs_nn, dim=1, keepdim=True)
