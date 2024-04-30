@@ -1,7 +1,7 @@
 # main class of env
 import gymnasium as gym
 from gymnasium import envs
-from core.commons import *
+from utils.commons import *
 
 custom_env_list = []
 

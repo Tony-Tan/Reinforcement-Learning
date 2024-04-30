@@ -20,4 +20,3 @@ exploration_steps: 1_000_000
 epsilon_for_test: 0.05
 agent_test_episodes: 20
 agent_saving_period: 80000
-seed: 1

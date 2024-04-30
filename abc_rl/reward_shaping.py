@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from core.commons import Logger
+from utils.commons import Logger
 
 
 class RewardShaping(ABC):

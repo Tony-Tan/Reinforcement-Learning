@@ -3,7 +3,7 @@ from agents.dueling_dqn_agent import *
 from environments.env_wrapper import EnvWrapper
 from exploration.epsilon_greedy import *
 from tools.dqn_play_ground import DQNPlayGround
-from core.hyperparameters import Hyperparameters
+from utils.hyperparameters import Hyperparameters
 
 # Argument parser for command line arguments
 parser = argparse.ArgumentParser(description='PyTorch Dueling DQN training arguments')
@@ -18,11 +18,6 @@ parser.add_argument('--log_path', default='../exps/dueling_dqn/', type=str,
 
 # Load hyperparameters from yaml file
 cfg = Hyperparameters(parser, '../configs/dqn.yaml')
-# set random seed
-cfg['seed'] = np.random.randint(1, 1000000)
-# set random seed randomly
-np.random.seed(cfg['seed'])
-torch.manual_seed(cfg['seed'])
 
 # If using CUDA (GPU computation) with PyTorch, set this as well
 if torch.cuda.is_available():

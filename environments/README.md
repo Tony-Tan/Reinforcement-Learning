@@ -3,7 +3,7 @@
 
 ```python
 from environments.env_wrapper import *
-from core import *
+from utils import *
 
 logger = Logger('./log.txt')
 custom_env = EnvWrapper('custom_env_0', logger)

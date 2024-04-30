@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from core.commons import Logger
+from utils.commons import Logger
 
 
 class PerceptionMapping(ABC):

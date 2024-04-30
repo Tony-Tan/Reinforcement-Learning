@@ -1,7 +1,7 @@
 from agents.dqn_agent import  *
 from abc_rl.experience_replay import *
 from abc_rl.exploration import *
-from core.hyperparameters import *
+from utils.hyperparameters import *
 
 
 class DQNPlayGround:
