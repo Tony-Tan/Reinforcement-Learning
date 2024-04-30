@@ -39,31 +39,6 @@ class Logger:
             print(complete_info)
 
 
-# callbacks for training process
-#
-class Callbacks:
-    def __init__(self):
-        pass
-
-    def on_episode_begin(self):
-        pass
-
-    def on_episode_end(self):
-        pass
-
-    def on_training_begin(self):
-        pass
-
-    def on_training_end(self):
-        pass
-
-    def on_step_begin(self):
-        pass
-
-    def on_step_end(self):
-        pass
-
-
 # exceptions
 # class MethodNotImplement(Exception):
 #     def __init__(self, info=None):
@@ -84,14 +59,7 @@ class PolicyNotImplement(Exception):
     def __str__(self):
         return 'Policy Has Not Been Implemented'
 
-def debugger_time_cost(func):
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        print(f'{func.__name__} time cost: {end_time - start_time}')
-        return result
-    return wrapper
+
 
 if __name__ == '__main__':
     logger_ = Logger(log_name='test_log.txt', log_path='./')

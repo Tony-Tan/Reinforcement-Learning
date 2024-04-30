@@ -11,17 +11,12 @@ parser.add_argument('--env_name', default='ALE/Atlantis-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
-parser.add_argument('--save_path', default='./data_log/', type=str,
-                    help='model save path ，default: ./model/')
 parser.add_argument('--log_path', default='../exps/dueling_dqn/', type=str,
                     help='log save path，default: ./log/')
 
 # Load hyperparameters from yaml file
 cfg = Hyperparameters(parser, '../configs/dqn.yaml')
 
-# If using CUDA (GPU computation) with PyTorch, set this as well
-if torch.cuda.is_available():
-    torch.cuda.manual_seed_all(cfg['seed'])
 
 
 def main():

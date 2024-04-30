@@ -15,12 +15,10 @@ parser.add_argument('--env_name', default='ALE/Atlantis-v5', type=str,
                     help='openai gym environment (default: ALE/Pong-v5)')
 parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
-parser.add_argument('--save_path', default='./data_log/', type=str,
-                    help='model save path ，default: ./model/')
 parser.add_argument('--log_path', default='../exps/double_dqn/', type=str,
                     help='log save path，default: ./log/')
 
-# Load hyperparameters from yaml file
+# Load hyperparameters from yaml file and combine with command line arguments
 cfg = Hyperparameters(parser, '../configs/dqn.yaml')
 
 
