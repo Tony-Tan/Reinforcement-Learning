@@ -1,23 +1,28 @@
 import subprocess
 import time
+import os
 
 games = [
-    "ALE/Pitfall-v5",
+
     "ALE/Seaquest-v5",
-    "ALE/Enduro-v5",
-    "ALE/Breakout-v5",
-    "ALE/Frostbite-v5",
-    "ALE/Gravitar-v5",
+    "ALE/WizardOfWor-v5",
+    "ALE/SpaceInvaders-v5",
+    "ALE/Asterix-v5",
+    "ALE/DoubleDunk-v5",
     "ALE/Phoenix-v5",
-    "ALE/Qbert-v5",
-    "ALE/Centipede-v5"
+    "ALE/Kangaroo-v5",
+    "ALE/Atlantis-v5"
 ]
+base_command = ''
+home_directory = os.path.expanduser('~')
+if os.path.exists(f"{home_directory}/miniconda3/"):
+    base_command = (f"{home_directory}/miniconda3/bin/conda run -n Reinforcement-Learning --no-capture-output python "
+                    f"{home_directory}/rl/algorithms/double_dqn.py --env_name")
+elif os.path.exists(f"{home_directory}/anaconda3/"):
+    base_command = (f"{home_directory}/anaconda3/bin/conda run -n Reinforcement-Learning --no-capture-output python "
+                    f"{home_directory}/rl/algorithms/double_dqn.py --env_name")
 
-# Base command to run the training script
-base_command = ("/root/miniconda3/bin/conda run -n Reinforcement-Learning --no-capture-output python "
-                "/root/rl/algorithms/dqn.py --env_name")
-
-python_path = ("export PYTHONPATH=$PYTHONPATH:/root/rl")
+python_path = f"export PYTHONPATH=$PYTHONPATH:/{home_directory}/rl"
 # Activate your virtual environment command
 
 # Loop through each game, creating a screen session for each one
@@ -33,5 +38,4 @@ for game in games:
 
     # Execute the command to start the screen session with the training running
     subprocess.run(screen_command, shell=True)
-
 print("Training sessions started in separate screen sessions.")

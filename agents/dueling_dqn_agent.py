@@ -6,7 +6,7 @@ class DuelingDQNValueFunction(DQNValueFunction):
     def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
                  gamma: float, step_c: int, model_saving_period: int, device: torch.device, logger: Logger):
         super(DuelingDQNValueFunction, self).__init__(input_channel, action_dim, learning_rate,
-                                                     gamma, step_c, model_saving_period, device, logger)
+                                                      gamma, step_c, model_saving_period, device, logger)
         self.value_nn = DuelingDQNAtari(input_channel, action_dim).to(device)
         self.target_value_nn = DuelingDQNAtari(input_channel, action_dim).to(device)
         self.optimizer = torch.optim.Adam(self.value_nn.parameters(), lr=learning_rate)
@@ -23,4 +23,4 @@ class DuelingDQNAgent(DQNAgent):
                                               model_saving_period, gamma, training_episodes, phi_channel, epsilon_max,
                                               epsilon_min, exploration_steps, device, logger)
         self.value_function = DuelingDQNValueFunction(phi_channel, action_space.n, learning_rate,
-                                                     gamma, step_c, model_saving_period, device, logger)
+                                                      gamma, step_c, model_saving_period, device, logger)

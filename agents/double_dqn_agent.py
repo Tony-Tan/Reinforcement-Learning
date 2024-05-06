@@ -1,6 +1,7 @@
 from agents.dqn_agent import *
 import gc
 
+
 class DoubleDQNValueFunction(DQNValueFunction):
     def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
                  gamma: float, step_c: int, model_saving_period: int, device: torch.device, logger: Logger):
@@ -33,5 +34,3 @@ class DoubleDQNAgent(DQNAgent):
         # create the value function for double dqn agent
         self.value_function = DoubleDQNValueFunction(phi_channel, action_space.n, learning_rate,
                                                      gamma, step_c, model_saving_period, device, logger)
-
-
