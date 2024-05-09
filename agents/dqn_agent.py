@@ -182,6 +182,7 @@ class DQNValueFunction(ValueFunction):
         # Clip the difference between obs_action_value and q_value to the range of -1 to 1
         diff = obs_action_value - q_value
         if weight is not None:
+            # for the prioritized experience replay
             weight = torch.as_tensor(weight, device=self.device, dtype=torch.float32).resize_as_(diff)
             diff_clipped = torch.clip(diff, -1, 1) * weight
         else:
