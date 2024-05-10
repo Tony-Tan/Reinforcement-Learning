@@ -2006,7 +2006,7 @@ div.code {
     /*color: inherit;*/
     /*overflow-x: auto;  !* 允许水平滚动 *!*/
     /*font-size: 16px;  !* 减小默认字体大小 *!*/
-    line-height: 0.3;  /* 提高行高以增加可读性 */
+    line-height: 0.1;  /* 提高行高以增加可读性 */
     white-space: pre-wrap;
     display: block;
 }
