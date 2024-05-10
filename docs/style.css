@@ -137,16 +137,20 @@ div.section div.code {
   padding: 14px 8px 16px 15px;
   vertical-align: top;
 }
+
+
 @media (min-width: 768px) {
   div.section div.code {
     margin-left: 40%;
   }
+
 }
 div.section div.code pre {
   font-size: 12px;
   word-break: break-all;
   white-space: pre-wrap;
 }
+
 
 .highlight .n, .highlight .nn, .highlight .nc, .highlight .nf {
   cursor: pointer;
@@ -305,6 +309,7 @@ div.section:hover {
 div.section:hover div.code {
   background: #080a16;
 }
+
 div.section div.docs .section-link a {
   color: #454545;
 }
@@ -315,6 +320,7 @@ div.section div.docs p tt, div.section div.docs li code, div.section div.docs ol
 div.section div.code {
   background: #282a36;
 }
+
 
 div.doc-strings {
   color: #ccc;
@@ -879,6 +885,8 @@ body.lights-off .highlight .il {
   div.section:hover div.code {
     background: #080a16;
   }
+
+
   div.section div.docs .section-link a {
     color: #454545;
   }
@@ -1453,6 +1461,7 @@ body.lights-off .highlight .il {
   div.section:hover div.code {
     background: #f8fafb;
   }
+
   div.section div.docs .section-link a {
     color: #454545;
   }
@@ -1476,8 +1485,6 @@ body.lights-off .highlight .il {
     background: #ebedef;
     border: 1px solid #cacddc;
   }
-
-
 
   #modal {
     background-color: rgba(0, 0, 0, 0.9);
@@ -1977,33 +1984,45 @@ body.lights-off .highlight .il {
   body.lights-off .highlight .il {
     color: #7f7f7f;
   }
+  /*pre code {*/
+  /*  !*font-family: 'Source Code Pro', monospace;*!*/
+  /*  background-color: transparent;*/
+  /*  color: inherit;*/
+  /*  overflow-x: auto;  !* 允许水平滚动 *!*/
+  /*  !*font-size: 16px;  !* 减小默认字体大小 *!*!*/
+  /*  line-height: 0.2;  !* 提高行高以增加可读性 *!*/
+  /*  padding: 10px;*/
+  /*  margin: 0;*/
+  /*  border: none;*/
+  /*  white-space: pre-wrap;*/
+  /*}*/
 }
 
 
 
-pre code {
+div.code {
     /*font-family: 'Source Code Pro', monospace;*/
-    background-color: transparent;
-    color: inherit;
-    overflow-x: auto;  /* 允许水平滚动 */
+    /*background-color: transparent;*/
+    /*color: inherit;*/
+    /*overflow-x: auto;  !* 允许水平滚动 *!*/
     /*font-size: 16px;  !* 减小默认字体大小 *!*/
-    line-height: 0.2;  /* 提高行高以增加可读性 */
-    padding: 10px;
-    margin: 0;
-    border: none;
+    line-height: 0.3;  /* 提高行高以增加可读性 */
     white-space: pre-wrap;
+    display: block;
 }
 
 .line {
-    display: block;
+    display: flex; /* 使用 flexbox 布局 */
+    align-items: baseline; /* 确保基线对齐 */
     margin: 0;
     padding: 0;
-    line-height: 1.3;  /* 确保每行有适当的行高 */
+    line-height: 2;  /* 确保每行有适当的行高 */
 
 }
 
 .line-number {
     display: inline-block;
+    flex-shrink: 0; /* 防止行号被压缩 */
     width: 40px;
     color: #888;
     text-align: right;
@@ -2011,19 +2030,20 @@ pre code {
     user-select: none;
     padding-right: 10px;
     opacity: 0.3;
-    font-size: 14px;  // 根据需要调整字体大小
+    font-size: 16px;  // 根据需要调整字体大小
     white-space: nowrap;
     font-family: 'Consolas', monospace;  // 使用Consolas字体
 }
 
 
 .code-content {
+    flex-grow: 1; /* 使代码内容占据剩余空间 */
     display: inline;
     white-space: pre-wrap;
     background: transparent;
     font-family: 'Source Code Pro', monospace;
     font-size: 16px;  /* 统一字体大小 */
-    padding-left: 10px;  /* 留出行号的空间 */
+
 
 }
 

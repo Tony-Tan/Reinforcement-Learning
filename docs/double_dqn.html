@@ -3,8 +3,9 @@
 <head>
     <meta http-equiv="content-type" content="text/html;charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/monokai-sublime.min.css">
+    <link id="highlight-style" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.0/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.15.0/dist/katex.min.js"></script>
@@ -20,9 +21,9 @@
                     {left: "$", right: "$", display: false}
                 ]
             });
-            document.querySelectorAll('.code-content').forEach((block) => {
-                hljs.highlightElement(block);
-            });
+            document.querySelectorAll('span.code-content').forEach((block) => {
+                hljs.highlightElement(block); });
+
         });
     </script>
 </head>
@@ -59,72 +60,70 @@
                     </script>
                 </div>
                 <div class="code">
-                    <pre>
-                    <code class="language-python">
-                        
+
+                    
                         <span class="line"><span class="line-number">1</span> <span class="code-content language-python">from agents.dqn_agent import *</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">2</span> <span class="code-content language-python">import gc</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">3</span> <span class="code-content language-python"></span></span>
-                        
+                    
                         <span class="line"><span class="line-number">4</span> <span class="code-content language-python">class DoubleDQNValueFunction(DQNValueFunction):</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">5</span> <span class="code-content language-python">    def __init__(self, input_channel: int, action_dim: int, learning_rate: float,</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">6</span> <span class="code-content language-python">                 gamma: float, step_c: int, model_saving_period: int, device: torch.device, logger: Logger):</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">7</span> <span class="code-content language-python">        super(DoubleDQNValueFunction, self).__init__(input_channel, action_dim, learning_rate,</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">8</span> <span class="code-content language-python">                                                     gamma, step_c, model_saving_period, device, logger)</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">9</span> <span class="code-content language-python"></span></span>
-                        
+                    
                         <span class="line"><span class="line-number">10</span> <span class="code-content language-python">    def max_state_value(self, obs_tensor):</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">11</span> <span class="code-content language-python">        with torch.no_grad():</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">12</span> <span class="code-content language-python">            obs_tensor = image_normalization(obs_tensor)</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">13</span> <span class="code-content language-python">            outputs_tnn = self.target_value_nn(obs_tensor)</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">14</span> <span class="code-content language-python">            outputs_nn = self.value_nn(obs_tensor)</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">15</span> <span class="code-content language-python">        _, greedy_actions = torch.max(outputs_nn, dim=1, keepdim=True)</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">16</span> <span class="code-content language-python">        msv = outputs_tnn.gather(1, greedy_actions)</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">17</span> <span class="code-content language-python">        return msv</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">18</span> <span class="code-content language-python"></span></span>
-                        
+                    
                         <span class="line"><span class="line-number">19</span> <span class="code-content language-python"></span></span>
-                        
+                    
                         <span class="line"><span class="line-number">20</span> <span class="code-content language-python">class DoubleDQNAgent(DQNAgent):</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">21</span> <span class="code-content language-python">    def __init__(self, input_frame_width: int, input_frame_height: int, action_space,</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">22</span> <span class="code-content language-python">                 mini_batch_size: int, replay_buffer_size: int, min_update_sample_size: int,</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">23</span> <span class="code-content language-python">                 learning_rate: float, step_c: int, model_saving_period: int,</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">24</span> <span class="code-content language-python">                 gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">25</span> <span class="code-content language-python">                 exploration_steps: int, device: torch.device, logger: Logger):</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">26</span> <span class="code-content language-python">        super(DoubleDQNAgent, self).__init__(input_frame_width, input_frame_height, action_space, mini_batch_size,</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">27</span> <span class="code-content language-python">                                             replay_buffer_size, min_update_sample_size, learning_rate, step_c,</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">28</span> <span class="code-content language-python">                                             model_saving_period, gamma, training_episodes, phi_channel, epsilon_max,</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">29</span> <span class="code-content language-python">                                             epsilon_min, exploration_steps, device, logger)</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">31</span> <span class="code-content language-python">        del self.value_function</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">32</span> <span class="code-content language-python">        gc.collect()</span></span>
-                        
-                    </code></pre>
+                    
                 </div>
             </div>
         
@@ -140,18 +139,16 @@
                     </script>
                 </div>
                 <div class="code">
-                    <pre>
-                    <code class="language-python">
-                        
+
+                    
                         <span class="line"><span class="line-number">34</span> <span class="code-content language-python">        self.value_function = DoubleDQNValueFunction(phi_channel, action_space.n, learning_rate,</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">35</span> <span class="code-content language-python">                                                     gamma, step_c, model_saving_period, device, logger)</span></span>
-                        
+                    
                         <span class="line"><span class="line-number">36</span> <span class="code-content language-python"></span></span>
-                        
+                    
                         <span class="line"><span class="line-number">37</span> <span class="code-content language-python"></span></span>
-                        
-                    </code></pre>
+                    
                 </div>
             </div>
         
@@ -186,5 +183,28 @@
     }
     handleImages();
 </script>
+<script>
+        // Function to set the correct Highlight.js theme based on the system theme
+        function setHighlightTheme() {
+            const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const styleLink = document.getElementById('highlight-style');
+            if (isDarkMode) {
+                styleLink.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/atom-one-dark.min.css";
+            } else {
+                styleLink.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/atom-one-light.min.css";
+            }
+        }
+
+        // Set the initial theme
+        setHighlightTheme();
+
+        // Add event listener for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            setHighlightTheme();
+        });
+
+        // Initialize highlighting
+        // hljs.highlightAll();
+    </script>
 </body>
 </html>
