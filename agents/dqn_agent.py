@@ -58,11 +58,8 @@ class DQNAtariReward(RewardShaping):
         return np.clip(reward, a_min=-1, a_max=1)
 
 
+# Class for perception mapping in DQN for Atari games.
 class DQNPerceptionMapping(PerceptionMapping):
-    """
-    Class for perception mapping in DQN for Atari games.
-    """
-
     def __init__(self, phi_channel: int, input_frame_width: int,
                  input_frame_height: int):
         super().__init__()
