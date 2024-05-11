@@ -5,7 +5,7 @@
 # ![](https://raw.githubusercontent.com/Tony-Tan/Reinforcement-Learning-Data/dev/figures/DQN%202015%20rewards.png)
 # ![](https://raw.githubusercontent.com/Tony-Tan/Reinforcement-Learning-Data/dev/figures/DQN%202015%20q%20values.png)
 #
-# you can find the original data in the
+# you can find the original data in the:
 # [Reinforcement-Learning-Data](https://github.com/Tony-Tan/Reinforcement-Learning-Data/tree/dev/exps/dqn)
 #
 # paper:
