@@ -1,4 +1,5 @@
 # ## DQN Agent for Atari Games
+#
 # the result of DQN agent on several atari games is shown below:
 # ![](https://github.com/Tony-Tan/Reinforcement-Learning-Data/blob/dev/figures/DQN%202015%20q%20values.png)
 #
@@ -179,6 +180,7 @@ class DQNValueFunction(ValueFunction):
         truncated_tensor.resize_as_(max_next_state_value)
         termination_tensor.resize_as_(max_next_state_value)
         # $y = r_{j} + \gamma  * max_{a'}Q(\phi_{j+1},a';\theta)$ for non-terminal state
+        #
         # $y = r_{j}$ for terminal state
         q_value = reward_tensor + self.gamma * max_next_state_value * (1 - truncated_tensor) * (1 - termination_tensor)
         action_tensor.resize_as_(reward_tensor)
