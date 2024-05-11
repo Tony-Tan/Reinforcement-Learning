@@ -159,4 +159,4 @@ def doc_website(json_file, output_dir):
 
 # 调用函数
 if __name__ == '__main__':
-    doc_website('.algs_path.json', 'htmls/')
+    doc_website('algs_path.json', 'htmls/')

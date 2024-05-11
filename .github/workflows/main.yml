@@ -3,11 +3,10 @@ name: Generate HTML Document
 on:
   push:
     branches:
-      - main  # 触发工作流的分支
       - dev  # 触发工作流的分支
   pull_request:
     branches:
-      - main
+      - dev
 
 jobs:
   build:
@@ -34,4 +33,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: html-documents
-        path: docs/htmls/*.html  # 上传docs/htmls文件夹下所有的HTML文件
+        path: docs/htmls/*  # 上传docs/htmls文件夹下所有文件
