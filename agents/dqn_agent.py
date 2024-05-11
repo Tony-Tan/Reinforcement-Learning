@@ -123,10 +123,8 @@ class DQNPerceptionMapping(PerceptionMapping):
         return obs
 
 
+#  Class for value function in DQN for Atari games.
 class DQNValueFunction(ValueFunction):
-    """
-    Class for value function in DQN for Atari games.
-    """
 
     def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
                  gamma: float, step_c: int, model_saving_period: int, device: torch.device, logger: Logger):
