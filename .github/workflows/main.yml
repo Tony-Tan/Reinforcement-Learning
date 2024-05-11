@@ -3,11 +3,11 @@ name: Generate HTML Document
 on:
   push:
     branches:
-      - dev
+      - main  # 触发工作流的分支
+      - dev  # 触发工作流的分支
   pull_request:
     branches:
       - main
-
 
 jobs:
   build:
@@ -25,13 +25,13 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install jinja2  # 安装依赖
+        pip install jinja2  # 假设依赖文件在docs文件夹中
 
     - name: Run Python script
-      run: python docs/generate_html.py  # 运行脚本，假设脚本名为 generate_html.py
+      run: python docs/generate_html.py  # 指定脚本在docs文件夹下
 
     - name: Upload HTML document
       uses: actions/upload-artifact@v2
       with:
-        name: html-document
-        path: path/to/generated-file.html  # HTML 文件的路径
+        name: html-documents
+        path: docs/htmls/*.html  # 上传docs/htmls文件夹下所有的HTML文件
