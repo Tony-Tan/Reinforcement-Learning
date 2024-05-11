@@ -94,7 +94,7 @@ def parse_python_script(filename):
             collecting_code = False  # 结束代码收集
 
             # 提取注释内容，考虑空注释行
-            comment_line = repr(line_stripped[1:].strip())[1:-1] if len(line_stripped) > 1 else '\n'
+            comment_line = repr(line_stripped[1:].strip())[1:-1] if len(line_stripped) > 1 else '\n\n'
             comment_lines.append(comment_line)
 
         else:

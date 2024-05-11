@@ -1,7 +1,8 @@
 # ## DQN Agent for Atari Games
 #
 # the result of DQN agent on several atari games is shown below:
-# ![](https://github.com/Tony-Tan/Reinforcement-Learning-Data/blob/dev/figures/DQN%202015%20q%20values.png)
+# ![](https://raw.githubusercontent.com/Tony-Tan/Reinforcement-Learning-Data/dev/figures/DQN%202015%20rewards.png)
+# ![](https://raw.githubusercontent.com/Tony-Tan/Reinforcement-Learning-Data/dev/figures/DQN%202015%20q%20values.png)
 #
 # you can find the original data in the
 # [Reinforcement-Learning-Data](https://github.com/Tony-Tan/Reinforcement-Learning-Data/tree/dev/exps/dqn)
