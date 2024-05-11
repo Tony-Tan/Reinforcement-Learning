@@ -3,8 +3,9 @@
 <head>
     <meta http-equiv="content-type" content="text/html;charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/monokai-sublime.min.css">
+    <link id="highlight-style" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.0/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.15.0/dist/katex.min.js"></script>
@@ -20,9 +21,9 @@
                     {left: "$", right: "$", display: false}
                 ]
             });
-            document.querySelectorAll('.code-content').forEach((block) => {
-                hljs.highlightElement(block);
-            });
+            document.querySelectorAll('span.code-content').forEach((block) => {
+                hljs.highlightElement(block); });
+
         });
     </script>
 </head>
@@ -46,40 +47,26 @@
             </p>
         </div>
     </div>
-
-        <div class="section" id="section-0">
-            <div class="docs">
-                <div class="section-link">
-                    <a href="#section-0">#</a>
+        {% for section in sections %}
+            <div class="section" id="{{ section.id }}">
+                <div class="docs">
+                    <div class="section-link">
+                        <a href="#{{ section.id }}">#</a>
+                    </div>
+                    <h2>{{ section.title }}</h2>
+                     <div id="description-{{ section.id }}"></div>
+                    <script>
+                        document.getElementById('description-{{ section.id }}').innerHTML = marked(`{{ section.description }}`);
+                    </script>
                 </div>
-                <h2>HOME</h2>
-                 <div id="description-section-0"></div>
-                <script>
-                    document.getElementById('description-section-0').innerHTML = marked(`## value-based
+                <div class="code">
 
-0. [dqn](./dqn.html)
-
-1. [double_dqn](./double_dqn.html)
-
-2. [dqn_pp](./dqn_pp.html)
-
-3. [dueling_dqn](./dueling_dqn.html)
-
-## policy-based
-
-0. [dqn](./dqn.html)
-
-1. [double_dqn](./double_dqn.html)
-
-2. [dqn_pp](./dqn_pp.html)
-
-3. [dueling_dqn](./dueling_dqn.html)
-
-`);
-                </script>
+                    {% for line in section.code %}
+                        <span class="line"><span class="line-number">{{ line.line_num }}</span> <span class="code-content language-{{section.lang}}">{{ line.content }}</span></span>
+                    {% endfor %}
+                </div>
             </div>
-            <div class="code"></div>
-        </div>
+        {% endfor %}
     </div>
 <script src="interactive.js"></script>
 <script>
@@ -111,5 +98,28 @@
     }
     handleImages();
 </script>
+<script>
+        // Function to set the correct Highlight.js theme based on the system theme
+        function setHighlightTheme() {
+            const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const styleLink = document.getElementById('highlight-style');
+            if (isDarkMode) {
+                styleLink.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/atom-one-dark.min.css";
+            } else {
+                styleLink.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/atom-one-light.min.css";
+            }
+        }
+
+        // Set the initial theme
+        setHighlightTheme();
+
+        // Add event listener for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            setHighlightTheme();
+        });
+
+        // Initialize highlighting
+        // hljs.highlightAll();
+    </script>
 </body>
 </html>

@@ -1,0 +1,37 @@
+name: Generate HTML Document
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - main
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'  # 指定 Python 版本
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install jinja2  # 安装依赖
+
+    - name: Run Python script
+      run: python docs/generate_html.py  # 运行脚本，假设脚本名为 generate_html.py
+
+    - name: Upload HTML document
+      uses: actions/upload-artifact@v2
+      with:
+        name: html-document
+        path: path/to/generated-file.html  # HTML 文件的路径

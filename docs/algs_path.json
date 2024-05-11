@@ -1,0 +1,36 @@
+{
+  "algorithms": {
+    "value-based": [
+      {
+        "name": "dqn",
+        "script_path": "../agents/dqn_agent.py"
+      },
+      {
+        "name": "double dqn",
+        "script_path": "../agents/double_dqn_agent.py"
+      },
+      {
+        "name": "dqn with prioritized experience replay",
+        "script_path": "../agents/dqn_pp_agent.py"
+      },
+      {
+        "name": "dueling dqn",
+        "script_path": "../agents/dueling_dqn_agent.py"
+      }
+    ],
+
+    "policy-based": [],
+    "exploration": [
+        {
+            "name": "epsilon-greedy",
+            "script_path": "../exploration/epsilon_greedy.py"
+        }
+        ],
+    "experience replay": [
+        {
+            "name": "proportional prioritization replay",
+            "script_path": "../experience_replay/proportional_prioritization.py"
+        }
+    ]
+    }
+}
