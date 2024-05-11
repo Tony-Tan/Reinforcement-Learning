@@ -5,11 +5,10 @@
 # ![](https://raw.githubusercontent.com/Tony-Tan/Reinforcement-Learning-Data/dev/figures/DQN%202015%20rewards.png)
 # ![](https://raw.githubusercontent.com/Tony-Tan/Reinforcement-Learning-Data/dev/figures/DQN%202015%20q%20values.png)
 #
-# you can find the original data in the:
-# [Reinforcement-Learning-Data](https://github.com/Tony-Tan/Reinforcement-Learning-Data/tree/dev/exps/dqn)
+# you can find the original data in the: [Reinforcement-Learning-Data]
+# (https://github.com/Tony-Tan/Reinforcement-Learning-Data/tree/dev/exps/dqn)
 #
-# paper:
-# [Human-level control through deep reinforcement learning](https://www.nature.com/articles/nature14236)
+# paper: [Human-level control through deep reinforcement learning](https://www.nature.com/articles/nature14236)
 
 import cv2
 import numpy as np
