@@ -20,7 +20,7 @@ def generate_home(algorithm_json_path, output_html_path):
                 i += 1
     # Setup Jinja2 environment
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=''))
-    template = env.get_template('home_temp.html')
+    template = env.get_template('docs/home_temp.html')
 
     # Render the template with the sections data
     html_output = template.render(section=section)
@@ -37,7 +37,7 @@ def generate_page(script_path, output_html_path):
     sections = parse_python_script(script_path)
     # Setup Jinja2 environment
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=''))
-    template = env.get_template('page_temp.html')
+    template = env.get_template('docs/page_temp.html')
 
     # Render the template with the sections data
     html_output = template.render(sections=sections)
