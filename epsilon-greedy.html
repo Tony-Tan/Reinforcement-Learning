@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link id="highlight-style" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+
+    <link rel="stylesheet" href="html/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.0/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.15.0/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.15.0/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@3.0.7/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Consolas:wght@400&display=swap" rel="stylesheet">
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false}
+                ]
+            });
+            document.querySelectorAll('span.code-content').forEach((block) => {
+                hljs.highlightElement(block); });
+
+        });
+    </script>
+</head>
+<body>
+    <div id="container">
+        <div id="background"></div>
+        <div class="section">
+        <div class="docs">
+            <p>
+                <a class="parent" href="/">home</a>
+            </p>
+            <p>
+                <a href="https://github.com/Tony-Tan/Reinforcement-Learning" target="_blank">
+                    <img alt="Github" src="https://img.shields.io/github/stars/Tony-Tan/Reinforcement-Learning?style=social" style="max-width:100%;"></a>
+                <a href="https://twitter.com/anthony_s_tan" rel="nofollow" target="_blank">
+                    <img alt="Twitter" src="https://img.shields.io/twitter/follow/anthony_s_tan?style=social" style="max-width:100%;"></a>
+            </p>
+            <p>
+                <a href="https://github.com/Tony-Tan/Reinforcement-Learning" target="_blank">
+                    View code on Github</a>
+            </p>
+        </div>
+    </div>
+        
+            <div class="section" id="section-1">
+                <div class="docs">
+                    <div class="section-link">
+                        <a href="#section-1">#</a>
+                    </div>
+                    <h2></h2>
+                     <div id="description-section-1"></div>
+                    <script>
+                        document.getElementById('description-section-1').innerHTML = marked(`if a float random number less than epsilon, then explore`);
+                    </script>
+                </div>
+                <div class="code">
+
+                    
+                        <span class="line"><span class="line-number">1</span> <span class="code-content language-python">from abc_rl.exploration import *</span></span>
+                    
+                        <span class="line"><span class="line-number">2</span> <span class="code-content language-python">import numpy as np</span></span>
+                    
+                        <span class="line"><span class="line-number">3</span> <span class="code-content language-python"></span></span>
+                    
+                        <span class="line"><span class="line-number">4</span> <span class="code-content language-python">class EpsilonGreedy(Exploration):</span></span>
+                    
+                        <span class="line"><span class="line-number">5</span> <span class="code-content language-python">    def __init__(self, epsilon: float):</span></span>
+                    
+                        <span class="line"><span class="line-number">6</span> <span class="code-content language-python">        self.epsilon = epsilon</span></span>
+                    
+                        <span class="line"><span class="line-number">7</span> <span class="code-content language-python">        super().__init__()</span></span>
+                    
+                        <span class="line"><span class="line-number">8</span> <span class="code-content language-python"></span></span>
+                    
+                        <span class="line"><span class="line-number">9</span> <span class="code-content language-python">    def __call__(self, values: np.ndarray):</span></span>
+                    
+                        <span class="line"><span class="line-number">10</span> <span class="code-content language-python">        optimal_action = np.random.choice(</span></span>
+                    
+                        <span class="line"><span class="line-number">11</span> <span class="code-content language-python">            np.flatnonzero(values == np.max(values)))</span></span>
+                    
+                        <span class="line"><span class="line-number">12</span> <span class="code-content language-python">        if np.random.random() < self.epsilon:</span></span>
+                    
+                        <span class="line"><span class="line-number">13</span> <span class="code-content language-python">            return np.random.randint(0, len(values) - 1)</span></span>
+                    
+                        <span class="line"><span class="line-number">14</span> <span class="code-content language-python">        else:</span></span>
+                    
+                        <span class="line"><span class="line-number">15</span> <span class="code-content language-python">            return optimal_action</span></span>
+                    
+                        <span class="line"><span class="line-number">16</span> <span class="code-content language-python"></span></span>
+                    
+                        <span class="line"><span class="line-number">17</span> <span class="code-content language-python"></span></span>
+                    
+                        <span class="line"><span class="line-number">18</span> <span class="code-content language-python">class RandomAction(Exploration):</span></span>
+                    
+                        <span class="line"><span class="line-number">19</span> <span class="code-content language-python">    def __init__(self):</span></span>
+                    
+                        <span class="line"><span class="line-number">20</span> <span class="code-content language-python">        super().__init__()</span></span>
+                    
+                        <span class="line"><span class="line-number">21</span> <span class="code-content language-python"></span></span>
+                    
+                        <span class="line"><span class="line-number">22</span> <span class="code-content language-python">    def __call__(self, action_dim:int):</span></span>
+                    
+                        <span class="line"><span class="line-number">23</span> <span class="code-content language-python">        return np.random.randint(0, action_dim - 1)</span></span>
+                    
+                        <span class="line"><span class="line-number">24</span> <span class="code-content language-python"></span></span>
+                    
+                        <span class="line"><span class="line-number">25</span> <span class="code-content language-python"></span></span>
+                    
+                        <span class="line"><span class="line-number">26</span> <span class="code-content language-python">class DecayingEpsilonGreedy(Exploration):</span></span>
+                    
+                        <span class="line"><span class="line-number">27</span> <span class="code-content language-python">    def __init__(self, max_epsilon: float, min_epsilon: float, total_step: int):</span></span>
+                    
+                        <span class="line"><span class="line-number">28</span> <span class="code-content language-python">        super().__init__()</span></span>
+                    
+                        <span class="line"><span class="line-number">29</span> <span class="code-content language-python">        self.epsilon = max_epsilon</span></span>
+                    
+                        <span class="line"><span class="line-number">30</span> <span class="code-content language-python">        self.max_epsilon = max_epsilon</span></span>
+                    
+                        <span class="line"><span class="line-number">31</span> <span class="code-content language-python">        self.min_epsilon = min_epsilon</span></span>
+                    
+                        <span class="line"><span class="line-number">32</span> <span class="code-content language-python">        self.decay_rate = (max_epsilon - min_epsilon) / total_step</span></span>
+                    
+                        <span class="line"><span class="line-number">33</span> <span class="code-content language-python">        self.decaying_counter = 0</span></span>
+                    
+                        <span class="line"><span class="line-number">34</span> <span class="code-content language-python"></span></span>
+                    
+                        <span class="line"><span class="line-number">35</span> <span class="code-content language-python">    def __call__(self, values: np.ndarray):</span></span>
+                    
+                        <span class="line"><span class="line-number">36</span> <span class="code-content language-python">        self.decaying_counter += 1</span></span>
+                    
+                        <span class="line"><span class="line-number">37</span> <span class="code-content language-python">        self.epsilon = max(self.max_epsilon - self.decaying_counter * self.decay_rate, self.min_epsilon)</span></span>
+                    
+                        <span class="line"><span class="line-number">38</span> <span class="code-content language-python">        optimal_action = np.random.choice(</span></span>
+                    
+                        <span class="line"><span class="line-number">39</span> <span class="code-content language-python">            np.flatnonzero(values == np.max(values)))</span></span>
+                    
+                        <span class="line"><span class="line-number">41</span> <span class="code-content language-python">        if np.random.random() < self.epsilon:</span></span>
+                    
+                        <span class="line"><span class="line-number">42</span> <span class="code-content language-python">            return np.random.randint(0, len(values) - 1)</span></span>
+                    
+                        <span class="line"><span class="line-number">43</span> <span class="code-content language-python">        else:</span></span>
+                    
+                        <span class="line"><span class="line-number">44</span> <span class="code-content language-python">            return optimal_action</span></span>
+                    
+                </div>
+            </div>
+        
+            <div class="section" id="section-2">
+                <div class="docs">
+                    <div class="section-link">
+                        <a href="#section-2">#</a>
+                    </div>
+                    <h2></h2>
+                     <div id="description-section-2"></div>
+                    <script>
+                        document.getElementById('description-section-2').innerHTML = marked(`if random.randint(0, 1_000_000) < self.epsilon * 1_000_000:return random.randint(0, len(values) - 1)else:return optimal_action`);
+                    </script>
+                </div>
+                <div class="code">
+
+                    
+                </div>
+            </div>
+        
+    </div>
+<script src="html/interactive.js"></script>
+<script>
+    function handleImages() {
+        var images = document.querySelectorAll('p>img');
+        images.forEach(function(img) {
+            img.parentElement.style.textAlign = 'center';
+            var modal = document.createElement('div');
+            modal.id = 'modal';
+            var modalContent = document.createElement('div');
+            modal.appendChild(modalContent);
+            var modalImage = document.createElement('img');
+            modalContent.appendChild(modalImage);
+            var span = document.createElement('span');
+            span.classList.add('close');
+            span.textContent = '×';
+            modal.appendChild(span);
+
+            img.onclick = function() {
+                console.log('Image clicked');
+                document.body.appendChild(modal);
+                modalImage.src = this.src;
+            };
+
+            span.onclick = function() {
+                document.body.removeChild(modal);
+            };
+        });
+    }
+    handleImages();
+</script>
+<script>
+        // Function to set the correct Highlight.js theme based on the system theme
+        function setHighlightTheme() {
+            const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const styleLink = document.getElementById('highlight-style');
+            if (isDarkMode) {
+                styleLink.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/atom-one-dark.min.css";
+            } else {
+                styleLink.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/atom-one-light.min.css";
+            }
+        }
+
+        // Set the initial theme
+        setHighlightTheme();
+
+        // Add event listener for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            setHighlightTheme();
+        });
+
+        // Initialize highlighting
+        // hljs.highlightAll();
+    </script>
+</body>
+</html>
