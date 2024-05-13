@@ -58,8 +58,8 @@ def train(rank: int, agent: AsyncDQNAgent, env: EnvWrapper,
     training_steps = 0
     episode = 0
     epoch_i = 0
-    run_test = False
     while training_steps < training_steps_each_worker:
+        run_test = False
         state, _ = env.reset()
         done = False
         truncated = False
@@ -75,9 +75,8 @@ def train(rank: int, agent: AsyncDQNAgent, env: EnvWrapper,
             next_state, reward_raw, done, truncated, inf = env.step(action)
             reward = agent.reward_shaping(reward_raw)
             next_obs = agent.perception_mapping(next_state, step_i)
-            agent.store(obs, action, reward, next_obs, done, truncated, rank)
-            if agent.train_step(rank):
-                agent.memory[rank].clear()
+            agent.store(obs, action, reward, next_obs, done, truncated)
+            agent.train_step()
             obs = next_obs
             reward_cumulated += reward
             training_steps += 1
