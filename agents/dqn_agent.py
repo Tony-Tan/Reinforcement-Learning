@@ -159,6 +159,7 @@ class DQNValueFunction(ValueFunction):
 
     # Update the value function with the given samples
     def update(self, samples: list, weight=None):
+
         """
         :param samples: Input samples
         :param weight: Importance weight for prioritized experience replay
@@ -206,8 +207,9 @@ class DQNValueFunction(ValueFunction):
         # synchronize the target value neural network with the value neural network every step_c steps
         if self.update_step % self.step_c == 0:
             self.synchronize_value_nn()
-            self.logger.tb_scalar('loss', loss.item(), self.update_step)
-            self.logger.tb_scalar('q', torch.mean(q_value), self.update_step)
+            if self.logger:
+                self.logger.tb_scalar('loss', loss.item(), self.update_step)
+                self.logger.tb_scalar('q', torch.mean(q_value), self.update_step)
         return np.abs(diff_clipped.detach().cpu().numpy().astype(np.float32))
 
     # Calculate the value of the given phi tensor.
@@ -292,3 +294,4 @@ class DQNAgent(Agent):
         if len(self.memory) > self.replay_start_size:
             samples = self.memory.sample(self.mini_batch_size)
             self.value_function.update(samples)
+

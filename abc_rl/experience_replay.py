@@ -22,6 +22,10 @@ class ExperienceReplay(ABC):
         # Update the position in a circular manner
         self.position = (self.position + 1) % self.capacity
 
+    def clear(self):
+        self.buffer = []
+        self.position = 0
+
     def __len__(self):
         return len(self.buffer)
 

@@ -1,0 +1,147 @@
+from agents.async_dqn_agent import *
+from abc_rl.experience_replay import *
+from abc_rl.exploration import *
+from utils.hyperparameters import *
+
+import argparse
+from agents.dqn_agent import *
+from environments.env_wrapper import EnvWrapper
+from exploration.epsilon_greedy import *
+from utils.hyperparameters import Hyperparameters
+from tools.dqn_play_ground import DQNPlayGround
+import torch.multiprocessing as mp
+
+
+# Argument parser for command line arguments
+parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
+parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
+                    help='openai gym environment (default: ALE/Atlantis-v5)')
+parser.add_argument('--worker_num', default=4, type=int,
+                    help='parallel worker number (default: 4)')
+parser.add_argument('--device', default='cuda:0', type=str,
+                    help='calculation device default: cuda')
+parser.add_argument('--log_path', default='../exps/async_dqn/', type=str,
+                    help='log save path，default: ../exps/async_dqn/')
+
+# Load hyperparameters from yaml file
+cfg = Hyperparameters(parser, '../configs/async_dqn.yaml')
+
+
+def test(agent, test_episode_num: int):
+    """
+    Test the DQN agent for a given number of episodes.
+    :param test_episode_num: The number of episodes for testing
+    :return: The average reward and average steps per episode
+    """
+    env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
+    exploration_method = EpsilonGreedy(cfg['epsilon_for_test'])
+    reward_cum = 0
+    step_cum = 0
+    for i in range(test_episode_num):
+        state, _ = env.reset()
+        done = truncated = False
+        step_i = 0
+        while (not done) and (not truncated):
+            obs = agent.perception_mapping(state, step_i)
+            action = agent.select_action(obs, exploration_method)
+            next_state, reward, done, truncated, inf = env.step(action)
+            reward_cum += reward
+            state = next_state
+            step_i += 1
+        step_cum += step_i
+    return reward_cum / cfg['agent_test_episodes'], step_cum / cfg['agent_test_episodes']
+
+
+def train(rank:int, agent: DQNAgent, env: EnvWrapper,
+          training_steps_each_worker: int,
+          no_op: int,   batch_per_epoch:int):
+    # training
+    training_steps = 0
+    episode = 0
+    epoch_i = 0
+    run_test = False
+    while training_steps < training_steps_each_worker:
+        state, _ = env.reset()
+        done = False
+        truncated = False
+        step_i = 0
+        reward_cumulated = 0
+        obs = agent.perception_mapping(state, step_i)
+        while (not done) and (not truncated):
+            #
+            if step_i >= no_op:
+                action = agent.select_action(obs)
+            else:
+                action = agent.select_action(obs, RandomAction())
+            next_state, reward_raw, done, truncated, inf = env.step(action)
+            reward = agent.reward_shaping(reward_raw)
+            next_obs = agent.perception_mapping(next_state, step_i)
+            agent.store(obs, action, reward, next_obs, done, truncated)
+            agent.train_step()
+            if len(agent.memory) > 1000:
+                agent.memory.clear()
+            obs = next_obs
+            reward_cumulated += reward
+            training_steps += 1
+            step_i += 1
+            if rank==0 and training_steps % batch_per_epoch == 0:
+                run_test = True
+                epoch_i += 1
+        if rank == 0:
+            agent.logger.msg(f'{training_steps} training reward: ' + str(reward_cumulated))
+            agent.logger.tb_scalar('training reward', reward_cumulated, training_steps)
+        if run_test:
+            agent.logger.msg(f'{epoch_i} test start:')
+            avg_reward, avg_steps = test(agent, cfg['agent_test_episodes'])
+            agent.logger.tb_scalar('avg_reward', avg_reward, epoch_i)
+            agent.logger.tb_scalar('avg_steps', avg_steps, epoch_i)
+            agent.logger.tb_scalar('epsilon', agent.exploration_method.epsilon, epoch_i)
+            agent.logger.msg(f'{epoch_i} avg_reward: ' + str(avg_reward))
+            agent.logger.msg(f'{epoch_i} avg_steps: ' + str(avg_steps))
+            agent.logger.msg(f'{epoch_i} epsilon: ' + str(agent.exploration_method.epsilon))
+
+        episode += 1
+
+
+class AsyncDQNPlayGround:
+    def __init__(self, agent: AsynDQNAgent, env: list, cfg: Hyperparameters):
+        self.agent = agent
+        self.env_list = env
+        self.cfg = cfg
+        self.worker_num = cfg['worker_num']
+        self.training_steps_each_worker = int(self.cfg['training_steps'] / self.worker_num)
+
+    def train(self):
+        mp.set_start_method('spawn', force=True)
+        processes = []
+        for rank in range(self.worker_num):
+            p = mp.Process(target=train, args=(rank, self.agent, self.env_list[rank],
+                                               self.training_steps_each_worker,
+                                               self.cfg['no_op'],
+                                               cfg['batch_num_per_epoch']/self.worker_num))
+            p.start()
+            processes.append(p)
+        for p in processes:
+            p.join()
+
+
+
+
+
+def main():
+    logger = Logger(cfg['env_name'], cfg['log_path'])
+    logger.msg('\nparameters:' + str(cfg))
+    envs = [EnvWrapper(cfg['env_name'], repeat_action_probability=0,
+                      frameskip=cfg['skip_k_frame'])
+           for _ in range(cfg['worker_num'])]
+    async_dqn_agent = AsynDQNAgent(cfg['input_frame_width'], cfg['input_frame_height'], envs[0].action_space,
+                                   cfg['mini_batch_size'], cfg['replay_buffer_size'], cfg['replay_start_size'],
+                                   cfg['learning_rate'], cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
+                                   cfg['training_steps'], cfg['phi_channel'], cfg['epsilon_max'], cfg['epsilon_min'],
+                                   cfg['exploration_steps'], cfg['device'], logger)
+    dqn_pg = AsyncDQNPlayGround(async_dqn_agent, envs, cfg)
+    dqn_pg.train()
+
+
+if __name__ == '__main__':
+    main()
