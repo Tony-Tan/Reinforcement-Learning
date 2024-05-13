@@ -727,7 +727,7 @@ $y = r_{j}$ for terminal state`);
                     
                         <span class="line"><span class="line-number">227</span> <span class="code-content language-python">        else:</span></span>
                     
-                        <span class="line"><span class="line-number">228</span> <span class="code-content language-python">            phi_tensor = torch.as_tensor(obs, device=self.device,dtype=torch.float32)</span></span>
+                        <span class="line"><span class="line-number">228</span> <span class="code-content language-python">            phi_tensor = torch.as_tensor(obs, device=self.device, dtype=torch.float32)</span></span>
                     
                         <span class="line"><span class="line-number">229</span> <span class="code-content language-python">            value_list = self.value_function.value(phi_tensor)[0]</span></span>
                     
@@ -783,13 +783,15 @@ $y = r_{j}$ for terminal state`);
                     
                         <span class="line"><span class="line-number">242</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">243</span> <span class="code-content language-python">        if len(self.memory) > self.replay_start_size:</span></span>
+                        <span class="line"><span class="line-number">243</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">244</span> <span class="code-content language-python">            samples = self.memory.sample(self.mini_batch_size)</span></span>
+                        <span class="line"><span class="line-number">244</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">245</span> <span class="code-content language-python">            self.value_function.update(samples)</span></span>
+                        <span class="line"><span class="line-number">245</span> <span class="code-content language-python">        if len(self.memory) > self.replay_start_size:</span></span>
                     
-                        <span class="line"><span class="line-number">246</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">246</span> <span class="code-content language-python">            samples = self.memory.sample(self.mini_batch_size)</span></span>
+                    
+                        <span class="line"><span class="line-number">247</span> <span class="code-content language-python">            self.value_function.update(samples)</span></span>
                     
                 </div>
             </div>
