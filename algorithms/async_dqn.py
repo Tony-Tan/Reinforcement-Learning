@@ -129,7 +129,7 @@ def main():
                        frameskip=cfg['skip_k_frame'])
             for _ in range(cfg['worker_num'])]
     async_dqn_agent = AsyncDQNAgent(cfg['worker_num'], cfg['input_frame_width'], cfg['input_frame_height'],
-                                    envs[0].action_space, cfg['mini_batch_size'], cfg['learning_rate'],
+                                    envs[0].action_space, cfg['mini_batch_size'],cfg['replay_buffer_size'] ,cfg['learning_rate'],
                                     cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
                                     cfg['training_steps'], cfg['phi_channel'], cfg['epsilon_max'],
                                     cfg['epsilon_min'], cfg['exploration_steps'], cfg['device'], logger)
