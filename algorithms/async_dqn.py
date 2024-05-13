@@ -11,14 +11,13 @@ from utils.hyperparameters import Hyperparameters
 from tools.dqn_play_ground import DQNPlayGround
 import torch.multiprocessing as mp
 
-
 # Argument parser for command line arguments
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
 parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
                     help='openai gym environment (default: ALE/Atlantis-v5)')
 parser.add_argument('--worker_num', default=4, type=int,
                     help='parallel worker number (default: 4)')
-parser.add_argument('--device', default='cuda:0', type=str,
+parser.add_argument('--device', default='cpu', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--log_path', default='../exps/async_dqn/', type=str,
                     help='log save path，default: ../exps/async_dqn/')
@@ -52,9 +51,9 @@ def test(agent, test_episode_num: int):
     return reward_cum / cfg['agent_test_episodes'], step_cum / cfg['agent_test_episodes']
 
 
-def train(rank:int, agent: DQNAgent, env: EnvWrapper,
+def train(rank: int, agent: AsyncDQNAgent, env: EnvWrapper,
           training_steps_each_worker: int,
-          no_op: int,   batch_per_epoch:int):
+          no_op: int, batch_per_epoch: int):
     # training
     training_steps = 0
     episode = 0
@@ -76,15 +75,14 @@ def train(rank:int, agent: DQNAgent, env: EnvWrapper,
             next_state, reward_raw, done, truncated, inf = env.step(action)
             reward = agent.reward_shaping(reward_raw)
             next_obs = agent.perception_mapping(next_state, step_i)
-            agent.store(obs, action, reward, next_obs, done, truncated)
-            agent.train_step()
-            if len(agent.memory) > 1000:
-                agent.memory.clear()
+            agent.store(obs, action, reward, next_obs, done, truncated, rank)
+            if agent.train_step(rank):
+                agent.memory[rank].clear()
             obs = next_obs
             reward_cumulated += reward
             training_steps += 1
             step_i += 1
-            if rank==0 and training_steps % batch_per_epoch == 0:
+            if rank == 0 and training_steps % batch_per_epoch == 0:
                 run_test = True
                 epoch_i += 1
         if rank == 0:
@@ -104,7 +102,7 @@ def train(rank:int, agent: DQNAgent, env: EnvWrapper,
 
 
 class AsyncDQNPlayGround:
-    def __init__(self, agent: AsynDQNAgent, env: list, cfg: Hyperparameters):
+    def __init__(self, agent: AsyncDQNAgent, env: list, cfg: Hyperparameters):
         self.agent = agent
         self.env_list = env
         self.cfg = cfg
@@ -118,27 +116,24 @@ class AsyncDQNPlayGround:
             p = mp.Process(target=train, args=(rank, self.agent, self.env_list[rank],
                                                self.training_steps_each_worker,
                                                self.cfg['no_op'],
-                                               cfg['batch_num_per_epoch']/self.worker_num))
+                                               cfg['batch_num_per_epoch'] / self.worker_num))
             p.start()
             processes.append(p)
         for p in processes:
             p.join()
 
 
-
-
-
 def main():
     logger = Logger(cfg['env_name'], cfg['log_path'])
     logger.msg('\nparameters:' + str(cfg))
     envs = [EnvWrapper(cfg['env_name'], repeat_action_probability=0,
-                      frameskip=cfg['skip_k_frame'])
-           for _ in range(cfg['worker_num'])]
-    async_dqn_agent = AsynDQNAgent(cfg['input_frame_width'], cfg['input_frame_height'], envs[0].action_space,
-                                   cfg['mini_batch_size'], cfg['replay_buffer_size'], cfg['replay_start_size'],
-                                   cfg['learning_rate'], cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
-                                   cfg['training_steps'], cfg['phi_channel'], cfg['epsilon_max'], cfg['epsilon_min'],
-                                   cfg['exploration_steps'], cfg['device'], logger)
+                       frameskip=cfg['skip_k_frame'])
+            for _ in range(cfg['worker_num'])]
+    async_dqn_agent = AsyncDQNAgent(cfg['worker_num'], cfg['input_frame_width'], cfg['input_frame_height'],
+                                    envs[0].action_space, cfg['mini_batch_size'], cfg['learning_rate'],
+                                    cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
+                                    cfg['training_steps'], cfg['phi_channel'], cfg['epsilon_max'],
+                                    cfg['epsilon_min'], cfg['exploration_steps'], cfg['device'], logger)
     dqn_pg = AsyncDQNPlayGround(async_dqn_agent, envs, cfg)
     dqn_pg.train()
 

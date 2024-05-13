@@ -265,7 +265,7 @@ class DQNAgent(Agent):
         if isinstance(exploration_method, RandomAction):
             return exploration_method(self.action_dim)
         else:
-            phi_tensor = torch.as_tensor(obs, device=self.device,dtype=torch.float32)
+            phi_tensor = torch.as_tensor(obs, device=self.device, dtype=torch.float32)
             value_list = self.value_function.value(phi_tensor)[0]
             if exploration_method is None:
                 return self.exploration_method(value_list)
@@ -288,10 +288,11 @@ class DQNAgent(Agent):
 
     # Perform a training step if the memory size is larger than the update sample size.
     def train_step(self):
+
         """
         Perform a training step if the memory size is larger than the update sample size.
         """
+
         if len(self.memory) > self.replay_start_size:
             samples = self.memory.sample(self.mini_batch_size)
             self.value_function.update(samples)
-
