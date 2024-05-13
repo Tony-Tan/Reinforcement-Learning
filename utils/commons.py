@@ -40,10 +40,10 @@ class Logger:
     def __init__(self, log_name: str, log_path: str = './', print_in_terminal: bool = True):
         if not os.path.exists(log_path):
             os.makedirs(log_path)
-        self.log_name = log_name.replace('/', '-')
+        self.log_name = log_name.replace('/', '-')+f"_{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}"
         self.log_path = log_path
         self.print_in_terminal = print_in_terminal
-        self.log_file_name = f"{self.log_name}_{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.log"
+        self.log_file_name = f"{self.log_name}.log"
         self.log_file_path = os.path.join(self.log_path, self.log_file_name)
         self.tb_writer = None
 

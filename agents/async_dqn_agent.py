@@ -12,7 +12,7 @@ class AsynDQNValueFunction(DQNValueFunction):
 
 
 class AsyncDQNAgent(DQNAgent):
-    def __init__(self, worker_num: int, input_frame_width: int, input_frame_height: int, action_space,
+    def __init__(self,input_frame_width: int, input_frame_height: int, action_space,
                  mini_batch_size: int, replay_buffer_size: int, learning_rate: float, step_c: int, model_saving_period: int,
                  gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,
                  exploration_steps: int, device: torch.device, logger: Logger):

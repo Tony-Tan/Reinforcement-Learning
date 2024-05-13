@@ -85,7 +85,7 @@ def train(rank: int, agent: AsyncDQNAgent, env: EnvWrapper,
                 run_test = True
                 epoch_i += 1
         if rank == 0:
-            agent.logger.msg(f'{training_steps} training reward: ' + str(reward_cumulated))
+            # agent.logger.msg(f'{training_steps} training reward: ' + str(reward_cumulated))
             agent.logger.tb_scalar('training reward', reward_cumulated, training_steps)
         if run_test:
             agent.logger.msg(f'{epoch_i} test start:')
@@ -128,7 +128,7 @@ def main():
     envs = [EnvWrapper(cfg['env_name'], repeat_action_probability=0,
                        frameskip=cfg['skip_k_frame'])
             for _ in range(cfg['worker_num'])]
-    async_dqn_agent = AsyncDQNAgent(cfg['worker_num'], cfg['input_frame_width'], cfg['input_frame_height'],
+    async_dqn_agent = AsyncDQNAgent(cfg['input_frame_width'], cfg['input_frame_height'],
                                     envs[0].action_space, cfg['mini_batch_size'],cfg['replay_buffer_size'] ,cfg['learning_rate'],
                                     cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
                                     cfg['training_steps'], cfg['phi_channel'], cfg['epsilon_max'],
