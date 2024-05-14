@@ -11,5 +11,4 @@ matplotlib~=3.8.3
 --find-links https://download.pytorch.org/whl/torch_stable.html
 torch==2.2.0+cu121
 torchvision
-
 tensorboard~=2.16.2

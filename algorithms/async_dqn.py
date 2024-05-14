@@ -15,9 +15,9 @@ import torch.multiprocessing as mp
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
 parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
                     help='openai gym environment (default: ALE/Atlantis-v5)')
-parser.add_argument('--worker_num', default=4, type=int,
+parser.add_argument('--worker_num', default=8, type=int,
                     help='parallel worker number (default: 4)')
-parser.add_argument('--device', default='cpu', type=str,
+parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--log_path', default='../exps/async_dqn/', type=str,
                     help='log save path，default: ../exps/async_dqn/')
@@ -129,8 +129,8 @@ def main():
                        frameskip=cfg['skip_k_frame'])
             for _ in range(cfg['worker_num'])]
     async_dqn_agent = AsyncDQNAgent(cfg['input_frame_width'], cfg['input_frame_height'],
-                                    envs[0].action_space, cfg['mini_batch_size'],cfg['replay_buffer_size'] ,cfg['learning_rate'],
-                                    cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
+                                    envs[0].action_space, cfg['mini_batch_size'], cfg['replay_buffer_size'],
+                                    cfg['learning_rate'],  cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
                                     cfg['training_steps'], cfg['phi_channel'], cfg['epsilon_max'],
                                     cfg['epsilon_min'], cfg['exploration_steps'], cfg['device'], logger)
     dqn_pg = AsyncDQNPlayGround(async_dqn_agent, envs, cfg)
