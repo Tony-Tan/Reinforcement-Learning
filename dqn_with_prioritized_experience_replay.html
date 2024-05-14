@@ -56,7 +56,7 @@
                     <h2></h2>
                      <div id="description-section-1"></div>
                     <script>
-                        document.getElementById('description-section-1').innerHTML = marked(``);
+                        document.getElementById('description-section-1').innerHTML = marked(`synchronize the target value neural network with the value neural network every step_c steps`);
                     </script>
                 </div>
                 <div class="code">
@@ -102,19 +102,29 @@
                     
                         <span class="line"><span class="line-number">20</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">21</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">21</span> <span class="code-content language-python">    def train_step(self):</span></span>
                     
-                        <span class="line"><span class="line-number">22</span> <span class="code-content language-python">    def train_step(self):</span></span>
+                        <span class="line"><span class="line-number">22</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">23</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">23</span> <span class="code-content language-python">        if len(self.memory) > self.replay_start_size:</span></span>
                     
-                        <span class="line"><span class="line-number">24</span> <span class="code-content language-python">        if len(self.memory) > self.replay_start_size:</span></span>
+                        <span class="line"><span class="line-number">24</span> <span class="code-content language-python">            samples, w, idx = self.memory.sample(self.mini_batch_size)</span></span>
                     
-                        <span class="line"><span class="line-number">25</span> <span class="code-content language-python">            samples, w, idx = self.memory.sample(self.mini_batch_size)</span></span>
+                        <span class="line"><span class="line-number">25</span> <span class="code-content language-python">            loss, q = self.value_function.update(samples, w).reshape(1, -1) + np.float32(1e-5)</span></span>
                     
-                        <span class="line"><span class="line-number">26</span> <span class="code-content language-python">            td_err = self.value_function.update(samples, w).reshape(1, -1) + np.float32(1e-5)</span></span>
+                        <span class="line"><span class="line-number">26</span> <span class="code-content language-python">            self.memory.p[idx] = loss</span></span>
                     
-                        <span class="line"><span class="line-number">27</span> <span class="code-content language-python">            self.memory.p[idx] = td_err</span></span>
+                        <span class="line"><span class="line-number">27</span> <span class="code-content language-python">            self.update_step += 1</span></span>
+                    
+                        <span class="line"><span class="line-number">29</span> <span class="code-content language-python">            if self.update_step % self.step_c == 0:</span></span>
+                    
+                        <span class="line"><span class="line-number">30</span> <span class="code-content language-python">                self.value_function.synchronize_value_nn()</span></span>
+                    
+                        <span class="line"><span class="line-number">31</span> <span class="code-content language-python">                if self.logger:</span></span>
+                    
+                        <span class="line"><span class="line-number">32</span> <span class="code-content language-python">                    self.logger.tb_scalar('loss', np.mean(loss), self.update_step)</span></span>
+                    
+                        <span class="line"><span class="line-number">33</span> <span class="code-content language-python">                    self.logger.tb_scalar('q', torch.mean(q), self.update_step)</span></span>
                     
                 </div>
             </div>

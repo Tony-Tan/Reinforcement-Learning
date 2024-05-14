@@ -336,7 +336,7 @@ paper: [Human-level control through deep reinforcement learning](https://www.nat
                     
                         <span class="line"><span class="line-number">104</span> <span class="code-content language-python">    def __init__(self, input_channel: int, action_dim: int, learning_rate: float,</span></span>
                     
-                        <span class="line"><span class="line-number">105</span> <span class="code-content language-python">                 gamma: float, step_c: int, model_saving_period: int, device: torch.device, logger: Logger):</span></span>
+                        <span class="line"><span class="line-number">105</span> <span class="code-content language-python">                 gamma: float,  model_saving_period: int, device: torch.device, logger: Logger,):</span></span>
                     
                         <span class="line"><span class="line-number">106</span> <span class="code-content language-python">        super(DQNValueFunction, self).__init__()</span></span>
                     
@@ -379,9 +379,7 @@ paper: [Human-level control through deep reinforcement learning](https://www.nat
                     
                         <span class="line"><span class="line-number">118</span> <span class="code-content language-python">        self.update_step = 0</span></span>
                     
-                        <span class="line"><span class="line-number">119</span> <span class="code-content language-python">        self.step_c = step_c</span></span>
-                    
-                        <span class="line"><span class="line-number">120</span> <span class="code-content language-python">        self.model_saving_period = model_saving_period</span></span>
+                        <span class="line"><span class="line-number">119</span> <span class="code-content language-python">        self.model_saving_period = model_saving_period</span></span>
                     
                 </div>
             </div>
@@ -400,25 +398,23 @@ paper: [Human-level control through deep reinforcement learning](https://www.nat
                 <div class="code">
 
                     
-                        <span class="line"><span class="line-number">123</span> <span class="code-content language-python">    def synchronize_value_nn(self):</span></span>
+                        <span class="line"><span class="line-number">122</span> <span class="code-content language-python">    def synchronize_value_nn(self):</span></span>
+                    
+                        <span class="line"><span class="line-number">123</span> <span class="code-content language-python">        self.target_value_nn.load_state_dict(self.value_nn.state_dict())</span></span>
                     
                         <span class="line"><span class="line-number">124</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">125</span> <span class="code-content language-python">        self.target_value_nn.load_state_dict(self.value_nn.state_dict())</span></span>
+                        <span class="line"><span class="line-number">125</span> <span class="code-content language-python">    def max_state_value(self, obs_tensor):</span></span>
                     
-                        <span class="line"><span class="line-number">126</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">126</span> <span class="code-content language-python">        with torch.no_grad():</span></span>
                     
-                        <span class="line"><span class="line-number">127</span> <span class="code-content language-python">    def max_state_value(self, obs_tensor):</span></span>
+                        <span class="line"><span class="line-number">127</span> <span class="code-content language-python">            obs_tensor = image_normalization(obs_tensor)</span></span>
                     
-                        <span class="line"><span class="line-number">128</span> <span class="code-content language-python">        with torch.no_grad():</span></span>
+                        <span class="line"><span class="line-number">128</span> <span class="code-content language-python">            outputs = self.target_value_nn(obs_tensor)</span></span>
                     
-                        <span class="line"><span class="line-number">129</span> <span class="code-content language-python">            obs_tensor = image_normalization(obs_tensor)</span></span>
+                        <span class="line"><span class="line-number">129</span> <span class="code-content language-python">        msv, _ = torch.max(outputs, dim=1, keepdim=True)</span></span>
                     
-                        <span class="line"><span class="line-number">130</span> <span class="code-content language-python">            outputs = self.target_value_nn(obs_tensor)</span></span>
-                    
-                        <span class="line"><span class="line-number">131</span> <span class="code-content language-python">        msv, _ = torch.max(outputs, dim=1, keepdim=True)</span></span>
-                    
-                        <span class="line"><span class="line-number">132</span> <span class="code-content language-python">        return msv</span></span>
+                        <span class="line"><span class="line-number">130</span> <span class="code-content language-python">        return msv</span></span>
                     
                 </div>
             </div>
@@ -437,23 +433,23 @@ paper: [Human-level control through deep reinforcement learning](https://www.nat
                 <div class="code">
 
                     
-                        <span class="line"><span class="line-number">135</span> <span class="code-content language-python">    def update(self, samples: list, weight=None):</span></span>
+                        <span class="line"><span class="line-number">133</span> <span class="code-content language-python">    def update(self, samples: list, weight=None):</span></span>
                     
-                        <span class="line"><span class="line-number">136</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">134</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">137</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">135</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">138</span> <span class="code-content language-python">        obs_tensor = samples[0].to(self.device, non_blocking=True)</span></span>
+                        <span class="line"><span class="line-number">136</span> <span class="code-content language-python">        obs_tensor = samples[0].to(self.device, non_blocking=True)</span></span>
                     
-                        <span class="line"><span class="line-number">139</span> <span class="code-content language-python">        action_tensor = samples[1].to(self.device, non_blocking=True)</span></span>
+                        <span class="line"><span class="line-number">137</span> <span class="code-content language-python">        action_tensor = samples[1].to(self.device, non_blocking=True)</span></span>
                     
-                        <span class="line"><span class="line-number">140</span> <span class="code-content language-python">        reward_tensor = samples[2].to(self.device, non_blocking=True)</span></span>
+                        <span class="line"><span class="line-number">138</span> <span class="code-content language-python">        reward_tensor = samples[2].to(self.device, non_blocking=True)</span></span>
                     
-                        <span class="line"><span class="line-number">141</span> <span class="code-content language-python">        next_obs_tensor = samples[3].to(self.device, non_blocking=True)</span></span>
+                        <span class="line"><span class="line-number">139</span> <span class="code-content language-python">        next_obs_tensor = samples[3].to(self.device, non_blocking=True)</span></span>
                     
-                        <span class="line"><span class="line-number">142</span> <span class="code-content language-python">        termination_tensor = samples[4].to(self.device, non_blocking=True)</span></span>
+                        <span class="line"><span class="line-number">140</span> <span class="code-content language-python">        termination_tensor = samples[4].to(self.device, non_blocking=True)</span></span>
                     
-                        <span class="line"><span class="line-number">143</span> <span class="code-content language-python">        truncated_tensor = samples[5].to(self.device, non_blocking=True)</span></span>
+                        <span class="line"><span class="line-number">141</span> <span class="code-content language-python">        truncated_tensor = samples[5].to(self.device, non_blocking=True)</span></span>
                     
                 </div>
             </div>
@@ -472,15 +468,15 @@ paper: [Human-level control through deep reinforcement learning](https://www.nat
                 <div class="code">
 
                     
-                        <span class="line"><span class="line-number">146</span> <span class="code-content language-python">        max_next_state_value = self.max_state_value(next_obs_tensor)</span></span>
+                        <span class="line"><span class="line-number">144</span> <span class="code-content language-python">        max_next_state_value = self.max_state_value(next_obs_tensor)</span></span>
                     
-                        <span class="line"><span class="line-number">147</span> <span class="code-content language-python">        reward_tensor.resize_as_(max_next_state_value)</span></span>
+                        <span class="line"><span class="line-number">145</span> <span class="code-content language-python">        reward_tensor.resize_as_(max_next_state_value)</span></span>
                     
-                        <span class="line"><span class="line-number">148</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">146</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">149</span> <span class="code-content language-python">        truncated_tensor.resize_as_(max_next_state_value)</span></span>
+                        <span class="line"><span class="line-number">147</span> <span class="code-content language-python">        truncated_tensor.resize_as_(max_next_state_value)</span></span>
                     
-                        <span class="line"><span class="line-number">150</span> <span class="code-content language-python">        termination_tensor.resize_as_(max_next_state_value)</span></span>
+                        <span class="line"><span class="line-number">148</span> <span class="code-content language-python">        termination_tensor.resize_as_(max_next_state_value)</span></span>
                     
                 </div>
             </div>
@@ -501,17 +497,17 @@ $y = r_{j}$ for terminal state`);
                 <div class="code">
 
                     
-                        <span class="line"><span class="line-number">154</span> <span class="code-content language-python">        q_value = reward_tensor + self.gamma * max_next_state_value * (1 - truncated_tensor) * (1 - termination_tensor)</span></span>
+                        <span class="line"><span class="line-number">152</span> <span class="code-content language-python">        q_value = reward_tensor + self.gamma * max_next_state_value * (1 - truncated_tensor) * (1 - termination_tensor)</span></span>
                     
-                        <span class="line"><span class="line-number">155</span> <span class="code-content language-python">        action_tensor.resize_as_(reward_tensor)</span></span>
+                        <span class="line"><span class="line-number">153</span> <span class="code-content language-python">        action_tensor.resize_as_(reward_tensor)</span></span>
                     
-                        <span class="line"><span class="line-number">156</span> <span class="code-content language-python">        q_value.resize_as_(reward_tensor)</span></span>
+                        <span class="line"><span class="line-number">154</span> <span class="code-content language-python">        q_value.resize_as_(reward_tensor)</span></span>
                     
-                        <span class="line"><span class="line-number">157</span> <span class="code-content language-python">        actions = action_tensor.long()</span></span>
+                        <span class="line"><span class="line-number">155</span> <span class="code-content language-python">        actions = action_tensor.long()</span></span>
                     
-                        <span class="line"><span class="line-number">158</span> <span class="code-content language-python">        self.optimizer.zero_grad()</span></span>
+                        <span class="line"><span class="line-number">156</span> <span class="code-content language-python">        self.optimizer.zero_grad()</span></span>
                     
-                        <span class="line"><span class="line-number">159</span> <span class="code-content language-python">        self.value_nn.train()</span></span>
+                        <span class="line"><span class="line-number">157</span> <span class="code-content language-python">        self.value_nn.train()</span></span>
                     
                 </div>
             </div>
@@ -530,11 +526,11 @@ $y = r_{j}$ for terminal state`);
                 <div class="code">
 
                     
-                        <span class="line"><span class="line-number">161</span> <span class="code-content language-python">        obs_tensor = image_normalization(obs_tensor)</span></span>
+                        <span class="line"><span class="line-number">159</span> <span class="code-content language-python">        obs_tensor = image_normalization(obs_tensor)</span></span>
                     
-                        <span class="line"><span class="line-number">162</span> <span class="code-content language-python">        outputs = self.value_nn(obs_tensor)</span></span>
+                        <span class="line"><span class="line-number">160</span> <span class="code-content language-python">        outputs = self.value_nn(obs_tensor)</span></span>
                     
-                        <span class="line"><span class="line-number">163</span> <span class="code-content language-python">        obs_action_value = outputs.gather(1, actions)</span></span>
+                        <span class="line"><span class="line-number">161</span> <span class="code-content language-python">        obs_action_value = outputs.gather(1, actions)</span></span>
                     
                 </div>
             </div>
@@ -553,27 +549,31 @@ $y = r_{j}$ for terminal state`);
                 <div class="code">
 
                     
-                        <span class="line"><span class="line-number">167</span> <span class="code-content language-python">        diff = obs_action_value - q_value</span></span>
+                        <span class="line"><span class="line-number">164</span> <span class="code-content language-python">        diff = obs_action_value - q_value</span></span>
                     
-                        <span class="line"><span class="line-number">168</span> <span class="code-content language-python">        if weight is not None:</span></span>
+                        <span class="line"><span class="line-number">165</span> <span class="code-content language-python">        if weight is not None:</span></span>
                     
-                        <span class="line"><span class="line-number">169</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">166</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">170</span> <span class="code-content language-python">            weight = torch.as_tensor(weight, device=self.device, dtype=torch.float32).resize_as_(diff)</span></span>
+                        <span class="line"><span class="line-number">167</span> <span class="code-content language-python">            weight = torch.as_tensor(weight, device=self.device, dtype=torch.float32).resize_as_(diff)</span></span>
                     
-                        <span class="line"><span class="line-number">171</span> <span class="code-content language-python">            diff_clipped = torch.clip(diff, -1, 1) * weight</span></span>
+                        <span class="line"><span class="line-number">168</span> <span class="code-content language-python">            diff_clipped = torch.clip(diff, -1, 1) * weight</span></span>
                     
-                        <span class="line"><span class="line-number">172</span> <span class="code-content language-python">        else:</span></span>
+                        <span class="line"><span class="line-number">169</span> <span class="code-content language-python">        else:</span></span>
                     
-                        <span class="line"><span class="line-number">173</span> <span class="code-content language-python">            diff_clipped = torch.clip(diff, -1, 1)</span></span>
+                        <span class="line"><span class="line-number">170</span> <span class="code-content language-python">            diff_clipped = torch.clip(diff, -1, 1)</span></span>
                     
-                        <span class="line"><span class="line-number">174</span> <span class="code-content language-python">        loss = F.mse_loss(diff_clipped, torch.zeros_like(diff_clipped))</span></span>
+                        <span class="line"><span class="line-number">171</span> <span class="code-content language-python">        loss = F.mse_loss(diff_clipped, torch.zeros_like(diff_clipped))</span></span>
                     
-                        <span class="line"><span class="line-number">175</span> <span class="code-content language-python">        loss.backward()</span></span>
+                        <span class="line"><span class="line-number">172</span> <span class="code-content language-python">        loss.backward()</span></span>
                     
-                        <span class="line"><span class="line-number">176</span> <span class="code-content language-python">        self.optimizer.step()</span></span>
+                        <span class="line"><span class="line-number">173</span> <span class="code-content language-python">        self.optimizer.step()</span></span>
                     
-                        <span class="line"><span class="line-number">177</span> <span class="code-content language-python">        self.update_step += 1</span></span>
+                        <span class="line"><span class="line-number">174</span> <span class="code-content language-python">        self.update_step += 1</span></span>
+                    
+                        <span class="line"><span class="line-number">175</span> <span class="code-content language-python">        return (np.abs(diff_clipped.detach().cpu().numpy().astype(np.float32)),</span></span>
+                    
+                        <span class="line"><span class="line-number">176</span> <span class="code-content language-python">                q_value.detach().cpu().numpy().astype(np.float32))</span></span>
                     
                 </div>
             </div>
@@ -586,23 +586,33 @@ $y = r_{j}$ for terminal state`);
                     <h2></h2>
                      <div id="description-section-17"></div>
                     <script>
-                        document.getElementById('description-section-17').innerHTML = marked(`synchronize the target value neural network with the value neural network every step_c steps`);
+                        document.getElementById('description-section-17').innerHTML = marked(`Calculate the value of the given phi tensor.`);
                     </script>
                 </div>
                 <div class="code">
 
                     
-                        <span class="line"><span class="line-number">179</span> <span class="code-content language-python">        if self.update_step % self.step_c == 0:</span></span>
+                        <span class="line"><span class="line-number">179</span> <span class="code-content language-python">    def value(self, phi_tensor: torch.Tensor) -> np.ndarray:</span></span>
                     
-                        <span class="line"><span class="line-number">180</span> <span class="code-content language-python">            self.synchronize_value_nn()</span></span>
+                        <span class="line"><span class="line-number">180</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">181</span> <span class="code-content language-python">            if self.logger:</span></span>
+                        <span class="line"><span class="line-number">181</span> <span class="code-content language-python">        with torch.no_grad():</span></span>
                     
-                        <span class="line"><span class="line-number">182</span> <span class="code-content language-python">                self.logger.tb_scalar('loss', loss.item(), self.update_step)</span></span>
+                        <span class="line"><span class="line-number">182</span> <span class="code-content language-python">            if phi_tensor.dim() == 3:</span></span>
                     
-                        <span class="line"><span class="line-number">183</span> <span class="code-content language-python">                self.logger.tb_scalar('q', torch.mean(q_value), self.update_step)</span></span>
+                        <span class="line"><span class="line-number">183</span> <span class="code-content language-python">                obs_input = phi_tensor.unsqueeze(0)</span></span>
                     
-                        <span class="line"><span class="line-number">184</span> <span class="code-content language-python">        return np.abs(diff_clipped.detach().cpu().numpy().astype(np.float32))</span></span>
+                        <span class="line"><span class="line-number">184</span> <span class="code-content language-python">            else:</span></span>
+                    
+                        <span class="line"><span class="line-number">185</span> <span class="code-content language-python">                obs_input = phi_tensor</span></span>
+                    
+                        <span class="line"><span class="line-number">186</span> <span class="code-content language-python">            self.value_nn.eval()</span></span>
+                    
+                        <span class="line"><span class="line-number">187</span> <span class="code-content language-python">            obs_input = image_normalization(obs_input)</span></span>
+                    
+                        <span class="line"><span class="line-number">188</span> <span class="code-content language-python">            state_action_values = self.value_nn(obs_input).cpu().detach().numpy()</span></span>
+                    
+                        <span class="line"><span class="line-number">189</span> <span class="code-content language-python">            return state_action_values</span></span>
                     
                 </div>
             </div>
@@ -615,33 +625,55 @@ $y = r_{j}$ for terminal state`);
                     <h2></h2>
                      <div id="description-section-18"></div>
                     <script>
-                        document.getElementById('description-section-18').innerHTML = marked(`Calculate the value of the given phi tensor.`);
+                        document.getElementById('description-section-18').innerHTML = marked(`DQN agent for Atari games`);
                     </script>
                 </div>
                 <div class="code">
 
                     
-                        <span class="line"><span class="line-number">187</span> <span class="code-content language-python">    def value(self, phi_tensor: torch.Tensor) -> np.ndarray:</span></span>
+                        <span class="line"><span class="line-number">193</span> <span class="code-content language-python">class DQNAgent(Agent):</span></span>
                     
-                        <span class="line"><span class="line-number">188</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">194</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">189</span> <span class="code-content language-python">        with torch.no_grad():</span></span>
+                        <span class="line"><span class="line-number">195</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">190</span> <span class="code-content language-python">            if phi_tensor.dim() == 3:</span></span>
+                        <span class="line"><span class="line-number">196</span> <span class="code-content language-python">    def __init__(self, input_frame_width: int, input_frame_height: int, action_space,</span></span>
                     
-                        <span class="line"><span class="line-number">191</span> <span class="code-content language-python">                obs_input = phi_tensor.unsqueeze(0)</span></span>
+                        <span class="line"><span class="line-number">197</span> <span class="code-content language-python">                 mini_batch_size: int, replay_buffer_size: int, replay_start_size: int,</span></span>
                     
-                        <span class="line"><span class="line-number">192</span> <span class="code-content language-python">            else:</span></span>
+                        <span class="line"><span class="line-number">198</span> <span class="code-content language-python">                 learning_rate: float, step_c: int, model_saving_period: int,</span></span>
                     
-                        <span class="line"><span class="line-number">193</span> <span class="code-content language-python">                obs_input = phi_tensor</span></span>
+                        <span class="line"><span class="line-number">199</span> <span class="code-content language-python">                 gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,</span></span>
                     
-                        <span class="line"><span class="line-number">194</span> <span class="code-content language-python">            self.value_nn.eval()</span></span>
+                        <span class="line"><span class="line-number">200</span> <span class="code-content language-python">                 exploration_steps: int, device: torch.device, logger: Logger):</span></span>
                     
-                        <span class="line"><span class="line-number">195</span> <span class="code-content language-python">            obs_input = image_normalization(obs_input)</span></span>
+                        <span class="line"><span class="line-number">201</span> <span class="code-content language-python">        super(DQNAgent, self).__init__(logger)</span></span>
                     
-                        <span class="line"><span class="line-number">196</span> <span class="code-content language-python">            state_action_values = self.value_nn(obs_input).cpu().detach().numpy()</span></span>
+                        <span class="line"><span class="line-number">202</span> <span class="code-content language-python">        self.action_dim = action_space.n</span></span>
                     
-                        <span class="line"><span class="line-number">197</span> <span class="code-content language-python">            return state_action_values</span></span>
+                        <span class="line"><span class="line-number">203</span> <span class="code-content language-python">        self.value_function = DQNValueFunction(phi_channel, self.action_dim, learning_rate, gamma, step_c,</span></span>
+                    
+                        <span class="line"><span class="line-number">204</span> <span class="code-content language-python">                                               model_saving_period, device, logger)</span></span>
+                    
+                        <span class="line"><span class="line-number">205</span> <span class="code-content language-python">        self.exploration_method = DecayingEpsilonGreedy(epsilon_max, epsilon_min, exploration_steps)</span></span>
+                    
+                        <span class="line"><span class="line-number">206</span> <span class="code-content language-python">        self.memory = UniformExperienceReplay(replay_buffer_size)</span></span>
+                    
+                        <span class="line"><span class="line-number">207</span> <span class="code-content language-python">        self.perception_mapping = DQNPerceptionMapping(phi_channel, input_frame_width, input_frame_height)</span></span>
+                    
+                        <span class="line"><span class="line-number">208</span> <span class="code-content language-python">        self.reward_shaping = DQNAtariReward()</span></span>
+                    
+                        <span class="line"><span class="line-number">209</span> <span class="code-content language-python">        self.device = device</span></span>
+                    
+                        <span class="line"><span class="line-number">210</span> <span class="code-content language-python">        self.mini_batch_size = mini_batch_size</span></span>
+                    
+                        <span class="line"><span class="line-number">211</span> <span class="code-content language-python">        self.replay_start_size = replay_start_size</span></span>
+                    
+                        <span class="line"><span class="line-number">212</span> <span class="code-content language-python">        self.training_episodes = training_episodes</span></span>
+                    
+                        <span class="line"><span class="line-number">213</span> <span class="code-content language-python">        self.update_step = 0</span></span>
+                    
+                        <span class="line"><span class="line-number">214</span> <span class="code-content language-python">        self.step_c = step_c</span></span>
                     
                 </div>
             </div>
@@ -654,51 +686,33 @@ $y = r_{j}$ for terminal state`);
                     <h2></h2>
                      <div id="description-section-19"></div>
                     <script>
-                        document.getElementById('description-section-19').innerHTML = marked(`DQN agent for Atari games`);
+                        document.getElementById('description-section-19').innerHTML = marked(`Select an action based on the given observation and exploration method.`);
                     </script>
                 </div>
                 <div class="code">
 
                     
-                        <span class="line"><span class="line-number">201</span> <span class="code-content language-python">class DQNAgent(Agent):</span></span>
+                        <span class="line"><span class="line-number">217</span> <span class="code-content language-python">    def select_action(self, obs: np.ndarray, exploration_method: Exploration = None) -> np.ndarray:</span></span>
                     
-                        <span class="line"><span class="line-number">202</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">218</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">203</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">219</span> <span class="code-content language-python">        if isinstance(exploration_method, RandomAction):</span></span>
                     
-                        <span class="line"><span class="line-number">204</span> <span class="code-content language-python">    def __init__(self, input_frame_width: int, input_frame_height: int, action_space,</span></span>
+                        <span class="line"><span class="line-number">220</span> <span class="code-content language-python">            return exploration_method(self.action_dim)</span></span>
                     
-                        <span class="line"><span class="line-number">205</span> <span class="code-content language-python">                 mini_batch_size: int, replay_buffer_size: int, replay_start_size: int,</span></span>
+                        <span class="line"><span class="line-number">221</span> <span class="code-content language-python">        else:</span></span>
                     
-                        <span class="line"><span class="line-number">206</span> <span class="code-content language-python">                 learning_rate: float, step_c: int, model_saving_period: int,</span></span>
+                        <span class="line"><span class="line-number">222</span> <span class="code-content language-python">            phi_tensor = torch.as_tensor(obs, device=self.device, dtype=torch.float32)</span></span>
                     
-                        <span class="line"><span class="line-number">207</span> <span class="code-content language-python">                 gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,</span></span>
+                        <span class="line"><span class="line-number">223</span> <span class="code-content language-python">            value_list = self.value_function.value(phi_tensor)[0]</span></span>
                     
-                        <span class="line"><span class="line-number">208</span> <span class="code-content language-python">                 exploration_steps: int, device: torch.device, logger: Logger):</span></span>
+                        <span class="line"><span class="line-number">224</span> <span class="code-content language-python">            if exploration_method is None:</span></span>
                     
-                        <span class="line"><span class="line-number">209</span> <span class="code-content language-python">        super(DQNAgent, self).__init__(logger)</span></span>
+                        <span class="line"><span class="line-number">225</span> <span class="code-content language-python">                return self.exploration_method(value_list)</span></span>
                     
-                        <span class="line"><span class="line-number">210</span> <span class="code-content language-python">        self.action_dim = action_space.n</span></span>
+                        <span class="line"><span class="line-number">226</span> <span class="code-content language-python">            else:</span></span>
                     
-                        <span class="line"><span class="line-number">211</span> <span class="code-content language-python">        self.value_function = DQNValueFunction(phi_channel, self.action_dim, learning_rate, gamma, step_c,</span></span>
-                    
-                        <span class="line"><span class="line-number">212</span> <span class="code-content language-python">                                               model_saving_period, device, logger)</span></span>
-                    
-                        <span class="line"><span class="line-number">213</span> <span class="code-content language-python">        self.exploration_method = DecayingEpsilonGreedy(epsilon_max, epsilon_min, exploration_steps)</span></span>
-                    
-                        <span class="line"><span class="line-number">214</span> <span class="code-content language-python">        self.memory = UniformExperienceReplay(replay_buffer_size)</span></span>
-                    
-                        <span class="line"><span class="line-number">215</span> <span class="code-content language-python">        self.perception_mapping = DQNPerceptionMapping(phi_channel, input_frame_width, input_frame_height)</span></span>
-                    
-                        <span class="line"><span class="line-number">216</span> <span class="code-content language-python">        self.reward_shaping = DQNAtariReward()</span></span>
-                    
-                        <span class="line"><span class="line-number">217</span> <span class="code-content language-python">        self.device = device</span></span>
-                    
-                        <span class="line"><span class="line-number">218</span> <span class="code-content language-python">        self.mini_batch_size = mini_batch_size</span></span>
-                    
-                        <span class="line"><span class="line-number">219</span> <span class="code-content language-python">        self.replay_start_size = replay_start_size</span></span>
-                    
-                        <span class="line"><span class="line-number">220</span> <span class="code-content language-python">        self.training_episodes = training_episodes</span></span>
+                        <span class="line"><span class="line-number">227</span> <span class="code-content language-python">                return exploration_method(value_list)</span></span>
                     
                 </div>
             </div>
@@ -711,33 +725,17 @@ $y = r_{j}$ for terminal state`);
                     <h2></h2>
                      <div id="description-section-20"></div>
                     <script>
-                        document.getElementById('description-section-20').innerHTML = marked(`Select an action based on the given observation and exploration method.`);
+                        document.getElementById('description-section-20').innerHTML = marked(`Store the agent environment interaction in the memory.`);
                     </script>
                 </div>
                 <div class="code">
 
                     
-                        <span class="line"><span class="line-number">223</span> <span class="code-content language-python">    def select_action(self, obs: np.ndarray, exploration_method: Exploration = None) -> np.ndarray:</span></span>
+                        <span class="line"><span class="line-number">230</span> <span class="code-content language-python">    def store(self, obs, action, reward, next_obs, done, truncated):</span></span>
                     
-                        <span class="line"><span class="line-number">224</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">231</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">225</span> <span class="code-content language-python">        if isinstance(exploration_method, RandomAction):</span></span>
-                    
-                        <span class="line"><span class="line-number">226</span> <span class="code-content language-python">            return exploration_method(self.action_dim)</span></span>
-                    
-                        <span class="line"><span class="line-number">227</span> <span class="code-content language-python">        else:</span></span>
-                    
-                        <span class="line"><span class="line-number">228</span> <span class="code-content language-python">            phi_tensor = torch.as_tensor(obs, device=self.device, dtype=torch.float32)</span></span>
-                    
-                        <span class="line"><span class="line-number">229</span> <span class="code-content language-python">            value_list = self.value_function.value(phi_tensor)[0]</span></span>
-                    
-                        <span class="line"><span class="line-number">230</span> <span class="code-content language-python">            if exploration_method is None:</span></span>
-                    
-                        <span class="line"><span class="line-number">231</span> <span class="code-content language-python">                return self.exploration_method(value_list)</span></span>
-                    
-                        <span class="line"><span class="line-number">232</span> <span class="code-content language-python">            else:</span></span>
-                    
-                        <span class="line"><span class="line-number">233</span> <span class="code-content language-python">                return exploration_method(value_list)</span></span>
+                        <span class="line"><span class="line-number">232</span> <span class="code-content language-python">        self.memory.store(obs, np.array(action), np.array(reward), next_obs, np.array(done), np.array(truncated))</span></span>
                     
                 </div>
             </div>
@@ -750,17 +748,27 @@ $y = r_{j}$ for terminal state`);
                     <h2></h2>
                      <div id="description-section-21"></div>
                     <script>
-                        document.getElementById('description-section-21').innerHTML = marked(`Store the agent environment interaction in the memory.`);
+                        document.getElementById('description-section-21').innerHTML = marked(`Perform a training step if the memory size is larger than the update sample size.`);
                     </script>
                 </div>
                 <div class="code">
 
                     
-                        <span class="line"><span class="line-number">236</span> <span class="code-content language-python">    def store(self, obs, action, reward, next_obs, done, truncated):</span></span>
+                        <span class="line"><span class="line-number">235</span> <span class="code-content language-python">    def train_step(self):</span></span>
+                    
+                        <span class="line"><span class="line-number">236</span> <span class="code-content language-python"></span></span>
                     
                         <span class="line"><span class="line-number">237</span> <span class="code-content language-python"></span></span>
                     
-                        <span class="line"><span class="line-number">238</span> <span class="code-content language-python">        self.memory.store(obs, np.array(action), np.array(reward), next_obs, np.array(done), np.array(truncated))</span></span>
+                        <span class="line"><span class="line-number">238</span> <span class="code-content language-python"></span></span>
+                    
+                        <span class="line"><span class="line-number">239</span> <span class="code-content language-python">        if len(self.memory) > self.replay_start_size:</span></span>
+                    
+                        <span class="line"><span class="line-number">240</span> <span class="code-content language-python">            samples = self.memory.sample(self.mini_batch_size)</span></span>
+                    
+                        <span class="line"><span class="line-number">241</span> <span class="code-content language-python">            loss, q = self.value_function.update(samples)</span></span>
+                    
+                        <span class="line"><span class="line-number">242</span> <span class="code-content language-python">            self.update_step += 1</span></span>
                     
                 </div>
             </div>
@@ -773,25 +781,23 @@ $y = r_{j}$ for terminal state`);
                     <h2></h2>
                      <div id="description-section-22"></div>
                     <script>
-                        document.getElementById('description-section-22').innerHTML = marked(`Perform a training step if the memory size is larger than the update sample size.`);
+                        document.getElementById('description-section-22').innerHTML = marked(`synchronize the target value neural network with the value neural network every step_c steps`);
                     </script>
                 </div>
                 <div class="code">
 
                     
-                        <span class="line"><span class="line-number">241</span> <span class="code-content language-python">    def train_step(self):</span></span>
+                        <span class="line"><span class="line-number">244</span> <span class="code-content language-python">            if self.update_step % self.step_c == 0:</span></span>
                     
-                        <span class="line"><span class="line-number">242</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">245</span> <span class="code-content language-python">                self.value_function.synchronize_value_nn()</span></span>
                     
-                        <span class="line"><span class="line-number">243</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">246</span> <span class="code-content language-python">                if self.logger:</span></span>
                     
-                        <span class="line"><span class="line-number">244</span> <span class="code-content language-python"></span></span>
+                        <span class="line"><span class="line-number">247</span> <span class="code-content language-python">                    self.logger.tb_scalar('loss', np.mean(loss), self.update_step)</span></span>
                     
-                        <span class="line"><span class="line-number">245</span> <span class="code-content language-python">        if len(self.memory) > self.replay_start_size:</span></span>
+                        <span class="line"><span class="line-number">248</span> <span class="code-content language-python">                    self.logger.tb_scalar('q', torch.mean(q), self.update_step)</span></span>
                     
-                        <span class="line"><span class="line-number">246</span> <span class="code-content language-python">            samples = self.memory.sample(self.mini_batch_size)</span></span>
-                    
-                        <span class="line"><span class="line-number">247</span> <span class="code-content language-python">            self.value_function.update(samples)</span></span>
+                        <span class="line"><span class="line-number">249</span> <span class="code-content language-python"></span></span>
                     
                 </div>
             </div>
