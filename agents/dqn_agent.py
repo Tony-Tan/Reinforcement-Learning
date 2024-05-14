@@ -128,7 +128,7 @@ class DQNPerceptionMapping(PerceptionMapping):
 class DQNValueFunction(ValueFunction):
 
     def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
-                 gamma: float, step_c: int, model_saving_period: int, device: torch.device, logger: Logger):
+                 gamma: float,  model_saving_period: int, device: torch.device, logger: Logger,):
         super(DQNValueFunction, self).__init__()
         self.logger = logger
         # Define the value neural network and the target value neural network
@@ -142,12 +142,10 @@ class DQNValueFunction(ValueFunction):
         self.gamma = gamma
         self.device = device
         self.update_step = 0
-        self.step_c = step_c
         self.model_saving_period = model_saving_period
 
     # synchronize the target value neural network with the value neural network
     def synchronize_value_nn(self):
-
         self.target_value_nn.load_state_dict(self.value_nn.state_dict())
 
     def max_state_value(self, obs_tensor):
@@ -190,7 +188,6 @@ class DQNValueFunction(ValueFunction):
         obs_tensor = image_normalization(obs_tensor)
         outputs = self.value_nn(obs_tensor)
         obs_action_value = outputs.gather(1, actions)
-
         # Clip the difference between obs_action_value and q_value to the range of -1 to 1
         # in [prioritized experience replay]() algorithm, weight is used to adjust the importance of the samples
         diff = obs_action_value - q_value
@@ -204,13 +201,8 @@ class DQNValueFunction(ValueFunction):
         loss.backward()
         self.optimizer.step()
         self.update_step += 1
-        # synchronize the target value neural network with the value neural network every step_c steps
-        if self.update_step % self.step_c == 0:
-            self.synchronize_value_nn()
-            if self.logger:
-                self.logger.tb_scalar('loss', loss.item(), self.update_step)
-                self.logger.tb_scalar('q', torch.mean(q_value), self.update_step)
-        return np.abs(diff_clipped.detach().cpu().numpy().astype(np.float32))
+        return (np.abs(diff_clipped.detach().cpu().numpy().astype(np.float32)),
+                q_value.detach().cpu().numpy().astype(np.float32))
 
     # Calculate the value of the given phi tensor.
     def value(self, phi_tensor: torch.Tensor) -> np.ndarray:
@@ -253,6 +245,8 @@ class DQNAgent(Agent):
         self.mini_batch_size = mini_batch_size
         self.replay_start_size = replay_start_size
         self.training_episodes = training_episodes
+        self.update_step = 0
+        self.step_c = step_c
 
     # Select an action based on the given observation and exploration method.
     def select_action(self, obs: np.ndarray, exploration_method: Exploration = None) -> np.ndarray:
@@ -295,4 +289,12 @@ class DQNAgent(Agent):
 
         if len(self.memory) > self.replay_start_size:
             samples = self.memory.sample(self.mini_batch_size)
-            self.value_function.update(samples)
+            loss, q = self.value_function.update(samples)
+            self.update_step += 1
+            # synchronize the target value neural network with the value neural network every step_c steps
+            if self.update_step % self.step_c == 0:
+                self.value_function.synchronize_value_nn()
+                if self.logger:
+                    self.logger.tb_scalar('loss', np.mean(loss), self.update_step)
+                    self.logger.tb_scalar('q', torch.mean(q), self.update_step)
+
