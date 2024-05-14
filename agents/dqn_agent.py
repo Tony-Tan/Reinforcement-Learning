@@ -296,5 +296,5 @@ class DQNAgent(Agent):
                 self.value_function.synchronize_value_nn()
                 if self.logger:
                     self.logger.tb_scalar('loss', np.mean(loss), self.update_step)
-                    self.logger.tb_scalar('q', torch.mean(q), self.update_step)
+                    self.logger.tb_scalar('q', np.mean(q), self.update_step)
 
