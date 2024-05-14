@@ -235,7 +235,7 @@ class DQNAgent(Agent):
                  exploration_steps: int, device: torch.device, logger: Logger):
         super(DQNAgent, self).__init__(logger)
         self.action_dim = action_space.n
-        self.value_function = DQNValueFunction(phi_channel, self.action_dim, learning_rate, gamma, step_c,
+        self.value_function = DQNValueFunction(phi_channel, self.action_dim, learning_rate, gamma,
                                                model_saving_period, device, logger)
         self.exploration_method = DecayingEpsilonGreedy(epsilon_max, epsilon_min, exploration_steps)
         self.memory = UniformExperienceReplay(replay_buffer_size)
