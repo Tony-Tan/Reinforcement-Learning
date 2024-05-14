@@ -28,9 +28,8 @@ class AsyncDQNAgent(DQNAgent):
         Perform a training step if the memory size is larger than the update sample size.
         """
         if len(self.memory) > self.replay_start_size:
-            samples, w, idx = self.memory.sample(self.mini_batch_size)
-            loss, q = self.value_function.update(samples, w).reshape(1, -1) + np.float32(1e-5)
-            self.memory.p[idx] = loss
+            samples = self.memory.sample(self.mini_batch_size)
+            loss, q = self.value_function.update(samples)
             self.update_step += 1
             # synchronize the target value neural network with the value neural network every step_c steps
             if self.update_step % self.step_c == 0 and rank == 0:
