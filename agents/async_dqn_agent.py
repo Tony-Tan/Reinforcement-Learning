@@ -1,6 +1,6 @@
 import torch.multiprocessing as mp
 from agents.dqn_agent import *
-
+import gc
 
 class AsynDQNValueFunction(DQNValueFunction):
     def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
@@ -22,6 +22,12 @@ class AsyncDQNAgent(DQNAgent):
                                             learning_rate, step_c, model_saving_period,
                                             gamma, training_episodes, phi_channel, epsilon_max, epsilon_min,
                                             exploration_steps, device, logger)
+        del self.memory
+        gc.collect()
+        self.memory = UniformExperienceReplayMP(replay_buffer_size, np.array([4, input_frame_width,input_frame_height]),
+                                                [1])
+        self.value_function.value_nn.share_memory()
+        self.value_function.target_value_nn.share_memory()
 
     def train_step(self, rank: int = 0):
         """
@@ -37,3 +43,6 @@ class AsyncDQNAgent(DQNAgent):
                 if self.logger:
                     self.logger.tb_scalar('loss', np.mean(loss), self.update_step)
                     self.logger.tb_scalar('q', np.mean(q), self.update_step)
+
+    def store(self, obs, action, reward, next_obs, done, truncated):
+        self.memory.store(obs, np.array([action]), np.array(reward), next_obs, np.array(done), np.array(truncated))
