@@ -71,9 +71,10 @@ class ExperienceReplayMP(ABC):
     """
     Shared memory implementation of the Uniform Experience Replay buffer.
     """
-    def __init__(self, capacity: int, obs_shape: np.shape, action_shape:  np.shape):
+
+    def __init__(self, capacity: int, obs_shape: tuple, action_shape: tuple):
         self.capacity = capacity
-        self.obs_shape= obs_shape
+        self.obs_shape = obs_shape
         self.obs_dim = int(np.prod(obs_shape))
         self.action_shape = action_shape
         self.action_dim = int(np.prod(action_shape))
@@ -86,17 +87,19 @@ class ExperienceReplayMP(ABC):
         self.ptr = mp.Value('i', 0)
         self.size = mp.Value('i', 0)
         self.lock = mp.Lock()
+
     @staticmethod
-    def _store_in_shared_array(shared_array, data, index, dim):
-        for i in range(dim):
-            shared_array[index * dim + i] = data[i]
+    def _store_batch_in_shared_array(shared_array, data, indices, dim):
+        flat_data = data.flatten()
+        for idx, flat_idx in zip(indices, range(0, len(flat_data), dim)):
+            shared_array[idx * dim: (idx + 1) * dim] = flat_data[flat_idx: flat_idx + dim]
 
     def store(self, observation, action, reward, next_observation, done, truncated):
         with self.lock:
             index = self.ptr.value % self.capacity
-            self._store_in_shared_array(self.state_buffer, observation.flatten(), index, self.obs_dim)
-            self._store_in_shared_array(self.next_state_buffer, next_observation.flatten(), index, self.obs_dim)
-            self._store_in_shared_array(self.action_buffer, action, index, self.action_dim)
+            self._store_batch_in_shared_array(self.state_buffer, observation.flatten(), [index], self.obs_dim)
+            self._store_batch_in_shared_array(self.next_state_buffer, next_observation.flatten(), [index], self.obs_dim)
+            self._store_batch_in_shared_array(self.action_buffer, action, [index], self.action_dim)
             self.reward_buffer[index] = reward
             self.done_buffer[index] = done
             self.truncated_buffer[index] = truncated
@@ -112,26 +115,29 @@ class ExperienceReplayMP(ABC):
         return self.size.value
 
     @staticmethod
-    def _load_from_shared_array(shared_array, indices, dim):
-        data = np.zeros((len(indices), dim), dtype=np.float32)
-        for j, index in enumerate(indices):
-            for i in range(dim):
-                data[j, i] = shared_array[index * dim + i]
-        return data
+    def _load_batch_from_shared_array(shared_array, indices, dim):
+        flat_data = np.zeros(len(indices) * dim, dtype=np.float32)
+        for idx, flat_idx in zip(indices, range(0, len(flat_data), dim)):
+            flat_data[flat_idx: flat_idx + dim] = shared_array[idx * dim: (idx + 1) * dim]
+        return flat_data.reshape(len(indices), dim)
 
     def get_items(self, indices):
         with self.lock:
-            batch_size = len(indices)
-            states = self._load_from_shared_array(self.state_buffer, indices,
-                                                  self.obs_dim).reshape(batch_size, *self.obs_shape)
-            next_states = self._load_from_shared_array(self.next_state_buffer, indices,
-                                                       self.obs_dim).reshape(batch_size, *self.obs_shape)
-            actions = self._load_from_shared_array(self.action_buffer, indices, self.action_dim)
-            rewards = np.array([self.reward_buffer[i] for i in indices], dtype=np.float32)
-            truncated = np.array([self.truncated_buffer[i] for i in indices], dtype=np.float32)
-            dones = np.array([self.done_buffer[i] for i in indices], dtype=np.float32)
-        return (torch.as_tensor(states), torch.as_tensor(actions), torch.as_tensor(rewards),
-                torch.as_tensor(next_states), torch.as_tensor(dones), torch.as_tensor(truncated))
+            states = self._load_batch_from_shared_array(self.state_buffer, indices, self.obs_dim).reshape(len(indices), *self.obs_shape)
+            next_states = self._load_batch_from_shared_array(self.next_state_buffer, indices, self.obs_dim).reshape(len(indices), *self.obs_shape)
+            actions = self._load_batch_from_shared_array(self.action_buffer, indices, self.action_dim)
+            rewards = np.frombuffer(self.reward_buffer.get_obj(), dtype=np.float32)[indices]
+            dones = np.frombuffer(self.done_buffer.get_obj(), dtype=np.float32)[indices]
+            truncated = np.frombuffer(self.truncated_buffer.get_obj(), dtype=np.float32)[indices]
+
+        return (
+            torch.as_tensor(states),
+            torch.as_tensor(actions),
+            torch.as_tensor(rewards),
+            torch.as_tensor(next_states),
+            torch.as_tensor(dones),
+            torch.as_tensor(truncated)
+        )
 
     @abstractmethod
     def sample(self, *args, **kwargs):

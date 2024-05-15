@@ -16,7 +16,7 @@ global async_dqn_agent
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
 parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
                     help='openai gym environment (default: ALE/Atlantis-v5)')
-parser.add_argument('--worker_num', default=8, type=int,
+parser.add_argument('--worker_num', default=4, type=int,
                     help='parallel worker number (default: 4)')
 parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
@@ -87,8 +87,9 @@ def train_processor(rank: int, agent:AsyncDQNAgent, env: EnvWrapper,
             if rank == 0 and training_steps % batch_per_epoch == 0:
                 run_test = True
                 epoch_i += 1
+            # print(f'pid {rank} - {training_steps} training steps')
         if rank == 0:
-            # agent.logger.msg(f'{training_steps} training reward: ' + str(reward_cumulated))
+            agent.logger.msg(f'{training_steps} training reward: ' + str(reward_cumulated))
             agent.logger.tb_scalar('training reward', reward_cumulated, training_steps)
         if run_test:
             agent.logger.msg(f'{epoch_i} test start:')
