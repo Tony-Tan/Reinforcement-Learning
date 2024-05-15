@@ -115,7 +115,7 @@ class AsyncDQNPlayGround:
             p = mp.Process(target=train, args=(rank, self.agent, self.env_list[rank],
                                                self.training_steps_each_worker,
                                                self.cfg['no_op'],
-                                               cfg['batch_num_per_epoch'] / self.worker_num))
+                                               cfg['batch_num_per_epoch']))
             p.start()
             processes.append(p)
         for p in processes:
