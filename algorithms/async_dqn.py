@@ -1,8 +1,7 @@
+import time
 from agents.async_dqn_agent import *
-from abc_rl.experience_replay import *
-from abc_rl.exploration import *
-from utils.hyperparameters import *
 import argparse
+import random
 from agents.dqn_agent import *
 from environments.env_wrapper import EnvWrapper
 from exploration.epsilon_greedy import *
@@ -55,9 +54,11 @@ def test(agent, test_episode_num: int):
 
 def train_processor(rank: int, agent:AsyncDQNAgent, env: EnvWrapper,
                     training_steps_each_worker: int,
-                    no_op: int, batch_per_epoch: int):
+                    no_op: int, batch_per_epoch: int,seed:int):
     # training
-
+    np.random.seed(seed)
+    random.seed(seed)
+    env.env.seed(seed)
     training_steps = 0
     episode = 0
     epoch_i = 0
@@ -88,9 +89,9 @@ def train_processor(rank: int, agent:AsyncDQNAgent, env: EnvWrapper,
                 run_test = True
                 epoch_i += 1
             # print(f'pid {rank} - {training_steps} training steps')
-        if rank == 0:
-            agent.logger.msg(f'{training_steps} training reward: ' + str(reward_cumulated))
-            agent.logger.tb_scalar('training reward', reward_cumulated, training_steps)
+        # if rank == 0:
+        agent.logger.msg(f'pid {rank} - {step_i}/{training_steps} training reward: ' + str(reward_cumulated))
+        agent.logger.tb_scalar(f'training reward/pid_{rank} ', reward_cumulated, training_steps)
         if run_test:
             agent.logger.msg(f'{epoch_i} test start:')
             avg_reward, avg_steps = test(agent, cfg['agent_test_episodes'])
@@ -114,11 +115,14 @@ class AsyncDQNPlayGround:
 
     def train(self):
         processes = []
+
         for rank in range(self.worker_num):
+            seed = random.randint(0,10000)
             p = mp.Process(target=train_processor, args=(rank, self.agent, self.env_list[rank],
                                                          self.training_steps_each_worker,
                                                          self.cfg['no_op'],
-                                                         cfg['batch_num_per_epoch']))
+                                                         cfg['batch_num_per_epoch'],
+                                                         seed))
             p.start()
             processes.append(p)
         for p in processes:
@@ -127,12 +131,13 @@ class AsyncDQNPlayGround:
 if __name__ == '__main__':
     logger = Logger(cfg['env_name'], cfg['log_path'])
     logger.msg('\nparameters:' + str(cfg))
-    envs = [EnvWrapper(cfg['env_name'], repeat_action_probability=0,
-                       frameskip=cfg['skip_k_frame'])
-            for _ in range(cfg['worker_num'])]
 
+    envs = []
+    for _ in range(cfg['worker_num']):
+        env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
+        envs.append(env)
     async_dqn_agent = AsyncDQNAgent(cfg['input_frame_width'], cfg['input_frame_height'],
-                                    envs[0].action_space, cfg['mini_batch_size'], cfg['replay_buffer_size'],
+                                    envs[0].action_space, cfg['mini_batch_size'], cfg['replay_buffer_size'], cfg['replay_start_size'],
                                     cfg['learning_rate'], cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
                                     cfg['training_steps'], cfg['phi_channel'], cfg['epsilon_max'],
                                     cfg['epsilon_min'], cfg['exploration_steps'], cfg['device'], logger)

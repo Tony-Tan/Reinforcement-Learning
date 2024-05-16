@@ -10,7 +10,7 @@ class EpsilonGreedy(Exploration):
         optimal_action = np.random.choice(
             np.flatnonzero(values == np.max(values)))
         if np.random.random() < self.epsilon:
-            return np.random.randint(0, len(values) - 1)
+            return np.random.randint(0, len(values))
         else:
             return optimal_action
 
@@ -20,7 +20,7 @@ class RandomAction(Exploration):
         super().__init__()
 
     def __call__(self, action_dim:int):
-        return np.random.randint(0, action_dim - 1)
+        return np.random.randint(0, action_dim)
 
 
 class DecayingEpsilonGreedy(Exploration):
@@ -39,7 +39,7 @@ class DecayingEpsilonGreedy(Exploration):
             np.flatnonzero(values == np.max(values)))
         # if a float random number less than epsilon, then explore
         if np.random.random() < self.epsilon:
-            return np.random.randint(0, len(values) - 1)
+            return np.random.randint(0, len(values))
         else:
             return optimal_action
 

@@ -13,12 +13,12 @@ class AsynDQNValueFunction(DQNValueFunction):
 
 class AsyncDQNAgent(DQNAgent):
     def __init__(self, input_frame_width: int, input_frame_height: int, action_space,
-                 mini_batch_size: int, replay_buffer_size: int, learning_rate: float, step_c: int,
+                 mini_batch_size: int, replay_buffer_size: int,replay_start_size: int, learning_rate: float, step_c: int,
                  model_saving_period: int,
                  gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,
                  exploration_steps: int, device: torch.device, logger: Logger):
         super(AsyncDQNAgent, self).__init__(input_frame_width, input_frame_height, action_space,
-                                            mini_batch_size, replay_buffer_size, mini_batch_size + 1,
+                                            mini_batch_size, replay_buffer_size, replay_start_size,
                                             learning_rate, step_c, model_saving_period,
                                             gamma, training_episodes, phi_channel, epsilon_max, epsilon_min,
                                             exploration_steps, device, logger)
@@ -28,12 +28,13 @@ class AsyncDQNAgent(DQNAgent):
                                                 [1])
         self.value_function.value_nn.share_memory()
         self.value_function.target_value_nn.share_memory()
+        self.value_function.optimizer = torch.optim.Adam(self.value_function.value_nn.parameters(), lr=learning_rate)
 
-    def train_step(self, rank: int = 0):
+    def train_step(self, rank:int=0):
         """
         Perform a training step if the memory size is larger than the update sample size.
         """
-        if len(self.memory) > self.replay_start_size:
+        if len(self.memory) >= self.replay_start_size:
             samples = self.memory.sample(self.mini_batch_size)
             loss, q = self.value_function.update(samples)
             self.update_step += 1
@@ -45,4 +46,4 @@ class AsyncDQNAgent(DQNAgent):
                     self.logger.tb_scalar('q', np.mean(q), self.update_step)
 
     def store(self, obs, action, reward, next_obs, done, truncated):
-        self.memory.store(obs, np.array([action]), np.array(reward), next_obs, np.array(done), np.array(truncated))
+        self.memory.store(obs, action, np.array(reward), next_obs, np.array(done), np.array(truncated))

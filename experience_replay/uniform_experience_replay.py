@@ -13,7 +13,7 @@ class UniformExperienceReplay(ExperienceReplay):
         return self.get_items(idx)
 
 
-class UniformExperienceReplayMP(ExperienceReplayMP):
+class UniformExperienceReplayMP(SharedExperience):
     """
     Shared memory implementation of the Uniform Experience Replay buffer.
     """
@@ -27,5 +27,4 @@ class UniformExperienceReplayMP(ExperienceReplayMP):
         super(UniformExperienceReplayMP, self).store(observation, action, reward, next_observation, done, truncated)
 
     def sample(self, batch_size: int):
-        idx = np.random.choice(np.arange(self.__len__()), batch_size, replace=False)
-        return self.get_items(idx)
+        return self.get_items()
