@@ -8,14 +8,15 @@ from exploration.epsilon_greedy import *
 from utils.hyperparameters import Hyperparameters
 from tools.dqn_play_ground import DQNPlayGround
 import torch.multiprocessing as mp
+
 mp.set_start_method('spawn', force=True)
 global async_dqn_agent
 
 # Argument parser for command line arguments
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
-parser.add_argument('--env_name', default='ALE/Pong-v5', type=str,
+parser.add_argument('--env_name', default='ALE/Breakout-v5', type=str,
                     help='openai gym environment (default: ALE/Atlantis-v5)')
-parser.add_argument('--worker_num', default=4, type=int,
+parser.add_argument('--worker_num', default=8, type=int,
                     help='parallel worker number (default: 4)')
 parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
@@ -24,7 +25,6 @@ parser.add_argument('--log_path', default='../exps/async_dqn/', type=str,
 
 # Load hyperparameters from yaml file
 cfg = Hyperparameters(parser, '../configs/async_dqn.yaml')
-
 
 
 def test(agent, test_episode_num: int):
@@ -52,13 +52,13 @@ def test(agent, test_episode_num: int):
     return reward_cum / cfg['agent_test_episodes'], step_cum / cfg['agent_test_episodes']
 
 
-def train_processor(rank: int, agent:AsyncDQNAgent, env: EnvWrapper,
+def train_processor(rank: int, agent: AsyncDQNAgent, env: EnvWrapper,
                     training_steps_each_worker: int,
-                    no_op: int, batch_per_epoch: int,seed:int):
+                    no_op: int, batch_per_epoch: int, seed: int):
     # training
     np.random.seed(seed)
     random.seed(seed)
-    env.env.seed(seed)
+    env.env.unwrapped.seed(seed)
     training_steps = 0
     episode = 0
     epoch_i = 0
@@ -106,7 +106,7 @@ def train_processor(rank: int, agent:AsyncDQNAgent, env: EnvWrapper,
 
 
 class AsyncDQNPlayGround:
-    def __init__(self, agent:AsyncDQNAgent, env: list, cfg: Hyperparameters):
+    def __init__(self, agent: AsyncDQNAgent, env: list, cfg: Hyperparameters):
         self.env_list = env
         self.agent = agent
         self.cfg = cfg
@@ -117,7 +117,7 @@ class AsyncDQNPlayGround:
         processes = []
 
         for rank in range(self.worker_num):
-            seed = random.randint(0,10000)
+            seed = random.randint(0, 10000)
             p = mp.Process(target=train_processor, args=(rank, self.agent, self.env_list[rank],
                                                          self.training_steps_each_worker,
                                                          self.cfg['no_op'],
@@ -128,6 +128,7 @@ class AsyncDQNPlayGround:
         for p in processes:
             p.join()
 
+
 if __name__ == '__main__':
     logger = Logger(cfg['env_name'], cfg['log_path'])
     logger.msg('\nparameters:' + str(cfg))
@@ -137,12 +138,10 @@ if __name__ == '__main__':
         env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
         envs.append(env)
     async_dqn_agent = AsyncDQNAgent(cfg['input_frame_width'], cfg['input_frame_height'],
-                                    envs[0].action_space, cfg['mini_batch_size'], cfg['replay_buffer_size'], cfg['replay_start_size'],
+                                    envs[0].action_space, cfg['mini_batch_size'], cfg['replay_buffer_size'],
                                     cfg['learning_rate'], cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
                                     cfg['training_steps'], cfg['phi_channel'], cfg['epsilon_max'],
                                     cfg['epsilon_min'], cfg['exploration_steps'], cfg['device'], logger)
 
     dqn_pg = AsyncDQNPlayGround(async_dqn_agent, envs, cfg)
     dqn_pg.train()
-
-

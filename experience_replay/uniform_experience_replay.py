@@ -26,5 +26,5 @@ class UniformExperienceReplayMP(SharedExperience):
               next_observation: np.ndarray, done: np.ndarray, truncated: np.ndarray):
         super(UniformExperienceReplayMP, self).store(observation, action, reward, next_observation, done, truncated)
 
-    def sample(self, batch_size: int):
+    def sample(self, batch_size: int = 0 ):
         return self.get_items()

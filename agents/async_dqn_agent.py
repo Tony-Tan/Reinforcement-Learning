@@ -13,12 +13,12 @@ class AsynDQNValueFunction(DQNValueFunction):
 
 class AsyncDQNAgent(DQNAgent):
     def __init__(self, input_frame_width: int, input_frame_height: int, action_space,
-                 mini_batch_size: int, replay_buffer_size: int,replay_start_size: int, learning_rate: float, step_c: int,
+                 mini_batch_size: int, replay_buffer_size: int, learning_rate: float, step_c: int,
                  model_saving_period: int,
                  gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,
                  exploration_steps: int, device: torch.device, logger: Logger):
         super(AsyncDQNAgent, self).__init__(input_frame_width, input_frame_height, action_space,
-                                            mini_batch_size, replay_buffer_size, replay_start_size,
+                                            mini_batch_size, replay_buffer_size, 0,
                                             learning_rate, step_c, model_saving_period,
                                             gamma, training_episodes, phi_channel, epsilon_max, epsilon_min,
                                             exploration_steps, device, logger)
@@ -34,8 +34,8 @@ class AsyncDQNAgent(DQNAgent):
         """
         Perform a training step if the memory size is larger than the update sample size.
         """
-        if len(self.memory) >= self.replay_start_size:
-            samples = self.memory.sample(self.mini_batch_size)
+        if len(self.memory) >= self.mini_batch_size:
+            samples = self.memory.sample()
             loss, q = self.value_function.update(samples)
             self.update_step += 1
             # synchronize the target value neural network with the value neural network every step_c steps
