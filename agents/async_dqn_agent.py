@@ -2,13 +2,14 @@ import torch.multiprocessing as mp
 from agents.dqn_agent import *
 import gc
 
-class AsynDQNValueFunction(DQNValueFunction):
-    def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
-                 gamma: float, step_c: int, model_saving_period: int, device: torch.device, logger: Logger):
-        super(AsynDQNValueFunction, self).__init__(input_channel, action_dim, learning_rate,
-                                                   gamma, step_c, model_saving_period, device, logger)
-        self.value_nn.share_memory()
-        self.target_value_nn.share_memory()
+
+# class AsynDQNValueFunction(DQNValueFunction):
+#     def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
+#                  gamma: float, step_c: int, model_saving_period: int, device: torch.device, logger: Logger):
+#         super(AsynDQNValueFunction, self).__init__(input_channel, action_dim, learning_rate,
+#                                                    gamma, step_c, model_saving_period, device, logger)
+#         self.value_nn.share_memory()
+#         self.target_value_nn.share_memory()
 
 
 class AsyncDQNAgent(DQNAgent):
@@ -16,7 +17,7 @@ class AsyncDQNAgent(DQNAgent):
                  mini_batch_size: int, replay_buffer_size: int, learning_rate: float, step_c: int,
                  model_saving_period: int,
                  gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,
-                 exploration_steps: int, device: torch.device, logger: Logger):
+                 exploration_steps: int, device: torch.device, manager: mp.Manager, logger: Logger):
         super(AsyncDQNAgent, self).__init__(input_frame_width, input_frame_height, action_space,
                                             mini_batch_size, replay_buffer_size, 0,
                                             learning_rate, step_c, model_saving_period,
@@ -24,13 +25,12 @@ class AsyncDQNAgent(DQNAgent):
                                             exploration_steps, device, logger)
         del self.memory
         gc.collect()
-        self.memory = UniformExperienceReplayMP(replay_buffer_size, np.array([4, input_frame_width,input_frame_height]),
-                                                [1])
+        self.memory = UniformExperienceReplayMP(replay_buffer_size, manager)
         self.value_function.value_nn.share_memory()
-        self.value_function.target_value_nn.share_memory()
+        # self.value_function.target_value_nn.share_memory()
         self.value_function.optimizer = torch.optim.Adam(self.value_function.value_nn.parameters(), lr=learning_rate)
 
-    def train_step(self, rank:int=0):
+    def train_step(self, rank: int = 0):
         """
         Perform a training step if the memory size is larger than the update sample size.
         """

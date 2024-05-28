@@ -16,9 +16,9 @@ global async_dqn_agent
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
 parser.add_argument('--env_name', default='ALE/Breakout-v5', type=str,
                     help='openai gym environment (default: ALE/Atlantis-v5)')
-parser.add_argument('--worker_num', default=8, type=int,
+parser.add_argument('--worker_num', default=4, type=int,
                     help='parallel worker number (default: 4)')
-parser.add_argument('--device', default='cuda:0', type=str,
+parser.add_argument('--device', default='cpu', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--log_path', default='../exps/async_dqn/', type=str,
                     help='log save path，default: ../exps/async_dqn/')
@@ -132,7 +132,7 @@ class AsyncDQNPlayGround:
 if __name__ == '__main__':
     logger = Logger(cfg['env_name'], cfg['log_path'])
     logger.msg('\nparameters:' + str(cfg))
-
+    manager = mp.Manager()
     envs = []
     for _ in range(cfg['worker_num']):
         env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
@@ -141,7 +141,7 @@ if __name__ == '__main__':
                                     envs[0].action_space, cfg['mini_batch_size'], cfg['replay_buffer_size'],
                                     cfg['learning_rate'], cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
                                     cfg['training_steps'], cfg['phi_channel'], cfg['epsilon_max'],
-                                    cfg['epsilon_min'], cfg['exploration_steps'], cfg['device'], logger)
+                                    cfg['epsilon_min'], cfg['exploration_steps'], cfg['device'], manager, logger)
 
     dqn_pg = AsyncDQNPlayGround(async_dqn_agent, envs, cfg)
     dqn_pg.train()

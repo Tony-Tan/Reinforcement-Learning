@@ -64,9 +64,6 @@ class ExperienceReplay(ABC):
         pass
 
 
-
-
-
 class SharedExperience(ABC):
     """
     Shared memory implementation of the Uniform Experience Replay buffer.
@@ -116,8 +113,10 @@ class SharedExperience(ABC):
 
     def get_items(self):
         with self.lock:
-            states = np.frombuffer(self.state_buffer.get_obj(), dtype=np.float32).reshape(self.capacity, *self.obs_shape)
-            next_states = np.frombuffer(self.next_state_buffer.get_obj(), dtype=np.float32).reshape(self.capacity, *self.obs_shape)
+            states = np.frombuffer(self.state_buffer.get_obj(), dtype=np.float32).reshape(self.capacity,
+                                                                                          *self.obs_shape)
+            next_states = np.frombuffer(self.next_state_buffer.get_obj(), dtype=np.float32).reshape(self.capacity,
+                                                                                                    *self.obs_shape)
             # actions = np.frombuffer(self.action_buffer.get_obj(), dtype=np.float32).reshape(self.capacity, *self.action_shape)
             actions = np.frombuffer(self.action_buffer.get_obj(), dtype=np.float32)
             rewards = np.frombuffer(self.reward_buffer.get_obj(), dtype=np.float32)
@@ -136,3 +135,31 @@ class SharedExperience(ABC):
     @abstractmethod
     def sample(self, *args, **kwargs):
         pass
+
+
+class ShareMemory(ABC):
+    def __init__(self, capacity: int, manager: mp.Manager):
+        self.capacity = capacity
+        self.buffer = manager.list()
+        self.ptr = mp.Value('i', 0)
+
+    def store(self,  observation, action, reward, next_observation, done, truncated):
+        self.buffer.append([observation, action, reward, next_observation, done, truncated])
+        self.ptr.value += 1
+        if len(self.buffer) > self.capacity:
+            self.buffer.pop(0)
+
+    def clear(self):
+        self.buffer.clear()
+        self.ptr.value = 0
+
+    def __len__(self):
+        return len(self.buffer)
+
+    def get_all_items(self):
+        return self.buffer
+
+    @abstractmethod
+    def sample(self, *args, **kwargs):
+        pass
+
