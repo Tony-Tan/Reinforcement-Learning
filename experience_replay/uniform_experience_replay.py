@@ -38,12 +38,33 @@ class UniformExperienceReplayMP(ShareMemory):
         super(UniformExperienceReplayMP, self).store(observation, action, reward, next_observation, done, truncated)
 
     def sample(self, batch_size: int = 0):
-        transitions = self.get_all_items()
-        obs = torch.from_numpy(np.array([item[0] for item in transitions], dtype=np.float32))
-        action = torch.from_numpy(np.array([item[1] for item in transitions], dtype=np.float32))
-        reward = torch.from_numpy(np.array([item[2] for item in transitions], dtype=np.float32))
-        next_obs = torch.from_numpy(np.array([item[3] for item in transitions], dtype=np.float32))
-        done = torch.from_numpy(np.array([item[4] for item in transitions], dtype=np.float32))
-        truncated = torch.from_numpy(np.array([item[5] for item in transitions], dtype=np.float32))
-        return obs, action, reward, next_obs, done, truncated
+        with self.lock:
+            transitions = self.get_all_items()
+            obs = []
+            action = []
+            reward = []
+            next_obs = []
+            done = []
+            truncated = []
+            for item in transitions:
+                obs.append(item[0])
+                action.append(item[1])
+                reward.append(item[2])
+                next_obs.append(item[3])
+                done.append(item[4])
+                truncated.append(item[5])
+            obs = np.array(obs,dtype=np.float32)
+            action = np.array(action,dtype=np.float32)
+            reward = np.array(reward,dtype=np.float32)
+            next_obs = np.array(next_obs,dtype=np.float32)
+            done = np.array(done,dtype=np.float32)
+            truncated = np.array(truncated,dtype=np.float32)
+
+
+        return (torch.from_numpy(obs),
+                torch.from_numpy(action),
+                torch.from_numpy(reward),
+                torch.from_numpy(next_obs),
+                torch.from_numpy(done),
+                torch.from_numpy(truncated))
 

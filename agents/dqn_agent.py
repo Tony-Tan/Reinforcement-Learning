@@ -187,6 +187,7 @@ class DQNValueFunction(ValueFunction):
         # normalize the input image
         obs_tensor = image_normalization(obs_tensor)
         outputs = self.value_nn(obs_tensor)
+
         obs_action_value = outputs.gather(1, actions)
         # Clip the difference between obs_action_value and q_value to the range of -1 to 1
         # in [prioritized experience replay]() algorithm, weight is used to adjust the importance of the samples

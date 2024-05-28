@@ -18,7 +18,7 @@ parser.add_argument('--env_name', default='ALE/Breakout-v5', type=str,
                     help='openai gym environment (default: ALE/Atlantis-v5)')
 parser.add_argument('--worker_num', default=4, type=int,
                     help='parallel worker number (default: 4)')
-parser.add_argument('--device', default='cpu', type=str,
+parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--log_path', default='../exps/async_dqn/', type=str,
                     help='log save path，default: ../exps/async_dqn/')
@@ -77,6 +77,7 @@ def train_processor(rank: int, agent: AsyncDQNAgent, env: EnvWrapper,
             else:
                 action = agent.select_action(obs, RandomAction())
             next_state, reward_raw, done, truncated, inf = env.step(action)
+
             reward = agent.reward_shaping(reward_raw)
             next_obs = agent.perception_mapping(next_state, step_i)
             agent.store(obs, action, reward, next_obs, done, truncated)

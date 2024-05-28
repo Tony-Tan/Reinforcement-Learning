@@ -27,7 +27,7 @@ class AsyncDQNAgent(DQNAgent):
         gc.collect()
         self.memory = UniformExperienceReplayMP(replay_buffer_size, manager)
         self.value_function.value_nn.share_memory()
-        # self.value_function.target_value_nn.share_memory()
+        self.value_function.target_value_nn.share_memory()
         self.value_function.optimizer = torch.optim.Adam(self.value_function.value_nn.parameters(), lr=learning_rate)
 
     def train_step(self, rank: int = 0):
