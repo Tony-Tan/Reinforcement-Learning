@@ -1,11 +1,11 @@
-from agents.dqn_agent import  *
+from agents.dqn_agent import *
 from abc_rl.experience_replay import *
 from abc_rl.exploration import *
 from utils.hyperparameters import *
 
 
 class DQNPlayGround:
-    def __init__(self, agent:DQNAgent, env:EnvWrapper, cfg:Hyperparameters,logger:Logger):
+    def __init__(self, agent: DQNAgent, env: EnvWrapper, cfg: Hyperparameters, logger: Logger):
         self.agent = agent
         self.env = env
         self.cfg = cfg
@@ -24,7 +24,7 @@ class DQNPlayGround:
             reward_cumulated = 0
             obs = self.agent.perception_mapping(state, step_i)
             while (not done) and (not truncated):
-                #
+                # no op for the first few steps and then select action by epsilon greedy or other exploration methods
                 if len(self.agent.memory) > self.cfg['replay_start_size'] and step_i >= self.cfg['no_op']:
                     action = self.agent.select_action(obs)
                 else:
@@ -54,7 +54,7 @@ class DQNPlayGround:
                 self.logger.msg(f'{epoch_i} avg_steps: ' + str(avg_steps))
                 self.logger.msg(f'{epoch_i} epsilon: ' + str(self.agent.exploration_method.epsilon))
 
-    def test (self, test_episode_num: int):
+    def test(self, test_episode_num: int):
         """
         Test the DQN agent for a given number of episodes.
         :param test_episode_num: The number of episodes for testing
@@ -77,4 +77,3 @@ class DQNPlayGround:
                 step_i += 1
             step_cum += step_i
         return reward_cum / self.cfg['agent_test_episodes'], step_cum / self.cfg['agent_test_episodes']
-
