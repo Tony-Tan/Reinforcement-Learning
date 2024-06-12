@@ -143,11 +143,18 @@ class ShareMemory(ABC):
         self.buffer = manager.list()
         self.lock = manager.Lock()  # 添加一个锁
 
-    def store(self,  observation, action, reward, next_observation, done, truncated):
-        with self.lock:
-            self.buffer.append([observation, action, reward, next_observation, done, truncated])
-            if len(self.buffer) > self.capacity:
-                self.buffer.pop(0)
+    def store(self,  observation, action, reward, next_observation, done, truncated, rank: int=None):
+        if not rank:
+            with self.lock:
+                self.buffer.append([observation, action, reward, next_observation, done, truncated])
+                if len(self.buffer) > self.capacity:
+                    self.buffer.pop(0)
+        else:
+            self.buffer[rank] = [observation, action, reward, next_observation, done, truncated]
+
+    def init_memory_with_None(self):
+        for i in range(self.capacity):
+            self.buffer.append(None)
 
     def clear(self):
         self.buffer.clear()

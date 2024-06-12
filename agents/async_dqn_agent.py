@@ -36,6 +36,8 @@ class AsyncDQNAgent(DQNAgent):
         """
         if len(self.memory) >= self.mini_batch_size:
             samples = self.memory.sample()
+            if None in samples:
+                return
             loss, q = self.value_function.update(samples)
             self.update_step += 1
             # synchronize the target value neural network with the value neural network every step_c steps
@@ -45,5 +47,5 @@ class AsyncDQNAgent(DQNAgent):
                     self.logger.tb_scalar('loss', np.mean(loss), self.update_step)
                     self.logger.tb_scalar('q', np.mean(q), self.update_step)
 
-    def store(self, obs, action, reward, next_obs, done, truncated):
-        self.memory.store(obs, action, np.array(reward), next_obs, np.array(done), np.array(truncated))
+    def store(self, obs, action, reward, next_obs, done, truncated, rank :int=None):
+        self.memory.store(obs, action, np.array(reward), next_obs, np.array(done), np.array(truncated), rank)
