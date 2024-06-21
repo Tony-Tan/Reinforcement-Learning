@@ -35,7 +35,7 @@ class DQNPlayGround:
                 self.agent.store(obs, action, reward, next_obs, done, truncated)
                 self.agent.train_step()
                 obs = next_obs
-                reward_cumulated += reward
+                reward_cumulated += reward_raw
 
                 if (len(self.agent.memory) > self.cfg['replay_start_size'] and
                         training_steps % self.cfg['batch_num_per_epoch'] == 0):

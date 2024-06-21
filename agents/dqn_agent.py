@@ -55,7 +55,13 @@ class DQNAtariReward(RewardShaping):
         :param reward: Input reward
         :return: Clipped reward
         """
-        return np.clip(reward, a_min=-1, a_max=1)
+        if reward > 0 :
+            return 1
+        elif reward < 0:
+            return -1
+        else:
+            return 0
+
 
 
 # Class for perception mapping in DQN for Atari games.
@@ -80,14 +86,14 @@ class DQNPerceptionMapping(PerceptionMapping):
         :param obs: 2-d int matrix, original state of environment
         :return: 2-d float matrix, 1-channel image with size of self.down_sample_size
         """
-        img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:, :, 0]
-        if self.last_frame_pre_process is not None:
-            obs_y = np.maximum(self.last_frame_pre_process, img_y_channel)
-        else:
-            obs_y = self.last_frame_pre_process = img_y_channel
-        self.last_frame_pre_process = img_y_channel
-        obs_processed = cv2.resize(obs_y, (self.input_frame_width, self.input_frame_height))
 
+        # if self.last_frame_pre_process is not None:
+        #     obs_y = np.maximum(self.last_frame_pre_process, obs)
+        # else:
+        #     obs_y = self.last_frame_pre_process = obs
+        # self.last_frame_pre_process = obs
+        img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:, :, 0]
+        obs_processed = cv2.resize(img_y_channel, (self.input_frame_width, self.input_frame_height))
         return obs_processed
 
     # Append the observation to the phi deque
@@ -202,6 +208,7 @@ class DQNValueFunction(ValueFunction):
         loss.backward()
         self.optimizer.step()
         self.update_step += 1
+        # return the clipped difference and the q value
         return (np.abs(diff_clipped.detach().cpu().numpy().astype(np.float32)),
                 q_value.detach().cpu().numpy().astype(np.float32))
 
