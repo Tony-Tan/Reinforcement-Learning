@@ -35,7 +35,7 @@ def image_normalization(image_uint8):
     :param image_uint8: Input image tensor
     :return: Normalized image tensor
     """
-    return image_uint8 / 255.0 - .5
+    return image_uint8 / 255.0
 
 
 # Define the DQN reward shaping class
@@ -93,7 +93,8 @@ class DQNPerceptionMapping(PerceptionMapping):
         #     obs_y = self.last_frame_pre_process = obs
         # self.last_frame_pre_process = obs
         img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:, :, 0]
-        obs_processed = cv2.resize(img_y_channel, (self.input_frame_width, self.input_frame_height))
+        obs_processed = cv2.resize(img_y_channel, (self.input_frame_width, self.input_frame_height),
+                                   interpolation=cv2.INTER_AREA)
         return obs_processed
 
     # Append the observation to the phi deque
