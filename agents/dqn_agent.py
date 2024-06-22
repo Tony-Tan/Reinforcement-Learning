@@ -48,20 +48,21 @@ class DQNAtariReward(RewardShaping):
     def __init__(self):
         super().__init__()
 
-    def __call__(self, reward):
+    def __call__(self, reward, last_lives: int = 0, current_lives: int = 0):
         """
         Preprocess the reward to clip it between -1 and 1.
 
         :param reward: Input reward
         :return: Clipped reward
         """
-        if reward > 0 :
+        if current_lives < last_lives:
+            return -1
+        if reward > 0:
             return 1
         elif reward < 0:
             return -1
         else:
             return 0
-
 
 
 # Class for perception mapping in DQN for Atari games.
@@ -135,7 +136,7 @@ class DQNPerceptionMapping(PerceptionMapping):
 class DQNValueFunction(ValueFunction):
 
     def __init__(self, input_channel: int, action_dim: int, learning_rate: float,
-                 gamma: float,  model_saving_period: int, device: torch.device, logger: Logger,):
+                 gamma: float, model_saving_period: int, device: torch.device, logger: Logger, ):
         super(DQNValueFunction, self).__init__()
         self.logger = logger
         # Define the value neural network and the target value neural network
@@ -306,4 +307,3 @@ class DQNAgent(Agent):
                 if self.logger:
                     self.logger.tb_scalar('loss', np.mean(loss), self.update_step)
                     self.logger.tb_scalar('q', np.mean(q), self.update_step)
-

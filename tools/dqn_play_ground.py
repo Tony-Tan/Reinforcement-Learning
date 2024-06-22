@@ -36,11 +36,10 @@ class DQNPlayGround:
                 next_state, reward_raw, done, truncated, inf = self.env.step(action)
                 if 'lives' in inf.keys():
                     current_lives = inf['lives']
-                    if current_lives < last_lives:
-                        # if the agent loses a life, the reward is set to -1
-                        reward_raw = -1
-                        last_lives = current_lives
-                reward = self.agent.reward_shaping(reward_raw)
+                    reward = self.agent.reward_shaping(reward_raw, last_lives, current_lives)
+                    last_lives = current_lives
+                else:
+                    reward = self.agent.reward_shaping(reward_raw)
                 next_obs = self.agent.perception_mapping(next_state, step_i)
                 self.agent.store(obs, action, reward, next_obs, done, truncated)
                 self.agent.train_step()
