@@ -9,7 +9,7 @@ from tools.dqn_play_ground import DQNPlayGround
 parser = argparse.ArgumentParser(description='PyTorch dqn training arguments')
 parser.add_argument('--env_name', default='ALE/Seaquest-v5', type=str,
                     help='openai gym environment (default: ALE/Atlantis-v5)')
-parser.add_argument('--device', default='cuda:0', type=str,
+parser.add_argument('--device', default='cpu', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--log_path', default='../exps/dqn/', type=str,
                     help='log save path，default: ../exps/dqn/')
@@ -21,7 +21,7 @@ cfg = Hyperparameters(parser, '../configs/dqn.yaml')
 def main():
     logger = Logger(cfg['env_name'], cfg['log_path'])
     logger.msg('\nparameters:' + str(cfg))
-    env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
+    env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frame_skip=cfg['skip_k_frame'])
     dqn_agent = DQNAgent(cfg['input_frame_width'], cfg['input_frame_height'], env.action_space, cfg['mini_batch_size'],
                          cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['learning_rate'], cfg['step_c'],
                          cfg['agent_saving_period'], cfg['gamma'], cfg['training_steps'], cfg['phi_channel'],
