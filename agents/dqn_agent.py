@@ -55,7 +55,7 @@ class DQNAtariReward(RewardShaping):
         :param reward: Input reward
         :return: Clipped reward
         """
-        if current_lives < last_lives:
+        if (last_lives and current_lives is not None) and current_lives < last_lives:
             return -1
         if reward > 0:
             return 1
