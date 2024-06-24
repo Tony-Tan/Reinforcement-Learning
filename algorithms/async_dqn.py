@@ -31,7 +31,7 @@ def test(agent, test_episode_num: int):
     :param test_episode_num: The number of episodes for testing
     :return: The average reward and average steps per episode
     """
-    env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
+    env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frame_skip=cfg['skip_k_frame'])
     exploration_method = EpsilonGreedy(cfg['epsilon_for_test'])
     reward_cum = 0
     step_cum = 0
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     manager = mp.Manager()
     envs = []
     for _ in range(cfg['worker_num']):
-        env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
+        env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frame_skip=cfg['skip_k_frame'])
         envs.append(env)
     async_dqn_agent = AsyncDQNAgent(cfg['input_frame_width'], cfg['input_frame_height'],
                                     envs[0].action_space, cfg['mini_batch_size'], cfg['replay_buffer_size'],

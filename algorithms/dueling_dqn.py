@@ -22,7 +22,7 @@ cfg = Hyperparameters(parser, '../configs/dqn.yaml')
 def main():
     logger = Logger(cfg['env_name'], cfg['log_path'])
     logger.msg('\nparameters:' + str(cfg))
-    env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
+    env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frame_skip=cfg['skip_k_frame'])
     dueling_dqn_agent = DuelingDQNAgent(cfg['input_frame_width'], cfg['input_frame_height'], env.action_space, cfg['mini_batch_size'],
                          cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['learning_rate'], cfg['step_c'],
                          cfg['agent_saving_period'], cfg['gamma'], cfg['training_steps'], cfg['phi_channel'],

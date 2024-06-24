@@ -25,7 +25,7 @@ cfg = Hyperparameters(parser, '../configs/double_dqn.yaml')
 def main():
     logger = Logger(cfg['env_name'], cfg['log_path'])
     logger.msg('\nparameters:' + str(cfg))
-    env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frameskip=cfg['skip_k_frame'])
+    env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frame_skip=cfg['skip_k_frame'])
     double_dqn_agent = DoubleDQNAgent(cfg['input_frame_width'], cfg['input_frame_height'], env.action_space,
                                       cfg['mini_batch_size'], cfg['replay_buffer_size'], cfg['replay_start_size'],
                                       cfg['learning_rate'], cfg['step_c'], cfg['agent_saving_period'], cfg['gamma'],
