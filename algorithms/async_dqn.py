@@ -79,7 +79,7 @@ def train_processor(rank: int, agent: AsyncDQNAgent, env: EnvWrapper,
             reward = agent.reward_shaping(reward_raw)
             next_obs = agent.perception_mapping(next_state, step_i)
             agent.store(obs, action, reward, next_obs, done, truncated, rank)
-            agent.train_step(rank)
+            agent.train_one_step()
             obs = next_obs
             reward_cumulated += reward
             training_steps += 1

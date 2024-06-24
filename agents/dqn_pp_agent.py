@@ -40,7 +40,7 @@ class DQNPPAgent(DQNAgent):
         gc.collect()
         self.memory = ProportionalPrioritization(replay_buffer_size, alpha, beta)
 
-    def train_step(self):
+    def train_one_step(self):
         """
         Perform a training step if the memory size is larger than the update sample size.
         """

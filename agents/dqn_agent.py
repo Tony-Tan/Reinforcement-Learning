@@ -46,17 +46,28 @@ class DQNAtariReward(RewardShaping):
     """
 
     def __init__(self):
+        self.last_lives = 0
         super().__init__()
 
-    def __call__(self, reward, last_lives: int = 0, current_lives: int = 0):
+    def __call__(self, reward, step_i:int=0, info:dict=None):
         """
-        Preprocess the reward to clip it between -1 and 1.
-
+        Preprocess the reward to clip it to -1 and 1.
+        1. positive reward is clipped to 1
+        2. negative reward is clipped to -1
+        3. leave 0 reward unchanged
+        4. if the agent loses a life, the reward is set to -1
         :param reward: Input reward
         :return: Clipped reward
         """
-        if (last_lives and current_lives is not None) and current_lives < last_lives:
-            return -1
+        if info is not None and 'lives' in info.keys():
+            if step_i == 0:
+                self.last_lives = info['lives']
+            else:
+                current_lives = info['lives']
+                if current_lives < self.last_lives:
+                    self.last_lives = current_lives
+                    return -1
+
         if reward > 0:
             return 1
         elif reward < 0:
@@ -291,7 +302,7 @@ class DQNAgent(Agent):
         self.memory.store(obs, np.array(action), np.array(reward), next_obs, np.array(done), np.array(truncated))
 
     # Perform a training step if the memory size is larger than the update sample size.
-    def train_step(self):
+    def train_one_step(self):
 
         """
         Perform a training step if the memory size is larger than the update sample size.

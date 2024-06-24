@@ -19,7 +19,7 @@ class Agent(ABC):
         ...
 
     @abstractmethod
-    def train_step(self, **kwargs):
+    def train_one_step(self, **kwargs):
         ...
 
 

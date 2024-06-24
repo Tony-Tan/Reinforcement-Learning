@@ -30,7 +30,7 @@ class AsyncDQNAgent(DQNAgent):
         self.value_function.target_value_nn.share_memory()
         self.value_function.optimizer = torch.optim.Adam(self.value_function.value_nn.parameters(), lr=learning_rate)
 
-    def train_step(self, rank: int = 0):
+    def train_one_step(self, **kwargs: int):
         """
         Perform a training step if the memory size is larger than the update sample size.
         """

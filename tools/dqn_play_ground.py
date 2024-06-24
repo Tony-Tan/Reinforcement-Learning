@@ -17,15 +17,9 @@ class DQNPlayGround:
         training_steps = 0
         while training_steps < self.cfg['training_steps']:
             state, inf = self.env.reset()
-            if 'lives' in inf.keys():
-                last_lives = inf['lives']
-            else:
-                last_lives = None
-            done = False
-            truncated = False
-            step_i = 0
-            run_test = False
-            reward_cumulated = 0
+            done = truncated = run_test = False
+            step_i = reward_cumulated = 0
+            # perception mapping
             obs = self.agent.perception_mapping(state, step_i)
             while (not done) and (not truncated):
                 # no op for the first few steps and then select action by epsilon greedy or other exploration methods
@@ -33,34 +27,44 @@ class DQNPlayGround:
                     action = self.agent.select_action(obs)
                 else:
                     action = self.agent.select_action(obs, RandomAction())
+                # environment step
                 next_state, reward_raw, done, truncated, inf = self.env.step(action)
-                if 'lives' in inf.keys():
-                    current_lives = inf['lives']
-                    reward = self.agent.reward_shaping(reward_raw, last_lives, current_lives)
-                    last_lives = current_lives
-                else:
-                    reward = self.agent.reward_shaping(reward_raw)
+                # reward shaping
+                reward = self.agent.reward_shaping(reward_raw, step_i, inf)
+                # perception mapping next state
                 next_obs = self.agent.perception_mapping(next_state, step_i)
+                # store the transition
                 self.agent.store(obs, action, reward, next_obs, done, truncated)
-                self.agent.train_step()
+                # train the agent 1 step
+                self.agent.train_one_step()
+                # update the state
                 obs = next_obs
+                # update the reward cumulated in the episode
                 reward_cumulated += reward_raw
 
                 if (len(self.agent.memory) > self.cfg['replay_start_size'] and
                         training_steps % self.cfg['batch_num_per_epoch'] == 0):
+                    # test the agent when the training steps reach the batch_num_per_epoch
                     run_test = True
                     epoch_i += 1
+                # update the training step counter of the entire training process
                 training_steps += 1
+                # update the step counter of the current episode
                 step_i += 1
+            # log the training reward
             self.logger.tb_scalar('training reward', reward_cumulated, training_steps)
             if run_test:
+                # test the agent
                 self.logger.msg(f'{epoch_i} test start:')
                 avg_reward, avg_steps = self.test(self.cfg['agent_test_episodes'])
+                # log the test reward
                 self.logger.tb_scalar('avg_reward', avg_reward, epoch_i)
-                self.logger.tb_scalar('avg_steps', avg_steps, epoch_i)
-                self.logger.tb_scalar('epsilon', self.agent.exploration_method.epsilon, epoch_i)
                 self.logger.msg(f'{epoch_i} avg_reward: ' + str(avg_reward))
+                # log the test steps
+                self.logger.tb_scalar('avg_steps', avg_steps, epoch_i)
                 self.logger.msg(f'{epoch_i} avg_steps: ' + str(avg_steps))
+                # log the epsilon
+                self.logger.tb_scalar('epsilon', self.agent.exploration_method.epsilon, epoch_i)
                 self.logger.msg(f'{epoch_i} epsilon: ' + str(self.agent.exploration_method.epsilon))
 
     def test(self, test_episode_num: int):
