@@ -22,7 +22,7 @@ class EnvWrapper:
         if env_id in gym.envs.registry.keys():
             if 'ALE' in env_id:
                 self.env_id = env_id
-                self.env = gym.make(env_id, repeat_action_probability=0,frameskip=1, render_mode=None)
+                self.env = gym.make(env_id, repeat_action_probability=0, frameskip=1, render_mode=None)
                 self.screen_size = kwargs['screen_size'] if 'screen_size' in kwargs.keys() else 84
                 self.env = AtariPreprocessing(self.env,  screen_size=self.screen_size,frame_skip=frame_skip,
                                               grayscale_obs=True, scale_obs=False)
