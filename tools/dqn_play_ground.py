@@ -5,7 +5,7 @@ from utils.hyperparameters import *
 
 
 class DQNPlayGround:
-    def __init__(self, agent: DQNAgent, env: EnvWrapper, cfg: Hyperparameters, logger: Logger):
+    def __init__(self, agent: DQNAgent, env: AtariEnv, cfg: Hyperparameters, logger: Logger):
         self.agent = agent
         self.env = env
         self.cfg = cfg
@@ -16,7 +16,7 @@ class DQNPlayGround:
         epoch_i = 0
         training_steps = 0
         while training_steps < self.cfg['training_steps']:
-            state,info = self.env.reset()
+            state, info = self.env.reset()
             done = truncated = run_test = False
             step_i = reward_cumulated = 0
             # perception mapping
@@ -30,7 +30,7 @@ class DQNPlayGround:
                 # environment step
                 next_state, reward_raw, done, truncated, inf = self.env.step(action)
                 # reward shaping
-                reward = self.agent.reward_shaping(reward_raw, step_i, inf)
+                reward = self.agent.reward_shaping(reward_raw)
                 # perception mapping next state
                 next_obs = self.agent.perception_mapping(next_state, step_i)
                 # store the transition
@@ -41,7 +41,7 @@ class DQNPlayGround:
                 obs = next_obs
                 # update the reward cumulated in the episode
                 reward_cumulated += reward_raw
-
+                # debug
                 if (len(self.agent.memory) > self.cfg['replay_start_size'] and
                         training_steps % self.cfg['batch_num_per_epoch'] == 0):
                     # test the agent when the training steps reach the batch_num_per_epoch

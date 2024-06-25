@@ -49,7 +49,7 @@ class DQNAtariReward(RewardShaping):
         self.last_lives = 0
         super().__init__()
 
-    def __call__(self, reward, step_i: int = 0, info: dict = None):
+    def __call__(self, reward):
         """
         Preprocess the reward to clip it to -1 and 1.
         1. positive reward is clipped to 1
@@ -59,15 +59,6 @@ class DQNAtariReward(RewardShaping):
         :param reward: Input reward
         :return: Clipped reward
         """
-        if info is not None and 'lives' in info.keys():
-            if step_i == 0:
-                self.last_lives = info['lives']
-            else:
-                current_lives = info['lives']
-                if current_lives < self.last_lives:
-                    self.last_lives = current_lives
-                    return -1
-
         if reward > 0:
             return 1
         elif reward < 0:
@@ -76,12 +67,7 @@ class DQNAtariReward(RewardShaping):
             return 0
 
 
-# Class for perception mapping in DQN for Atari games.
-# Preprocess the observation by taking the maximum value for each pixel colour value over the frame being encoded
-# and the previous frame. This is necessary to remove flickering that is present in games where some objects
-# appear only in even frames while other objects appear only in odd frames, an artefact caused by the limited
-# number of sprites Atari 2600 can display at once. Second, we then extract the Y channel, also known as
-# luminance, from the RGB frame and rescale it to $84\times 84$.
+
 class DQNPerceptionMapping(PerceptionMapping):
     def __init__(self, phi_channel: int, screen_size: int):
         super().__init__()
