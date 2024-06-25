@@ -73,7 +73,7 @@ class DQNPlayGround:
         :param test_episode_num: The number of episodes for testing
         :return: The average reward and average steps per episode
         """
-        env = EnvWrapper(self.cfg['env_name'], frame_skip=self.cfg['skip_k_frame'])
+        env = AtariEnv(self.cfg['env_name'], frame_skip=self.cfg['skip_k_frame'])
         exploration_method = EpsilonGreedy(self.cfg['epsilon_for_test'])
         reward_cum = 0
         step_cum = 0

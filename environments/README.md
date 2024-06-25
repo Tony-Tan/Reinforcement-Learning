@@ -6,5 +6,5 @@ from environments.env_wrapper import *
 from utils import *
 
 logger = Logger('./log.txt')
-custom_env = EnvWrapper('custom_env_0', logger)
+custom_env = AtariEnv('custom_env_0', logger)
 ```

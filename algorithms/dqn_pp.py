@@ -1,6 +1,6 @@
 import argparse
 from agents.dqn_pp_agent import *
-from environments.env_wrapper import EnvWrapper
+from environments.env_wrapper import AtariEnv
 from exploration.epsilon_greedy import *
 from utils.hyperparameters import Hyperparameters
 from tools.dqn_play_ground import DQNPlayGround
@@ -21,7 +21,7 @@ cfg = Hyperparameters(parser, '../configs/dqn_pp.yaml')
 def main():
     logger = Logger(cfg['env_name'], cfg['log_path'])
     logger.msg('\nparameters:' + str(cfg))
-    env = EnvWrapper(cfg['env_name'], frame_skip=cfg['skip_k_frame'], logger=logger, screen_size=cfg['screen_size'])
+    env = AtariEnv(cfg['env_name'], frame_skip=cfg['skip_k_frame'], logger=logger, screen_size=cfg['screen_size'])
 
     dqn_agent = DQNPPAgent(cfg['screen_size'], env.action_space, cfg['mini_batch_size'],
                            cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['learning_rate'], cfg['step_c'],
