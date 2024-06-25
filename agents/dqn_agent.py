@@ -46,7 +46,6 @@ class DQNAtariReward(RewardShaping):
     """
 
     def __init__(self):
-        self.last_lives = 0
         super().__init__()
 
     def __call__(self, reward):
@@ -55,7 +54,6 @@ class DQNAtariReward(RewardShaping):
         1. positive reward is clipped to 1
         2. negative reward is clipped to -1
         3. leave 0 reward unchanged
-        4. if the agent loses a life, the reward is set to -1
         :param reward: Input reward
         :return: Clipped reward
         """
@@ -65,7 +63,6 @@ class DQNAtariReward(RewardShaping):
             return -1
         else:
             return 0
-
 
 
 class DQNPerceptionMapping(PerceptionMapping):

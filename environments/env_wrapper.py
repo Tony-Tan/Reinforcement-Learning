@@ -80,6 +80,8 @@ class AtariEnv:
             reward_cum += reward
             if done or trunc:
                 break
+        # cv2.imshow('frame', cv2.cvtColor(state, cv2.COLOR_RGB2BGR))
+        # cv2.waitKey(30)
         if self.remove_flickering:
             state = np.maximum(state, self.last_frame)
         if self.screen_size:

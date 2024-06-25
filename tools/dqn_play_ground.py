@@ -51,6 +51,7 @@ class DQNPlayGround:
                 training_steps += 1
                 # update the step counter of the current episode
                 step_i += 1
+
             # log the training reward
             self.logger.tb_scalar('training reward', reward_cumulated, training_steps)
             if run_test:
