@@ -4,7 +4,7 @@ from experience_replay.proportional_prioritization import *
 
 
 class DQNPPAgent(DQNAgent):
-    def __init__(self, input_frame_width: int, input_frame_height: int, action_space: int, mini_batch_size: int,
+    def __init__(self, screen_size: int, action_space: int, mini_batch_size: int,
                  replay_buffer_size: int, replay_start_size: int, learning_rate: float, step_c: int,
                  agent_saving_period: int, gamma: float, training_steps: int, phi_channel: int, epsilon_max: float,
                  epsilon_min: float, exploration_steps: int, device: torch.device, logger: Logger, alpha: float = 0.6,
@@ -32,7 +32,7 @@ class DQNPPAgent(DQNAgent):
         :param alpha: The alpha value for proportional prioritization
         :param beta: The beta value for proportional prioritization
         """
-        super(DQNPPAgent, self).__init__(input_frame_width, input_frame_height, action_space, mini_batch_size,
+        super(DQNPPAgent, self).__init__(screen_size, action_space, mini_batch_size,
                                          replay_buffer_size, replay_start_size, learning_rate, step_c,
                                          agent_saving_period, gamma, training_steps, phi_channel, epsilon_max,
                                          epsilon_min, exploration_steps, device, logger)

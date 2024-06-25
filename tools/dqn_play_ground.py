@@ -16,7 +16,7 @@ class DQNPlayGround:
         epoch_i = 0
         training_steps = 0
         while training_steps < self.cfg['training_steps']:
-            state, inf = self.env.reset()
+            state,info = self.env.reset()
             done = truncated = run_test = False
             step_i = reward_cumulated = 0
             # perception mapping
@@ -73,7 +73,7 @@ class DQNPlayGround:
         :param test_episode_num: The number of episodes for testing
         :return: The average reward and average steps per episode
         """
-        env = EnvWrapper(self.cfg['env_name'], repeat_action_probability=0, frame_skip=self.cfg['skip_k_frame'])
+        env = EnvWrapper(self.cfg['env_name'], frame_skip=self.cfg['skip_k_frame'])
         exploration_method = EpsilonGreedy(self.cfg['epsilon_for_test'])
         reward_cum = 0
         step_cum = 0

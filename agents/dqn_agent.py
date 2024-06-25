@@ -49,7 +49,7 @@ class DQNAtariReward(RewardShaping):
         self.last_lives = 0
         super().__init__()
 
-    def __call__(self, reward, step_i:int=0, info:dict=None):
+    def __call__(self, reward, step_i: int = 0, info: dict = None):
         """
         Preprocess the reward to clip it to -1 and 1.
         1. positive reward is clipped to 1
@@ -77,37 +77,17 @@ class DQNAtariReward(RewardShaping):
 
 
 # Class for perception mapping in DQN for Atari games.
+# Preprocess the observation by taking the maximum value for each pixel colour value over the frame being encoded
+# and the previous frame. This is necessary to remove flickering that is present in games where some objects
+# appear only in even frames while other objects appear only in odd frames, an artefact caused by the limited
+# number of sprites Atari 2600 can display at once. Second, we then extract the Y channel, also known as
+# luminance, from the RGB frame and rescale it to $84\times 84$.
 class DQNPerceptionMapping(PerceptionMapping):
-    def __init__(self, phi_channel: int, input_frame_width: int,
-                 input_frame_height: int):
+    def __init__(self, phi_channel: int, screen_size: int):
         super().__init__()
         self.phi = deque(maxlen=phi_channel)
         self.phi_channel = phi_channel
-        self.input_frame_width = input_frame_width
-        self.input_frame_height = input_frame_height
-        self.last_frame_pre_process = None
-
-    # Preprocess the observation by taking the maximum value for each pixel colour value over the frame being encoded
-    # and the previous frame. This is necessary to remove flickering that is present in games where some objects
-    # appear only in even frames while other objects appear only in odd frames, an artefact caused by the limited
-    # number of sprites Atari 2600 can display at once. Second, we then extract the Y channel, also known as
-    # luminance, from the RGB frame and rescale it to $84\times 84$.
-
-    def __pre_process(self, obs: np.ndarray):
-        """
-        :param obs: 2-d int matrix, original state of environment
-        :return: 2-d float matrix, 1-channel image with size of self.down_sample_size
-        """
-
-        # if self.last_frame_pre_process is not None:
-        #     obs_y = np.maximum(self.last_frame_pre_process, obs)
-        # else:
-        #     obs_y = self.last_frame_pre_process = obs
-        # self.last_frame_pre_process = obs
-        img_y_channel = cv2.cvtColor(obs, cv2.COLOR_BGR2YUV)[:, :, 0]
-        obs_processed = cv2.resize(img_y_channel, (self.input_frame_width, self.input_frame_height),
-                                   interpolation=cv2.INTER_AREA)
-        return obs_processed
+        self.screen_size = screen_size
 
     # Append the observation to the phi deque
     def __phi_append(self, obs: np.ndarray):
@@ -123,10 +103,9 @@ class DQNPerceptionMapping(PerceptionMapping):
         """
         Reset the phi to zero and reset the last_frame_pre_process.
         """
-        self.last_frame_pre_process = None
         self.phi.clear()
         for i in range(self.phi_channel):
-            self.phi.append(np.zeros([self.input_frame_width, self.input_frame_width]))
+            self.phi.append(np.zeros([self.screen_size, self.screen_size]))
 
     # Preprocess the state to a certain size and load it to phi.
     def __call__(self, state: np.ndarray, step_i: int) -> np.ndarray:
@@ -138,7 +117,7 @@ class DQNPerceptionMapping(PerceptionMapping):
         """
         if step_i == 0:
             self.reset()
-        self.__phi_append(self.__pre_process(state))
+        self.__phi_append(state)
         obs = np.array(self.phi, dtype=np.uint8)
         return obs
 
@@ -249,7 +228,7 @@ class DQNAgent(Agent):
     Class for DQN agent for Atari games.
     """
 
-    def __init__(self, input_frame_width: int, input_frame_height: int, action_space,
+    def __init__(self,  screen_size: int, action_space,
                  mini_batch_size: int, replay_buffer_size: int, replay_start_size: int,
                  learning_rate: float, step_c: int, model_saving_period: int,
                  gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,
@@ -260,7 +239,7 @@ class DQNAgent(Agent):
                                                model_saving_period, device, logger)
         self.exploration_method = DecayingEpsilonGreedy(epsilon_max, epsilon_min, exploration_steps)
         self.memory = UniformExperienceReplay(replay_buffer_size)
-        self.perception_mapping = DQNPerceptionMapping(phi_channel, input_frame_width, input_frame_height)
+        self.perception_mapping = DQNPerceptionMapping(phi_channel, screen_size)
         self.reward_shaping = DQNAtariReward()
         self.device = device
         self.mini_batch_size = mini_batch_size

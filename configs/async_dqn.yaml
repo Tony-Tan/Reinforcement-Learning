@@ -5,8 +5,7 @@ training_steps: 500_000_000
 skip_k_frame: 4
 phi_channel: 4
 device: 'cpu'
-input_frame_width: 84
-input_frame_height: 84
+screen_size: 84
 gamma: 0.99
 no_op: 10
 save_path: './exps/'

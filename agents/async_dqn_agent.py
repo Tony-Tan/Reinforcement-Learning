@@ -13,12 +13,12 @@ import gc
 
 
 class AsyncDQNAgent(DQNAgent):
-    def __init__(self, input_frame_width: int, input_frame_height: int, action_space,
+    def __init__(self, screen_size: int, action_space,
                  mini_batch_size: int, replay_buffer_size: int, learning_rate: float, step_c: int,
                  model_saving_period: int,
                  gamma: float, training_episodes: int, phi_channel: int, epsilon_max: float, epsilon_min: float,
                  exploration_steps: int, device: torch.device, manager: mp.Manager, logger: Logger):
-        super(AsyncDQNAgent, self).__init__(input_frame_width, input_frame_height, action_space,
+        super(AsyncDQNAgent, self).__init__(screen_size, action_space,
                                             mini_batch_size, replay_buffer_size, 0,
                                             learning_rate, step_c, model_saving_period,
                                             gamma, training_episodes, phi_channel, epsilon_max, epsilon_min,

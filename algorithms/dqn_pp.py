@@ -17,15 +17,16 @@ parser.add_argument('--log_path', default='../exps/dqn_pp/', type=str,
 # Load hyperparameters from yaml file
 cfg = Hyperparameters(parser, '../configs/dqn_pp.yaml')
 
+
 def main():
     logger = Logger(cfg['env_name'], cfg['log_path'])
     logger.msg('\nparameters:' + str(cfg))
-    env = EnvWrapper(cfg['env_name'], repeat_action_probability=0, frame_skip=cfg['skip_k_frame'])
+    env = EnvWrapper(cfg['env_name'], frame_skip=cfg['skip_k_frame'], logger=logger, screen_size=cfg['screen_size'])
 
-    dqn_agent = DQNPPAgent(cfg['input_frame_width'], cfg['input_frame_height'], env.action_space, cfg['mini_batch_size'],
-                         cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['learning_rate'], cfg['step_c'],
-                         cfg['agent_saving_period'], cfg['gamma'], cfg['training_steps'], cfg['phi_channel'],
-                         cfg['epsilon_max'], cfg['epsilon_min'], cfg['exploration_steps'], cfg['device'], logger)
+    dqn_agent = DQNPPAgent(cfg['screen_size'], env.action_space, cfg['mini_batch_size'],
+                           cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['learning_rate'], cfg['step_c'],
+                           cfg['agent_saving_period'], cfg['gamma'], cfg['training_steps'], cfg['phi_channel'],
+                           cfg['epsilon_max'], cfg['epsilon_min'], cfg['exploration_steps'], cfg['device'], logger)
     dqn_pg = DQNPlayGround(dqn_agent, env, cfg, logger)
     dqn_pg.train()
 
