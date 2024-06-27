@@ -58,7 +58,8 @@ class AtariEnv:
             self.lives_counter = info['lives']
 
         if self.gray_state_Y:
-            state = cv2.cvtColor(state, cv2.COLOR_BGR2YUV)[:,:,0]
+            # state = cv2.cvtColor(state, cv2.COLOR_BGR2YUV)[:,:,0]
+            state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
         if self.screen_size:
             state = cv2.resize(state, [self.screen_size, self.screen_size])
         if self.remove_flickering:
@@ -75,16 +76,23 @@ class AtariEnv:
             if self.remove_flickering:
                 self.last_frame = state
             state, reward, done, trunc, info = self.env.step(action)
-            if 'lives' in info.keys() and info['lives'] < self.lives_counter:
-                self.lives_counter = info['lives']
-                reward = -1
+            if 'lives' in info.keys():
+                if info['lives'] < self.lives_counter:
+                    self.lives_counter = info['lives']
+                    reward = -1
+                    print(f'lives - 1; done:{done}')
+                elif info['lives'] > self.lives_counter:
+                    self.lives_counter = info['lives']
+                    reward = +1
+                    print(f'lives + 1; done:{done}')
             reward_cum += reward
             if done or trunc:
                 break
         # cv2.imshow('frame', cv2.cvtColor(state, cv2.COLOR_RGB2BGR))
         # cv2.waitKey(30)
         if self.gray_state_Y:
-            state = cv2.cvtColor(state, cv2.COLOR_BGR2YUV)[:, :, 0]
+            # state = cv2.cvtColor(state, cv2.COLOR_BGR2YUV)[:, :, 0]
+            state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
         if self.screen_size:
             state = cv2.resize(state, [self.screen_size, self.screen_size])
         if self.remove_flickering:
