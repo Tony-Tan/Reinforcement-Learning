@@ -34,7 +34,8 @@ class DQNPlayGround:
                 # perception mapping next state
                 next_obs = self.agent.perception_mapping(next_state, step_i)
                 # store the transition
-                self.agent.store(obs, action, reward, next_obs, done, truncated)
+                self.agent.store(obs, action, reward, next_obs, done,
+                                 truncated or (info['life_reduced'] if 'life_reduced' in info.keys() else truncated))
                 # train the agent 1 step
                 self.agent.train_one_step()
                 # update the state
