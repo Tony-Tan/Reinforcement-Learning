@@ -15,8 +15,11 @@ class DQNPlayGround:
         # training
         epoch_i = 0
         training_steps = 0
+        lives_counter = 1
         while training_steps < self.cfg['training_steps']:
             state, info = self.env.reset()
+            if 'lives' in info.keys():
+                lives_counter = info['lives']
             done = truncated = run_test = False
             step_i = reward_cumulated = 0
             # perception mapping
@@ -34,8 +37,8 @@ class DQNPlayGround:
                 # perception mapping next state
                 next_obs = self.agent.perception_mapping(next_state, step_i)
                 # store the transition
-                self.agent.store(obs, action, reward, next_obs, done,
-                                 truncated or (info['life_reduced'] if 'life_reduced' in info.keys() else truncated))
+
+                self.agent.store(obs, action, reward, next_obs, done, truncated)
                 # train the agent 1 step
                 self.agent.train_one_step()
                 # update the state
@@ -80,8 +83,11 @@ class DQNPlayGround:
         exploration_method = EpsilonGreedy(self.cfg['epsilon_for_test'])
         reward_cum = 0
         step_cum = 0
+        lives_counter = 1
         for i in range(test_episode_num):
-            state, _ = env.reset()
+            state, info = env.reset()
+            if 'lives' in info.keys():
+                lives_counter = info['lives']
             done = truncated = False
             step_i = 0
             while (not done) and (not truncated):
@@ -92,4 +98,5 @@ class DQNPlayGround:
                 state = next_state
                 step_i += 1
             step_cum += step_i
-        return reward_cum / self.cfg['agent_test_episodes'], step_cum / self.cfg['agent_test_episodes']
+        return (reward_cum / self.cfg['agent_test_episodes'] * lives_counter,
+                step_cum / self.cfg['agent_test_episodes'] * lives_counter)

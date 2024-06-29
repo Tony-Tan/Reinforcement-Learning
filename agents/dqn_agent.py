@@ -159,6 +159,8 @@ class DQNValueFunction(ValueFunction):
         # $y = r_{j} + \gamma  * max_{a'}Q(\phi_{j+1},a';\theta)$ for non-terminal state
         #
         # $y = r_{j}$ for terminal state
+        if truncated_tensor.any() == 1:
+            print(truncated_tensor)
         q_value = reward_tensor + self.gamma * max_next_state_value * (1 - truncated_tensor) * (1 - termination_tensor)
         action_tensor.resize_as_(reward_tensor)
         q_value.resize_as_(reward_tensor)

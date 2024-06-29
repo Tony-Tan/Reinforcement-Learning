@@ -72,7 +72,6 @@ class AtariEnv:
         reward_cum = 0
         state = self.last_frame
         done = trunc = info = None
-        life_reduced = False
         for i in range(self.frame_skip):
             if self.remove_flickering:
                 self.last_frame = state
@@ -81,7 +80,7 @@ class AtariEnv:
                 if info['lives'] < self.lives_counter:
                     self.lives_counter = info['lives']
                     reward = -1
-                    life_reduced = True
+                    done = True
                 elif info['lives'] > self.lives_counter:
                     self.lives_counter = info['lives']
                     reward = +1
@@ -89,8 +88,6 @@ class AtariEnv:
             reward_cum += reward
             if done or trunc:
                 break
-        # cv2.imshow('frame', cv2.cvtColor(state, cv2.COLOR_RGB2BGR))
-        # cv2.waitKey(30)
         if self.gray_state_Y:
             # state = cv2.cvtColor(state, cv2.COLOR_BGR2YUV)[:, :, 0]
             state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
@@ -104,7 +101,6 @@ class AtariEnv:
             state = np.maximum(state, self.last_frame)
         if self.scale_state:
             state = state / 255.
-        info['life_reduced'] = life_reduced
         return state, reward_cum, done, trunc, info
 
     def render(self):
