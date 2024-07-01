@@ -15,11 +15,8 @@ class DQNPlayGround:
         # training
         epoch_i = 0
         training_steps = 0
-        lives_counter = 1
         while training_steps < self.cfg['training_steps']:
             state, info = self.env.reset()
-            if 'lives' in info.keys():
-                lives_counter = info['lives']
             done = truncated = run_test = False
             step_i = reward_cumulated = 0
             # perception mapping
@@ -31,14 +28,14 @@ class DQNPlayGround:
                 else:
                     action = self.agent.select_action(obs, RandomAction())
                 # environment step
-                next_state, reward_raw, done, truncated, inf = self.env.step(action)
+                next_state, reward_raw, done, truncated, lives_decreased, inf = self.env.step(action)
                 # reward shaping
                 reward = self.agent.reward_shaping(reward_raw)
                 # perception mapping next state
                 next_obs = self.agent.perception_mapping(next_state, step_i)
                 # store the transition
 
-                self.agent.store(obs, action, reward, next_obs, done, truncated)
+                self.agent.store(obs, action, reward, next_obs, done or lives_decreased, truncated)
                 # train the agent 1 step
                 self.agent.train_one_step()
                 # update the state
@@ -83,20 +80,17 @@ class DQNPlayGround:
         exploration_method = EpsilonGreedy(self.cfg['epsilon_for_test'])
         reward_cum = 0
         step_cum = 0
-        lives_counter = 1
         for i in range(test_episode_num):
             state, info = env.reset()
-            if 'lives' in info.keys():
-                lives_counter = info['lives']
             done = truncated = False
             step_i = 0
             while (not done) and (not truncated):
                 obs = self.agent.perception_mapping(state, step_i)
                 action = self.agent.select_action(obs, exploration_method)
-                next_state, reward, done, truncated, inf = env.step(action)
+                next_state, reward, done, truncated, lives_decreased, inf = env.step(action)
                 reward_cum += reward
                 state = next_state
                 step_i += 1
             step_cum += step_i
-        return (reward_cum / self.cfg['agent_test_episodes'] * lives_counter,
-                step_cum / self.cfg['agent_test_episodes'] * lives_counter)
+        return (reward_cum / self.cfg['agent_test_episodes'] ,
+                step_cum / self.cfg['agent_test_episodes'] )
