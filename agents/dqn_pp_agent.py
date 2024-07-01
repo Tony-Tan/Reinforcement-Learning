@@ -46,8 +46,8 @@ class DQNPPAgent(DQNAgent):
         """
         if len(self.memory) > self.replay_start_size:
             samples, w, idx = self.memory.sample(self.mini_batch_size)
-            loss, q = self.value_function.update(samples, w).reshape(1, -1) + np.float32(1e-5)
-            self.memory.p[idx] = loss
+            loss, q = self.value_function.update(samples, w)
+            self.memory.p[idx] = loss.reshape(1, -1) + np.float32(1e-5)
             self.update_step += 1
             # synchronize the target value neural network with the value neural network every step_c steps
             if self.update_step % self.step_c == 0:
