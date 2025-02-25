@@ -185,8 +185,6 @@ class DQNValueFunction(ValueFunction):
             individual_losses = individual_losses.squeeze()
             weight = torch.as_tensor(weight, device=self.device, dtype=torch.float32).resize_as_(individual_losses)
             weighted_losses = individual_losses * weight
-            print('weighted losses')
-            print(weighted_losses)
             loss_value = weighted_losses.mean().detach().cpu().numpy().astype(np.float32)
             loss = weighted_losses.mean()
             loss.backward()

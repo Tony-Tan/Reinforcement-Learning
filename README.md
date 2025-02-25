@@ -71,7 +71,7 @@ Now you have successfully installed the project and its dependencies. You can pr
 | 7  | 2015 |  🚧 Developing   | [Continuous control with deep reinforcement learning]()                                               |
 | 8  | 2015 | 🧪 Experimenting | [Deep Reinforcement Learning with Double Q-Learning](./algorithms/double_dqn.py)                      | ![](https://img.shields.io/badge/dynamic/json?label=Citation&query=citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2F3b9732bb07dc99bde5e1f9f75251c6ea5039373e%3Ffields%3DcitationCount) |
 | 8  | 2016 | 🧪 Experimenting | [Dueling Network Architectures for Deep Reinforcement Learning](./algorithm/dueling_dqn.py_)          | 
-| 9  | 2016 | 🧪 Experimenting | [Prioritized Experience Replay](./algorithms/dqn_pp.py)                                               |
+| 9  | 2016 | 🧪 Experimenting | [Prioritized Experience Replay](./algorithms/ddqn_pp.py)                                               |
 | 10 | 2017 |  🚧 Developing   | [Proximal Policy Optimization Algorithms]()                                                           | 
 | 11 | 2018 |  🚧 Developing   | [Addressing Function Approximation Error in Actor-Critic Methods]()                                   | 
 | 12 | 2018 |  🚧 Developing   | [Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor]() |

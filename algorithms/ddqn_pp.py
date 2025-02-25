@@ -1,5 +1,5 @@
 import argparse
-from agents.dqn_pp_agent import *
+from agents.ddqn_pp_agent import *
 from environments.env_atari import AtariEnv
 from exploration.epsilon_greedy import *
 from utils.configurator import Configurator
@@ -16,13 +16,13 @@ parser.add_argument('--device', default='cuda:0', type=str,
                     help='calculation device default: cuda')
 parser.add_argument('--save_model', default=True, type=bool,
                     help='save model or not, default: True')
-parser.add_argument('--exp_path', default='../exps/dqn_pp/', type=str,
-                    help='exp save path，default: ../exps/dqn_pp/')
+parser.add_argument('--exp_path', default='../exps/ddqn_pp/', type=str,
+                    help='exp save path，default: ../exps/ddqn_pp/')
 
 
 def main():
     # Load hyperparameters from yaml file
-    cfg = Configurator(parser, '../configs/dqn_pp.yaml')
+    cfg = Configurator(parser, '../configs/ddqn_pp.yaml')
     logger = Logger(cfg['exp_path'], cfg['exp_name'])
     logger.msg('\nparameters:' + str(cfg))
 
@@ -40,7 +40,7 @@ def main():
         torch.backends.cudnn.benchmark = False
     env = AtariEnv(cfg['env_name'], frame_skip=cfg['skip_k_frame'], logger=logger, screen_size=cfg['screen_size'],
                    remove_flickering=True, seed=cfg['seed'])
-    dqn_pp_agent = DQNPPAgent(cfg['screen_size'], env.action_space, cfg['mini_batch_size'],
+    dqn_pp_agent = DDQNPPAgent(cfg['screen_size'], env.action_space, cfg['mini_batch_size'],
                               cfg['replay_buffer_size'], cfg['replay_start_size'], cfg['learning_rate'],
                               cfg['step_c'], cfg['gamma'], cfg['training_steps'], cfg['phi_channel'],
                               cfg['epsilon_max'], cfg['epsilon_min'], cfg['exploration_steps'],
